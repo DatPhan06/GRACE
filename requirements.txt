@@ -1,0 +1,10 @@
+pandas
+omdb
+chromadb
+langchain
+langchain-google-genai
+llama-index-embeddings-gemini
+llama-index
+llama-index-vector-stores-chroma
+llama-index-llms-langchain
+llama-index-llms-gemini
