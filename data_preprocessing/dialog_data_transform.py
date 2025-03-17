@@ -14,6 +14,11 @@ from typing import List, Dict, Any
 from utils.read_config import read_config
 
 
+from data_preprocessing.dialog_merge import redial_dialog_merge
+
+
+from tqdm import tqdm
+
 # Load configuration values from config file
 config_value = read_config()
 
@@ -36,22 +41,22 @@ def insp_dialog_data_transform(
     df = pd.read_csv(tsv_file_path, sep="\t")
 
     # Group the data by dialog_id to organize utterances by conversation
-    dialog_groups = df.groupby("dialog_id")
+    dialog_groups = df.groupby("dialog_id", sort=False)
 
     # Initialize the result list to store processed dialogs
     result = []
 
     # Process each dialog group separately
-    for dialog_id, group in dialog_groups:
+    for dialog_id, group in tqdm(dialog_groups):
 
         # Create a dictionary for this specific dialog
         dialog_dict = {dialog_id: []}
 
         # Sort group by utt_id to ensure utterances are in correct chronological order
-        group = group.sort_values("utt_id")
+        group = group.sort_values("utt_id") 
 
         # Process each utterance in the current dialog group
-        for _, row in group.iterrows():
+        for _, row in tqdm(group.iterrows()):
 
             # Create utterance dict with all columns from the row
             utterance = {}
@@ -100,6 +105,9 @@ def insp_dialog_data_transform(
 
         # Add the complete dialog dictionary to the result list
         result.append(dialog_dict)
+
+        # with open('dataset\preprocessed_data\INSPIRED\dialog_data\dialog_train_data.json', 'w', encoding='utf-8') as f:
+        #     json.dump(result, f, ensure_ascii=False, indent=2)
 
     return result
 
@@ -262,9 +270,11 @@ def redial_dialog_data_transform(train_data_path: os.PathLike):
 
 # if __name__ == "__main__":
 #     config_value = read_config()
-#     train_data_path = config_value['redial_dialog_train_data_path']
-#     data = redial_dialog_data_transform(train_data_path=train_data_path)
+#     train_data_path = config_value['insp_dialog_train_data_path']
+#     data = insp_dialog_data_transform(tsv_file_path=train_data_path)
 
-#     print(len(data))
+# train_data = redial_dialog_data_transform(train_data_path="dataset/ReDial/dialog_data/train_data.jsonl")
 
-# print(json.dumps(data[53], indent=2, ensure_ascii=False))
+# context = redial_dialog_merge(train_data[1], 1)
+
+# print(context[0])
