@@ -1,0 +1,56 @@
+EmbeddingModel: 
+    gecko: "text-embedding-004"
+    gemini_exp: "gemini-embedding-exp-03-07"
+
+GeminiModel:
+    2.0_flash: "gemini-2.0-flash"
+    2.0_flash_thinking_exp: "gemini-2.0-flash-thinking-exp-01-21"
+    2.5_pro_exp: "gemini-2.5-pro-exp-03-25"
+
+DeepSeekModel:
+    r1_distill_llama_70b: "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free"
+
+LlamaModel:
+    llama_3.3_70b: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+
+InspiredDataPath:
+    raw:
+        dialog:
+            test: "dataset/INSPIRED/raw/dialog_data/test.tsv"
+            train: "dataset/INSPIRED/raw/dialog_data/train.tsv"
+        movie: "dataset/INSPIRED/raw/movie_data/movie_database.tsv"
+    processed:
+        dialog:
+            test: "dataset/INSPIRED/processed/dialog_data/test.json"
+            train: "dataset/INSPIRED/processed/dialog_data/train_2.json"
+        movie: "dataset/INSPIRED/processed/movie_data/movie_database_no_missing.json"
+
+RedialDataPath:
+    raw:
+        dialog:
+            test: "dataset/REDIAL/raw/dialog_data/test_data.jsonl"
+            train: "dataset/REDIAL/raw/dialog_data/train_data.jsonl"
+        movie: "dataset/REDIAL/raw/movie_data/movie_with_mentions.csv"
+    processed:
+        dialog:
+            test: ""
+            train: "dataset/REDIAL/processed/dialog_data/train.json"
+        movie: ""
+
+OutputPath:
+    redial: "output/REDIAL/"
+    inspired: "output/INSPIRED/"
+
+VectorDB:
+    redial_chroma_db_path: "dataset/embeddings/REDIAL"
+    redial_collection_name: "redialMovie"
+    insp_chroma_db_path: "dataset/embeddings/INSPIRED"
+    insp_collection_name: "inspMovie"
+
+APIKey:
+    TOGETHER_AI_API_KEY_1: "8c229a8bd12c3a297e3dc81fbddbc98f04b83b023c0013c7e90a175180e68805"
+    GOOGLE_API_KEY_1: "AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA"
+    GOOGLE_API_KEY_2: "AIzaSyDPZD0vm7XjdySa5_sTkNa9JSfLqI5Tt4A"
+    GOOGLE_API_KEY_3: "AIzaSyC8s1mBOG8SHqbohcdG79eI4L064t4q3wc"
+    GOOGLE_API_KEY_4: "AIzaSyDnwh-JgJlkq8agkfl8JDpQhC4xl2Pl6oQ"
+    OMDB_API_KEY: "8f2d33cd"
