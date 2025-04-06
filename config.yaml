@@ -35,7 +35,7 @@ RedialDataPath:
         dialog:
             test: ""
             train: "dataset/REDIAL/processed/dialog_data/train.json"
-        movie: ""
+        movie: "dataset/REDIAL/processed/movie_data/movie_fix_year.json"
 
 OutputPath:
     redial: "output/REDIAL/"

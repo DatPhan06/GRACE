@@ -159,7 +159,10 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
         Here is the summary of seeker's preferences: {summary_preference}.
         And here is the candidate list: {movie_list}.
         Read the summary of seeker's preferences, and candidate list, then re-rank movie candidate list and retrieve top {k} movies that match the seeker's preferences the most.
+        
+        Your response must follow the instruction below:
         {format_instructions}
+        
         Let's think step by step. 
         Do the task carefully, or you are going to be severely punished.
         """,
