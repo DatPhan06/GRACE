@@ -101,7 +101,8 @@ def evaluate(
     top_k: Literal[1, 5, 10, 50] = 50,
 ):
     # Process and normalize the re-ranked list
-    ranked_movies = [standardize_movie_title(m) for m in re_ranked_list["movie_list"].strip().split("|") if m.strip()]
+    # ranked_movies = [standardize_movie_title(m) for m in re_ranked_list["movie_list"].strip().split("|") if m.strip()]
+    ranked_movies = [standardize_movie_title(m) for m in re_ranked_list["movie_list"] if m.strip()]
 
     # Normalize recommended items
     normalized_recommendations = [standardize_movie_title(m) for m in recommend_item if m.strip()]
@@ -111,7 +112,8 @@ def evaluate(
         "id": conv_id,
         "recommend_item": "|".join(recommend_item),
         "summarized_conversation": summarized_preferences,
-        "recommend_movie_list": "|".join(re_ranked_list["movie_list"].split("|")),
+        # "recommend_movie_list": "|".join(re_ranked_list["movie_list"].split("|")),
+        "recommend_movie_list": "|".join(re_ranked_list["movie_list"]),
         "movie_candidate_list": movie_candidate_list,
     }
 

@@ -34,8 +34,8 @@ class MovieList(BaseModel):
     """
 
     # Defines output format for movie recommendations
-    movie_list: str = Field(description="Re-ranked movie list, only movie title, separate by '|'")
-    # movie_list: List[str] = Field()
+    # movie_list: str = Field(description="Re-ranked movie list, only movie title, separate by '|'")
+    movie_list: List[str] = Field(description="Re-ranked movie list, only movie title")
 
 
 class UserPreference(BaseModel):
@@ -70,12 +70,16 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
         Read this conversation, find all the information about the seeker's preferences in movie, actor, genres, countries and 
         content (Do not contain assistant preferences), and summarize them.
         The conversation: {document}
+        
+         Your response must follow the instruction below:
+        {format_instructions}
+        
         Here are some examples of summarization:
         - Exapmle 1: The seeker is looking for a good action comedy and is tired of holiday movies. He/she doesn't like superhero movies but do enjoy British comedies like Red Dwarf. He/she is interested in watching Hot Fuzz, 
         especially since it stars Simon Pegg from Shaun of the Dead. He/she also enjoyed Zombieland and Zombieland 2, with Woody Harrelson being a favorite.
         - Example 2: The seeker enjoys comedy and horror movies, particularly R-rated ones. His/her favorite actors include Seth Rogan and Seth MacFarlane. He/she recently watched and enjoyed the movie 'Ted'. He/she is potentially interested in the movie 'Superbad' and inquired about its rating and if it contains nudity, indicating a preference for content without explicit nudity.
         - Example 3: The seekr is interested in fantasy or animated movies. He/she have watched Frozen 2. He/she are concerned about violence and age appropriateness for his/her niece. He/she accepted a recommendation for an animated movie about a dragon and a boy, with a PG age rating, produced by 20th Century Fox, released in 2014, and 104 minutes long (How to Train Your Dragon 2). They prefer family-friendly movies.
-        {format_instructions}
+        
         Let's think step by step
         Do the task carefully, or you are going to be severely punished.
         """,
@@ -92,6 +96,9 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
     elif model in [
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
         "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
+        "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     ]:
         llm_langchain = ChatTogether(model=model, api_key=api_key)
 
@@ -110,6 +117,7 @@ def callLangChainLLMSummarization(
         "gemini-2.5-pro-exp-03-25",
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
         "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     ] = "gemini-2.0-flash",
 ) -> Dict[str, str]:
     """
@@ -125,9 +133,21 @@ def callLangChainLLMSummarization(
     """
 
     # Create and invoke the chain with the conversation document
-    output = LangChainLLMSummarization(model, api_key).invoke({"document": document})
+    max_retries = 10
+    for attempt in range(max_retries):
+        try:
+            output = LangChainLLMSummarization(model, api_key).invoke({"document": document})
+            return output
 
-    return output
+        except Exception as e:
+            logging.error(f"Attempt {attempt+1} failed: {str(e)}")
+            if attempt < max_retries - 1:
+                print(f"Retrying in 5 seconds...")
+                time.sleep(5)
+            else:
+                # Fallback mechanism - return a simple structure that matches the expected format
+                print("All retries failed, returning fallback response")
+                return {"user_preferences": ""}
 
 
 # ------------------- RE-RANKING OUTPUT ------------------------------
@@ -158,7 +178,7 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
         Here is the conversation {document}
         Here is the summary of seeker's preferences: {summary_preference}.
         And here is the candidate list: {movie_list}.
-        Read the summary of seeker's preferences, and candidate list, then re-rank movie candidate list and retrieve top {k} movies that match the seeker's preferences the most.
+        Your task is to read the summary of seeker's preferences, and candidate list, then re-rank movie candidate list and retrieve top {k} movies that match the seeker's preferences the most.
         
         Your response must follow the instruction below:
         {format_instructions}
@@ -184,6 +204,9 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
     elif model in [
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
         "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
+        "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     ]:
         llm_langchain = ChatTogether(model=model, api_key=api_key)
 

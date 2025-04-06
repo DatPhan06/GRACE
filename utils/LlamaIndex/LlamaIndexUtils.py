@@ -69,6 +69,9 @@ def load_retriever(
     elif model in [
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
         "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
+        "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     ]:
         llm_llama_index = TogetherLLM(api_key=api_key, model=model)
 
