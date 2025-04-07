@@ -20,7 +20,7 @@ from langchain_core.prompts import PromptTemplate as PromptTemplateLangchain
 from langchain.chains import LLMChain
 
 # Type hints
-from typing import Dict, List, Literal
+from typing import Any, Dict, List, Literal
 
 # Import Pydantic for data validation and parsing
 # BaseModel for schema definition, Field for field validation
@@ -109,16 +109,9 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
 
 
 def callLangChainLLMSummarization(
-    document: List[str],
+    document: Any,
     api_key: str,
-    model: Literal[
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-thinking-exp-01-21",
-        "gemini-2.5-pro-exp-03-25",
-        "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
-        "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    ] = "gemini-2.0-flash",
+    model: str,
 ) -> Dict[str, str]:
     """
     Invokes the summarization chain to extract seeker preferences from conversation.
@@ -217,7 +210,7 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
 
 
 def callLangChainLLMReranking(
-    context: List[str],
+    context: Any,
     user_preferences: str,
     movie_str: str,
     model: str,
