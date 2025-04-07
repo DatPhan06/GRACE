@@ -1,6 +1,15 @@
 import pandas as pd
 import os
 
+
+def standardize_movie_title(movie_title: str) -> str:
+    """Normalizes movie titles for consistent comparison."""
+    # Remove year and special characters, convert to lowercase
+    title = re.sub(r"\s*\(\d{4}\)", "", movie_title)  # Remove year anywhere in title
+    title = re.sub(r"[^\w\s]", "", title)  # Remove punctuation
+    return title.strip().lower()  # Normalize case and whitespace
+
+
 def calculate_recall(
     model_name,
     response, 
@@ -14,7 +23,8 @@ def calculate_recall(
 ):
     output_dict = {}
 
-    output = response["movie_list"].strip().replace("  ", " ")
+    # output = response["movie_list"].strip().replace("  ", " ")
+    output = [standardize_movie_title(m) for m in response["movie_list"] if m.strip()]
     count_match_movie = 0
     recommend_movie_list = recommend_item.replace("  ", " ").split("|")
     for movie in recommend_movie_list:
