@@ -66,7 +66,7 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
     prompt = PromptTemplateLangchain(
         template="""
         This conversation is a discussion between a seeker and a recommender about the seeker's movie preferences. 
-        The conversation begins with "SEEKER/RECOMMENDER" defining the role he/she is a seeker or a recommender.
+        The conversation begins with "SEEKER(B)/RECOMMENDER(A)" defining the role he/she is a seeker or a recommender.
         Read this conversation, find all the information about the seeker's preferences in movie, actor, genres, countries and 
         content (Do not contain assistant preferences), and summarize them.
         The conversation: {document}
@@ -89,7 +89,7 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
         partial_variables={"format_instructions": parser.get_format_instructions()},
     )
 
-    if model in ["gemini-2.0-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
+    if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
         # Initialize Google's generative AI with the specified model and API key
         llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key)
 
@@ -190,7 +190,7 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
         partial_variables={"format_instructions": parser.get_format_instructions()},
     )
 
-    if model in ["gemini-2.0-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
+    if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
         # Initialize Google's generative AI with the specified model and API key
         llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key)
 

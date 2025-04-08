@@ -81,7 +81,7 @@ class read_process_data_class:
 
         # Load train data
         train_data = []
-        for line in open(file_path_train, "r"):
+        for line in open(file_path_train, "r", encoding="utf-8"):
             data_line = json.loads(line)
             data_line_processed = self.processing_data(data_line)
             train_data.append(data_line_processed)

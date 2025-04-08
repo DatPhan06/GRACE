@@ -62,7 +62,7 @@ def load_retriever(
     retriever = VectorIndexRetriever(index=index, similarity_top_k=int(n))
 
     # Configure response synthesizer with the specified LLM
-    if model in ["gemini-2.0-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
+    if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
         # Initialize Google's generative AI with the specified model and API key
         llm_llama_index = Gemini(api_key=api_key, model_name=f"models/{model}")
 

@@ -63,23 +63,45 @@ def query_parse_output(
     movie_name = []
 
     # Process each node in the retrieval results
+    
+    # data: inspired/redial
+    data = "redial"
     for idx in range(len(streaming_response.source_nodes)):
-        try:
-            # Extract movie ID from the source node
-            movie_idx = streaming_response.source_nodes[idx].node.source_node.node_id
+        if data == "inspired":
+            try:
+                # Extract movie ID from the source node
+                movie_idx = streaming_response.source_nodes[idx].node.source_node.node_id
 
-            # Look up the movie name in the DataFrame and clean it
-            movie_name_idx = df_movie.loc[df_movie["imdb_id"] == movie_idx]["title"].iloc[0].replace("  ", " ")
+                # Look up the movie name in the DataFrame and clean it
+                movie_name_idx = df_movie.loc[df_movie["imdb_id"] == movie_idx]["title"].iloc[0].replace("  ", " ")
 
-            # Add movie name to the list
-            movie_name.append(movie_name_idx)
+                # Add movie name to the list
+                movie_name.append(movie_name_idx)
 
-        except Exception as e:
-            # Log errors for movies that can't be found
-            logging.error(f"{e}, movie {movie_idx} does not exist")
+            except Exception as e:
+                # Log errors for movies that can't be found
+                logging.error(f"{e}, movie {movie_idx} does not exist")
 
-            # Continue to the next movie
-            continue
+                # Continue to the next movie
+                continue
+        
+        elif data == "redial":
+            try:
+                # Extract movie ID from the source node
+                movie_idx = int(streaming_response.source_nodes[idx].node.source_node.node_id)
+
+                # Look up the movie name in the DataFrame and clean it
+                movie_name_idx = df_movie.loc[df_movie["movieId"] == movie_idx]["movieName"].iloc[0].replace("  ", " ")
+
+                # Add movie name to the list
+                movie_name.append(movie_name_idx)
+
+            except Exception as e:
+                # Log errors for movies that can't be found
+                logging.error(f"{e}, movie {movie_idx} does not exist")
+
+                # Continue to the next movie
+                continue
 
     # Join all movie names with pipe separator
     movie_str = "|".join(movie_name)

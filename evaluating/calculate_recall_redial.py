@@ -1,13 +1,15 @@
 import pandas as pd
 import os
+import re
 
 
 def standardize_movie_title(movie_title: str) -> str:
     """Normalizes movie titles for consistent comparison."""
     # Remove year and special characters, convert to lowercase
     title = re.sub(r"\s*\(\d{4}\)", "", movie_title)  # Remove year anywhere in title
-    title = re.sub(r"[^\w\s]", "", title)  # Remove punctuation
-    return title.strip().lower()  # Normalize case and whitespace
+    # title = re.sub(r"[^\w\s]", "", title)  # Remove punctuation
+    # return title.strip().lower()  # Normalize case and whitespace
+    return title
 
 
 def calculate_recall(
@@ -25,20 +27,23 @@ def calculate_recall(
 
     # output = response["movie_list"].strip().replace("  ", " ")
     output = [standardize_movie_title(m) for m in response["movie_list"] if m.strip()]
+
     count_match_movie = 0
     recommend_movie_list = recommend_item.replace("  ", " ").split("|")
-    for movie in recommend_movie_list:
+    normalized_recommendations = [standardize_movie_title(m) for m in recommend_movie_list if m.strip()]
+
+    for movie in normalized_recommendations:
         if movie in output:
             count_match_movie += 1
         elif movie == output:
             count_match_movie += 1
-    recall = count_match_movie / len(recommend_movie_list)
+    recall = count_match_movie / len(normalized_recommendations)
 
     output_dict["recall"] = recall
     output_dict["row"] = conv_id
     output_dict["recommend_item"] = recommend_item
     output_dict["summarized_conversation"] = summarized_conversation
-    output_dict["recommend_movie_list"] = output
+    output_dict["recommend_movie_list"] = "|".join(response["movie_list"])
     output_dict["movie_candidate_list"] = "[[[[" + movie_candidate_list
     # print(output_dict)
     pd.DataFrame.from_dict([output_dict]).to_csv(
