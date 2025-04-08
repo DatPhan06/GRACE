@@ -3,6 +3,7 @@ EmbeddingModel:
     gemini_exp: "gemini-embedding-exp-03-07"
 
 GeminiModel:
+    1.5_flash: "gemini-1.5-flash"
     2.0_flash: "gemini-2.0-flash"
     2.0_flash_thinking_exp: "gemini-2.0-flash-thinking-exp-01-21"
     2.5_pro_exp: "gemini-2.5-pro-exp-03-25"
@@ -14,6 +15,7 @@ LlamaModel:
     llama_3.3_70b: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
     # llama_3.3_70b: "meta-llama/Llama-3.3-70B-Instruct-Turbo"
     llama_3_8b: "meta-llama/Meta-Llama-3-8B-Instruct-Turbo"
+    llama_3.1_8b: "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-classifier"
     llama_3.2_3b: "meta-llama/Llama-3.2-3B-Instruct-Turbo"
 
 
@@ -26,7 +28,7 @@ InspiredDataPath:
     processed:
         dialog:
             test: "dataset/INSPIRED/processed/dialog_data/test.json"
-            train: "dataset/INSPIRED/processed/dialog_data/train_2.json"
+            train: "dataset/INSPIRED/processed/dialog_data/train_3.json"
         movie: "dataset/INSPIRED/processed/movie_data/movie_database_no_missing.json"
 
 RedialDataPath:
@@ -34,7 +36,7 @@ RedialDataPath:
         dialog:
             test: "dataset/REDIAL/raw/dialog_data/test_data.jsonl"
             train: "dataset/REDIAL/raw/dialog_data/train_data.jsonl"
-        movie: "dataset/REDIAL/raw/movie_data/movie_with_mentions.csv"
+        movie: "dataset/REDIAL/raw/movie_data/movies_with_mentions.csv"
     processed:
         dialog:
             test: ""
@@ -54,8 +56,13 @@ VectorDB:
 APIKey:
     TOGETHER_AI_API_KEY_1: "8c229a8bd12c3a297e3dc81fbddbc98f04b83b023c0013c7e90a175180e68805"
     TOGETHER_AI_API_KEY_2: "6c8713173b68e1a57c67094466985b0bc17832e008420df60abca654f6baa0a7"
+    TOGETHER_AI_API_KEY_3: "c1fa71b898de637ef9971f4575453559a80f614fd78bc6d4977ba5cfdd6b8a33"
     GOOGLE_API_KEY_1: "AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA"
     GOOGLE_API_KEY_2: "AIzaSyDPZD0vm7XjdySa5_sTkNa9JSfLqI5Tt4A"
     GOOGLE_API_KEY_3: "AIzaSyC8s1mBOG8SHqbohcdG79eI4L064t4q3wc"
     GOOGLE_API_KEY_4: "AIzaSyDnwh-JgJlkq8agkfl8JDpQhC4xl2Pl6oQ"
+    GOOGLE_API_KEY_5: "AIzaSyAgGyG5MbSXWyr43kooFL_xqcrqGPmGVPo"
+    GOOGLE_API_KEY_6: "AIzaSyD61mfpS4pZEZxJJzi8z3QsvSfEEXTaqAg"
+    GOOGLE_API_KEY_7: "AIzaSyDgobcDPlUWIsz2pLv7F0gnuPNGypGH2U8"
+    GOOGLE_API_KEY_8: "AIzaSyAhOBLKUUhjw9BXMyZmYP8yuN4hFbfv5NU"
     OMDB_API_KEY: "8f2d33cd"
