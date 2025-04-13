@@ -2635,7 +2635,7 @@
             "RECOMMENDER: <personal_opinion> i think youtube is where I would do it."
         ],
         "target": [
-            "X-Men Apocalypse (2016)"
+            "X-Men: Apocalypse (2016)"
         ],
         "masked_dialog": [
             "RECOMMENDER: <no_strategy> Hi how are you?",
@@ -6003,7 +6003,7 @@
             "SEEKER:  That is very true!  Friendship seems prevalent throughout history.  I gladly will follow up on your recommendations."
         ],
         "target": [
-            "Mission Impossible: Ghost Protocol",
+            "Mission: Impossible - Ghost Protocol",
             "Dances with Wolves"
         ],
         "masked_dialog": [
@@ -28445,10 +28445,10 @@
             "Mission: Impossible (1996)",
             "Mission: Impossible 2 (2000)",
             "Mission: Impossible III (2006)",
-            "Mission: Impossible â€“ Ghost Protocol (2011)",
-            "Mission: Impossible â€“ Rogue Nation (2015)",
-            "Mission: Impossible â€“ Fallout (2018)",
-            "Mission: Impossible â€“ Dead Reckoning Part One (2023)"
+            "Mission: Impossible - Ghost Protocol (2011)",
+            "Mission: Impossible - Rogue Nation (2015)",
+            "Mission: Impossible - Fallout (2018)",
+            "Mission: Impossible - Dead Reckoning Part One (2023)"
         ],
         "masked_dialog": [
             "RECOMMENDER: <no_strategy> Hello! <offer_help> I am here to help you pick a movie to watch! <opinion_inquiry> What kind of movies do you enjoy?",
@@ -29218,7 +29218,7 @@
             "SEEKER:  Thank you again and have a great day."
         ],
         "target": [
-            "Mission Impossible Rogue Nation (2015)"
+            "Mission: Impossible - Rogue Nation (2015)"
         ],
         "masked_dialog": [
             "RECOMMENDER: <offer_help>  Hi there, are you interested in finding a movie trailer?",

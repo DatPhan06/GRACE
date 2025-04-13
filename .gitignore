@@ -1,6 +1,4 @@
 .venv
 dataset/embeddings
-dataset/INSPIRED/processed
-dataset/REDIAL/processed
 
 **/*__pycache__

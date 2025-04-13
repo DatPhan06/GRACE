@@ -40,7 +40,7 @@ RedialDataPath:
     processed:
         dialog:
             test: ""
-            train: "dataset/REDIAL/processed/dialog_data/train.json"
+            train: "dataset/REDIAL/processed/dialog_data/train_data.json"
         movie: "dataset/REDIAL/processed/movie_data/movie_fix_year.json"
 
 OutputPath:
@@ -54,15 +54,21 @@ VectorDB:
     insp_collection_name: "inspMovie"
 
 APIKey:
-    TOGETHER_AI_API_KEY_1: "8c229a8bd12c3a297e3dc81fbddbc98f04b83b023c0013c7e90a175180e68805"
-    TOGETHER_AI_API_KEY_2: "6c8713173b68e1a57c67094466985b0bc17832e008420df60abca654f6baa0a7"
-    TOGETHER_AI_API_KEY_3: "c1fa71b898de637ef9971f4575453559a80f614fd78bc6d4977ba5cfdd6b8a33"
+    TOGETHER_AI_API_KEY_0: "6c8713173b68e1a57c67094466985b0bc17832e008420df60abca654f6baa0a7"
+    TOGETHER_AI_API_KEY_1: "c1fa71b898de637ef9971f4575453559a80f614fd78bc6d4977ba5cfdd6b8a33"
+
+    GOOGLE_API_KEY_0: "AIzaSyChHLhPkRRVyAxgWqiFwJ_3M2v-1ijWntk"
     GOOGLE_API_KEY_1: "AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA"
     GOOGLE_API_KEY_2: "AIzaSyDPZD0vm7XjdySa5_sTkNa9JSfLqI5Tt4A"
     GOOGLE_API_KEY_3: "AIzaSyC8s1mBOG8SHqbohcdG79eI4L064t4q3wc"
     GOOGLE_API_KEY_4: "AIzaSyDnwh-JgJlkq8agkfl8JDpQhC4xl2Pl6oQ"
+
     GOOGLE_API_KEY_5: "AIzaSyAgGyG5MbSXWyr43kooFL_xqcrqGPmGVPo"
     GOOGLE_API_KEY_6: "AIzaSyD61mfpS4pZEZxJJzi8z3QsvSfEEXTaqAg"
     GOOGLE_API_KEY_7: "AIzaSyDgobcDPlUWIsz2pLv7F0gnuPNGypGH2U8"
     GOOGLE_API_KEY_8: "AIzaSyAhOBLKUUhjw9BXMyZmYP8yuN4hFbfv5NU"
+
+    GOOGLE_API_KEY_9: "AIzaSyD6X3y_l5Emp2ucgKCtemxZh9lx43Cij8M"
+    GOOGLE_API_KEY_10: "AIzaSyDqo1CyKZb9MFyI83Tqar5J_vlYS82-qYw"
+    
     OMDB_API_KEY: "8f2d33cd"

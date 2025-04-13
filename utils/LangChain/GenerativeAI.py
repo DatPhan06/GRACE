@@ -9,6 +9,7 @@ from langchain_core.output_parsers import JsonOutputParser
 
 # Google's generative AI integration
 from langchain_google_genai import ChatGoogleGenerativeAI
+from google.api_core.exceptions import TooManyRequests
 
 # Together's generative AI integration
 from langchain_together import ChatTogether
@@ -25,6 +26,9 @@ from typing import Any, Dict, List, Literal
 # Import Pydantic for data validation and parsing
 # BaseModel for schema definition, Field for field validation
 from pydantic import BaseModel, Field
+
+
+current_key_index = 0
 
 
 class MovieList(BaseModel):
@@ -126,11 +130,30 @@ def callLangChainLLMSummarization(
     """
 
     # Create and invoke the chain with the conversation document
-    max_retries = 10
+    max_retries = 100
+    # current_key_index = 0
+    
+    global current_key_index
     for attempt in range(max_retries):
         try:
-            output = LangChainLLMSummarization(model, api_key).invoke({"document": document})
+            output = LangChainLLMSummarization(model, api_key[current_key_index]).invoke({"document": document})
+            # output = LangChainLLMSummarization(model, api_key).invoke({"document": document})
             return output
+
+        except TooManyRequests as e:
+            logging.error(f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")         
+            current_key_index = (current_key_index + 1) % len(api_key)
+            print(f"Switching to next API key: {api_key[current_key_index]}")
+            
+            if current_key_index == 0 and attempt < max_retries - 1:
+                # We've cycled through all keys, wait longer before retrying
+                print("Exhausted all API keys.")
+                exit
+            else:
+                # Wait briefly before retrying with the new key
+                print("Retrying with new API key in 5 seconds...")
+                time.sleep(5)
+        
 
         except Exception as e:
             logging.error(f"Attempt {attempt+1} failed: {str(e)}")
@@ -232,11 +255,14 @@ def callLangChainLLMReranking(
         Parsed re-ranked list of movies tailored to the user's preferences
     """
 
-    max_retries = 10
+    max_retries = 100
+    # current_key_index = 0
+    global current_key_index
     for attempt in range(max_retries):
         try:
             # Create and invoke chain with all required inputs
-            chain = LangChainLLMReranking(model, api_key)
+            chain = LangChainLLMReranking(model, api_key[current_key_index])
+            # chain = LangChainLLMReranking(model, api_key)
             output = chain.invoke(
                 {
                     "document": context,
@@ -247,12 +273,23 @@ def callLangChainLLMReranking(
             )
             return output
         
+        except TooManyRequests as e:
+            logging.error(f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")
+            current_key_index = (current_key_index + 1) % len(api_key)
+            print(f"Switching to next API key: {api_key[current_key_index]}")
+            
+            if current_key_index == 0 and attempt < max_retries - 1:
+                # We've cycled through all keys, wait longer before retrying
+                print("Exhausted all API keys.")
+                exit
+            else:
+                # Wait briefly before retrying with the new key
+                print("Retrying with new API key in 5 seconds")
+                time.sleep(5)
+                
+        
         except Exception as e:
             logging.error(f"Attempt {attempt+1} failed: {str(e)}")
+            
             if attempt < max_retries - 1:
-                print(f"Retrying in 5 seconds...")
-                time.sleep(5)
-            else:
-                # Fallback mechanism - return a simple structure that matches the expected format
-                print("All retries failed, returning fallback response")
-                return {"movie_list": (movie_str.split("|")[0:10] if movie_str else "No movies available")}
+                print
