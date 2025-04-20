@@ -81,7 +81,7 @@ if __name__ == "__main__":
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
         n_sample = 600
-        k = 10
+        k = 1
 
         # retriever_engine = load_retriever(
         #     chromadb_path=insp_chroma,
@@ -100,11 +100,11 @@ if __name__ == "__main__":
             movie = [json.loads(line) for line in file if line.strip()]
         df_movie = pd.DataFrame(movie)
         
-        start = 375
+        start = 0
         for index, conv in tqdm(enumerate(input_data[start:], start=start)):
 
             conv_id = f"{index} {conv['conv_id']}"
-            context = conv["dialog"]
+            context = conv["processed_dialog"]
             recommend_item = conv["target"]
             print(f"Conversation {conv_id}")
 

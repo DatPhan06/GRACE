@@ -28,7 +28,7 @@ InspiredDataPath:
     processed:
         dialog:
             test: "dataset/INSPIRED/processed/dialog_data/test.json"
-            train: "dataset/INSPIRED/processed/dialog_data/train_3.json"
+            train: "dataset/INSPIRED/processed/dialog_data/train_processed.json"
         movie: "dataset/INSPIRED/processed/movie_data/movie_database_no_missing.json"
 
 RedialDataPath:
