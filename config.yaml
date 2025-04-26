@@ -50,7 +50,7 @@ OutputPath:
 VectorDB:
     redial_chroma_db_path: "dataset/embeddings/REDIAL"
     redial_collection_name: "redialMovie"
-    insp_chroma_db_path: "dataset/embeddings/INSPIRED"
+    insp_chroma_db_path: "dataset/embedding/insp_movie_embedding"
     insp_collection_name: "inspMovie"
 
 APIKey:
@@ -70,5 +70,21 @@ APIKey:
 
     GOOGLE_API_KEY_9: "AIzaSyD6X3y_l5Emp2ucgKCtemxZh9lx43Cij8M"
     GOOGLE_API_KEY_10: "AIzaSyDqo1CyKZb9MFyI83Tqar5J_vlYS82-qYw"
+
+    GOOGLE_API_KEY_11: "AIzaSyC7RGtwoeNG5nuDl8ZDrkFL4ClXTAucZpw"
+    GOOGLE_API_KEY_12: "AIzaSyA0NozU4V6oChCGpDw4lNbdyQeJ_SyEAkY"
+    GOOGLE_API_KEY_13: "AIzaSyAMtg-x4rNX54uCJdZZ--8PO0267cL65SM"
+    GOOGLE_API_KEY_14: "AIzaSyA8fJdMpFew2rSwzNFQyANxxQCW13NiPwQ"
+    GOOGLE_API_KEY_15: "AIzaSyDsjtDUVMziI99cEPUOwKNG4j8-qNb6jLo"
+    GOOGLE_API_KEY_16: "AIzaSyARfEA94aB_ChrxONk_VGwELeXguME32h8"
+    GOOGLE_API_KEY_17: "AIzaSyBTcsJj8gajm8mErqM5oRP0V9yZ6Eih47U"
+    GOOGLE_API_KEY_18: "AIzaSyBbJYAELfJsahzw-Kn408pShDH9ZB-HJdo"
+    GOOGLE_API_KEY_19: "AIzaSyAdQijuP2jhQq0vFiStItIUApKMczVDE1U"
+    GOOGLE_API_KEY_20: "AIzaSyDxMqfyXxz5vW-g4rUm1PLFu5d45uQyQEA"
+    GOOGLE_API_KEY_21: "AIzaSyCWuy4Js_NbzwF1LMKm0EcDtsH8Q9GUBi8"
+    GOOGLE_API_KEY_22: "AIzaSyBU8GpBvLKLKErAguusBoTCR5NFtxZf9F8"
+    GOOGLE_API_KEY_23: "AIzaSyAhOBLKUUhjw9BXMyZmYP8yuN4hFbfv5NU"
+    GOOGLE_API_KEY_24: "AIzaSyAHgc9WAmS7tYt6WnUmZY8d1u3LJrvJsSw"
+    GOOGLE_API_KEY_25: "AIzaSyCZ-XNdpy6NIKrDM_4jMY2j5r4fqHX-eQA"
     
     OMDB_API_KEY: "8f2d33cd"
