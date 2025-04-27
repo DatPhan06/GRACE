@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Literal
 # BaseModel for schema definition, Field for field validation
 from pydantic import BaseModel, Field
 
+import random
 
 current_key_index = 0
 
@@ -131,9 +132,10 @@ def callLangChainLLMSummarization(
 
     # Create and invoke the chain with the conversation document
     max_retries = 100
-    # current_key_index = 0
-    
+    # Initialize with random key index for load balancing
     global current_key_index
+    current_key_index = random.randint(0, len(api_key) - 1)
+    
     for attempt in range(max_retries):
         try:
             output = LangChainLLMSummarization(model, api_key[current_key_index]).invoke({"document": document})
@@ -256,8 +258,10 @@ def callLangChainLLMReranking(
     """
 
     max_retries = 100
-    # current_key_index = 0
     global current_key_index
+    # Initialize with random key index for load balancing
+    current_key_index = random.randint(0, len(api_key) - 1)
+    
     for attempt in range(max_retries):
         try:
             # Create and invoke chain with all required inputs
