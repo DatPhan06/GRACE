@@ -11,6 +11,7 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 
 import os
 from typing import Literal
+import random
 
 # Chorma Databasse for vector data storage
 import chromadb
@@ -221,7 +222,9 @@ def query_parse_output(
     """
 
     global current_index_key
-    
+    # Initialize with random key index for load balancing
+    current_index_key = random.randint(0, len(api_key) - 1)
+
     retriever_engine = load_retriever(chromadb_path, collection_name, embedding_model, model, api_key[current_index_key], n)
     # retriever_engine = load_retriever(chromadb_path, collection_name, embedding_model, model, api_key, n)
     

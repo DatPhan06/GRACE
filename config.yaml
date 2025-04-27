@@ -50,7 +50,7 @@ OutputPath:
 VectorDB:
     redial_chroma_db_path: "dataset/embeddings/REDIAL"
     redial_collection_name: "redialMovie"
-    insp_chroma_db_path: "dataset/embedding/INSPIRED"
+    insp_chroma_db_path: "dataset/embeddings/INSPIRED"
     insp_collection_name: "inspMovie"
 
 APIKey:
@@ -86,5 +86,8 @@ APIKey:
     GOOGLE_API_KEY_23: "AIzaSyAhOBLKUUhjw9BXMyZmYP8yuN4hFbfv5NU"
     GOOGLE_API_KEY_24: "AIzaSyAHgc9WAmS7tYt6WnUmZY8d1u3LJrvJsSw"
     GOOGLE_API_KEY_25: "AIzaSyCZ-XNdpy6NIKrDM_4jMY2j5r4fqHX-eQA"
-    
+
+    GOOGLE_API_KEY_26: "AIzaSyCKrc7OHNBlgjEaPhjL7d3GmaDItwjQdSo"
+    GOOGLE_API_KEY_27: "AIzaSyBamI2gM2Jn7s9QyR63aIzIJ0GKxz539Ko"
+
     OMDB_API_KEY: "8f2d33cd"

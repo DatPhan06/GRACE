@@ -43,37 +43,13 @@ GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]
 
 # API_KEY = config["APIKey"]["GOOGLE_API_KEY_2"]
 GG_API_KEY = [
-    config["APIKey"]["GOOGLE_API_KEY_0"],
-    config["APIKey"]["GOOGLE_API_KEY_1"],
-    config["APIKey"]["GOOGLE_API_KEY_2"],
-    config["APIKey"]["GOOGLE_API_KEY_3"],
-    config["APIKey"]["GOOGLE_API_KEY_4"],
-    config["APIKey"]["GOOGLE_API_KEY_5"],
-    config["APIKey"]["GOOGLE_API_KEY_6"],
-    config["APIKey"]["GOOGLE_API_KEY_7"],
-    config["APIKey"]["GOOGLE_API_KEY_8"],
-    config["APIKey"]["GOOGLE_API_KEY_9"],
-    config["APIKey"]["GOOGLE_API_KEY_10"],
-    config["APIKey"]["GOOGLE_API_KEY_11"],
-    config["APIKey"]["GOOGLE_API_KEY_12"],
-    config["APIKey"]["GOOGLE_API_KEY_13"],
-    config["APIKey"]["GOOGLE_API_KEY_14"],
-    config["APIKey"]["GOOGLE_API_KEY_15"],
-    config["APIKey"]["GOOGLE_API_KEY_16"],
-    config["APIKey"]["GOOGLE_API_KEY_17"],
-    config["APIKey"]["GOOGLE_API_KEY_18"],
-    config["APIKey"]["GOOGLE_API_KEY_19"],
-    config["APIKey"]["GOOGLE_API_KEY_20"],
-    config["APIKey"]["GOOGLE_API_KEY_21"],
-    config["APIKey"]["GOOGLE_API_KEY_22"],
-    config["APIKey"]["GOOGLE_API_KEY_23"],
-    config["APIKey"]["GOOGLE_API_KEY_24"],
-    config["APIKey"]["GOOGLE_API_KEY_25"],
+    config["APIKey"][f"GOOGLE_API_KEY_{i}"] 
+    for i in range(28)
 ]
 
-TOGETHR_API_KEY = [
-    config["APIKey"]["TOGETHER_AI_API_KEY_0"],
-    config["APIKey"]["TOGETHER_AI_API_KEY_1"],
+TOGETHER_API_KEY = [
+    config["APIKey"][f"TOGETHER_AI_API_KEY_{i}"]
+    for i in range(2)
 ]
 
 
@@ -94,9 +70,9 @@ if __name__ == "__main__":
 
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
-        # n_sample = 100
-        # k = 10
-        
+        n_sample = 600
+        k = 5
+
         # retriever_engine = load_retriever(
         #     chromadb_path=insp_chroma,
         #     collection_name=insp_collection,
