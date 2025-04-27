@@ -50,7 +50,7 @@ OutputPath:
 VectorDB:
     redial_chroma_db_path: "dataset/embeddings/REDIAL"
     redial_collection_name: "redialMovie"
-    insp_chroma_db_path: "dataset/embedding/insp_movie_embedding"
+    insp_chroma_db_path: "dataset/embedding/INSPIRED"
     insp_collection_name: "inspMovie"
 
 APIKey:
