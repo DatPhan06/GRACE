@@ -5,6 +5,8 @@ import pandas as pd
 
 import yaml
 
+import argparse
+
 from evaluating.output_eval import evaluate
 from utils.LangChain import *
 
@@ -19,18 +21,15 @@ from tqdm import tqdm
 
 from utils.LlamaIndex.candidate_retriever import query_parse_output
 
+def input_parse():
+    parser = argparse.ArgumentParser(description="Process some integers.")
+    parser.add_argument("--data", type=str, help="Dataset name")
+    parser.add_argument("--k", type=int, help="Top k movie")
+    parser.add_argument("--n", type=int, help="Number of samples")
+    parser.add_argument("--begin_row", type=int, help="Begin row")
+    args = parser.parse_args()
 
-
-
-# def input_parse():
-#     parser = argparse.ArgumentParser(description="Process some integers.")
-#     parser.add_argument("--end_row", type=int, help="End process row")
-#     parser.add_argument("--begin_row", type=int, help="Begin process row")
-#     parser.add_argument("--file_name", type=str, help="Begin process row")
-#     args = parser.parse_args()
-
-#     return args.begin_row, args.end_row, args.file_name
-
+    return args.data, args.k, args.n, args.begin_row
 
 # Config values
 with open("config.yaml", "r") as f:
@@ -65,9 +64,9 @@ TOGETHR_API_KEY = [
 
 if __name__ == "__main__":
 
-    # begin_row, end_row, file_name = input_parse()
+    data, k, n_sample, start = input_parse()
     
-    data = "inspired"  # "inspired" or "redial"
+    # data = "inspired"  # "inspired" or "redial"
 
     if data == "inspired":
         # Load config:
@@ -80,9 +79,9 @@ if __name__ == "__main__":
 
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
-        n_sample = 600
-        k = 1
-
+        # n_sample = 100
+        # k = 10
+        
         # retriever_engine = load_retriever(
         #     chromadb_path=insp_chroma,
         #     collection_name=insp_collection,
@@ -167,8 +166,8 @@ if __name__ == "__main__":
 
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
-        n_sample = 600
-        k = 50
+        # n_sample = 600
+        # k = 50
 
         with open(redial_train_dialog, "r", encoding="utf-8") as file:
             input_data = json.load(file)
