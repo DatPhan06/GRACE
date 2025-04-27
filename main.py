@@ -53,7 +53,22 @@ GG_API_KEY = [
     config["APIKey"]["GOOGLE_API_KEY_7"],
     config["APIKey"]["GOOGLE_API_KEY_8"],
     config["APIKey"]["GOOGLE_API_KEY_9"],
-    config["APIKey"]["GOOGLE_API_KEY_10"]
+    config["APIKey"]["GOOGLE_API_KEY_10"],
+    config["APIKey"]["GOOGLE_API_KEY_11"],
+    config["APIKey"]["GOOGLE_API_KEY_12"],
+    config["APIKey"]["GOOGLE_API_KEY_13"],
+    config["APIKey"]["GOOGLE_API_KEY_14"],
+    config["APIKey"]["GOOGLE_API_KEY_15"],
+    config["APIKey"]["GOOGLE_API_KEY_16"],
+    config["APIKey"]["GOOGLE_API_KEY_17"],
+    config["APIKey"]["GOOGLE_API_KEY_18"],
+    config["APIKey"]["GOOGLE_API_KEY_19"],
+    config["APIKey"]["GOOGLE_API_KEY_20"],
+    config["APIKey"]["GOOGLE_API_KEY_21"],
+    config["APIKey"]["GOOGLE_API_KEY_22"],
+    config["APIKey"]["GOOGLE_API_KEY_23"],
+    config["APIKey"]["GOOGLE_API_KEY_24"],
+    config["APIKey"]["GOOGLE_API_KEY_25"],
 ]
 
 TOGETHR_API_KEY = [
@@ -99,7 +114,7 @@ if __name__ == "__main__":
             movie = [json.loads(line) for line in file if line.strip()]
         df_movie = pd.DataFrame(movie)
         
-        start = 0
+        start = 164
         for index, conv in tqdm(enumerate(input_data[start:], start=start)):
 
             conv_id = f"{index} {conv['conv_id']}"
