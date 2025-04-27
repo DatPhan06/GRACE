@@ -1,0 +1,90 @@
+EmbeddingModel: 
+    gecko: "text-embedding-004"
+    gemini_exp: "gemini-embedding-exp-03-07"
+
+GeminiModel:
+    1.5_flash: "gemini-1.5-flash"
+    2.0_flash: "gemini-2.0-flash"
+    2.0_flash_thinking_exp: "gemini-2.0-flash-thinking-exp-01-21"
+    2.5_pro_exp: "gemini-2.5-pro-exp-03-25"
+
+DeepSeekModel:
+    r1_distill_llama_70b: "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free"
+
+LlamaModel:
+    llama_3.3_70b: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+    # llama_3.3_70b: "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    llama_3_8b: "meta-llama/Meta-Llama-3-8B-Instruct-Turbo"
+    llama_3.1_8b: "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-classifier"
+    llama_3.2_3b: "meta-llama/Llama-3.2-3B-Instruct-Turbo"
+
+
+InspiredDataPath:
+    raw:
+        dialog:
+            test: "dataset/INSPIRED/raw/dialog_data/test.tsv"
+            train: "dataset/INSPIRED/raw/dialog_data/train.tsv"
+        movie: "dataset/INSPIRED/raw/movie_data/movie_database.tsv"
+    processed:
+        dialog:
+            test: "dataset/INSPIRED/processed/dialog_data/test.json"
+            train: "dataset/INSPIRED/processed/dialog_data/train_processed.json"
+        movie: "dataset/INSPIRED/processed/movie_data/movie_database_no_missing.json"
+
+RedialDataPath:
+    raw:
+        dialog:
+            test: "dataset/REDIAL/raw/dialog_data/test_data.jsonl"
+            train: "dataset/REDIAL/raw/dialog_data/train_data.jsonl"
+        movie: "dataset/REDIAL/raw/movie_data/movies_with_mentions.csv"
+    processed:
+        dialog:
+            test: ""
+            train: "dataset/REDIAL/processed/dialog_data/train_data.json"
+        movie: "dataset/REDIAL/processed/movie_data/movie_fix_year.json"
+
+OutputPath:
+    redial: "output/REDIAL/"
+    inspired: "output/INSPIRED/"
+
+VectorDB:
+    redial_chroma_db_path: "dataset/embeddings/REDIAL"
+    redial_collection_name: "redialMovie"
+    insp_chroma_db_path: "dataset/embedding/INSPIRED"
+    insp_collection_name: "inspMovie"
+
+APIKey:
+    TOGETHER_AI_API_KEY_0: "6c8713173b68e1a57c67094466985b0bc17832e008420df60abca654f6baa0a7"
+    TOGETHER_AI_API_KEY_1: "c1fa71b898de637ef9971f4575453559a80f614fd78bc6d4977ba5cfdd6b8a33"
+
+    GOOGLE_API_KEY_0: "AIzaSyChHLhPkRRVyAxgWqiFwJ_3M2v-1ijWntk"
+    GOOGLE_API_KEY_1: "AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA"
+    GOOGLE_API_KEY_2: "AIzaSyDPZD0vm7XjdySa5_sTkNa9JSfLqI5Tt4A"
+    GOOGLE_API_KEY_3: "AIzaSyC8s1mBOG8SHqbohcdG79eI4L064t4q3wc"
+    GOOGLE_API_KEY_4: "AIzaSyDnwh-JgJlkq8agkfl8JDpQhC4xl2Pl6oQ"
+
+    GOOGLE_API_KEY_5: "AIzaSyAgGyG5MbSXWyr43kooFL_xqcrqGPmGVPo"
+    GOOGLE_API_KEY_6: "AIzaSyD61mfpS4pZEZxJJzi8z3QsvSfEEXTaqAg"
+    GOOGLE_API_KEY_7: "AIzaSyDgobcDPlUWIsz2pLv7F0gnuPNGypGH2U8"
+    GOOGLE_API_KEY_8: "AIzaSyAhOBLKUUhjw9BXMyZmYP8yuN4hFbfv5NU"
+
+    GOOGLE_API_KEY_9: "AIzaSyD6X3y_l5Emp2ucgKCtemxZh9lx43Cij8M"
+    GOOGLE_API_KEY_10: "AIzaSyDqo1CyKZb9MFyI83Tqar5J_vlYS82-qYw"
+
+    GOOGLE_API_KEY_11: "AIzaSyC7RGtwoeNG5nuDl8ZDrkFL4ClXTAucZpw"
+    GOOGLE_API_KEY_12: "AIzaSyA0NozU4V6oChCGpDw4lNbdyQeJ_SyEAkY"
+    GOOGLE_API_KEY_13: "AIzaSyAMtg-x4rNX54uCJdZZ--8PO0267cL65SM"
+    GOOGLE_API_KEY_14: "AIzaSyA8fJdMpFew2rSwzNFQyANxxQCW13NiPwQ"
+    GOOGLE_API_KEY_15: "AIzaSyDsjtDUVMziI99cEPUOwKNG4j8-qNb6jLo"
+    GOOGLE_API_KEY_16: "AIzaSyARfEA94aB_ChrxONk_VGwELeXguME32h8"
+    GOOGLE_API_KEY_17: "AIzaSyBTcsJj8gajm8mErqM5oRP0V9yZ6Eih47U"
+    GOOGLE_API_KEY_18: "AIzaSyBbJYAELfJsahzw-Kn408pShDH9ZB-HJdo"
+    GOOGLE_API_KEY_19: "AIzaSyAdQijuP2jhQq0vFiStItIUApKMczVDE1U"
+    GOOGLE_API_KEY_20: "AIzaSyDxMqfyXxz5vW-g4rUm1PLFu5d45uQyQEA"
+    GOOGLE_API_KEY_21: "AIzaSyCWuy4Js_NbzwF1LMKm0EcDtsH8Q9GUBi8"
+    GOOGLE_API_KEY_22: "AIzaSyBU8GpBvLKLKErAguusBoTCR5NFtxZf9F8"
+    GOOGLE_API_KEY_23: "AIzaSyAhOBLKUUhjw9BXMyZmYP8yuN4hFbfv5NU"
+    GOOGLE_API_KEY_24: "AIzaSyAHgc9WAmS7tYt6WnUmZY8d1u3LJrvJsSw"
+    GOOGLE_API_KEY_25: "AIzaSyCZ-XNdpy6NIKrDM_4jMY2j5r4fqHX-eQA"
+    
+    OMDB_API_KEY: "8f2d33cd"
