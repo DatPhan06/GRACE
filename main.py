@@ -114,7 +114,6 @@ if __name__ == "__main__":
             movie = [json.loads(line) for line in file if line.strip()]
         df_movie = pd.DataFrame(movie)
         
-        start = 164
         for index, conv in tqdm(enumerate(input_data[start:], start=start)):
 
             conv_id = f"{index} {conv['conv_id']}"
@@ -190,7 +189,6 @@ if __name__ == "__main__":
         movie = pd.read_csv(redial_movie, encoding="utf-8")
         df_movie = pd.DataFrame(movie)
         
-        start = 115
         for index, conv in tqdm(enumerate(input_data[start:], start=start)):
 
             conv_id = index
