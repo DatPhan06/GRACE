@@ -44,17 +44,18 @@ GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]
 # API_KEY = config["APIKey"]["GOOGLE_API_KEY_2"]
 GG_API_KEY = [
     config["APIKey"][f"GOOGLE_API_KEY_{i}"] 
-    for i in range(28)
+    for i in range(27)
 ]
 
 TOGETHER_API_KEY = [
     config["APIKey"][f"TOGETHER_AI_API_KEY_{i}"]
-    for i in range(2)
+    for i in range(13)
 ]
 
 
 if __name__ == "__main__":
 
+    # Ex: python main.py --data inspired --k 10 --n 300 --begin_row 0
     data, k, n_sample, start = input_parse()
     
     # data = "inspired"  # "inspired" or "redial"
@@ -70,8 +71,8 @@ if __name__ == "__main__":
 
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
-        n_sample = 600
-        k = 5
+        # n_sample = 600
+        # k = 5
 
         # retriever_engine = load_retriever(
         #     chromadb_path=insp_chroma,
