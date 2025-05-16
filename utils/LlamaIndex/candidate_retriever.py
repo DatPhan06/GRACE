@@ -221,9 +221,11 @@ def query_parse_output(
         String containing pipe-separated list of recommended movie names
     """
 
-    global current_index_key
     # Initialize with random key index for load balancing
+    global current_index_key
     current_index_key = random.randint(0, len(api_key) - 1)
+    key_len = len(api_key)
+    
 
     retriever_engine = load_retriever(chromadb_path, collection_name, embedding_model, model, api_key[current_index_key], n)
     # retriever_engine = load_retriever(chromadb_path, collection_name, embedding_model, model, api_key, n)
@@ -248,10 +250,11 @@ def query_parse_output(
         except TooManyRequests as e:
             logging.error(f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")
             current_index_key = (current_index_key + 1) % len(api_key)
-            print(f"Switching to next API key: {api_key[current_index_key]}")
+            key_len -= 1
+            print(f"Switching to next API key : #{current_index_key} ({api_key[current_index_key]})")
             retriever_engine = load_retriever(chromadb_path, collection_name, embedding_model, model, api_key[current_index_key], n)
             
-            if current_index_key == 0 and attempt < max_retries - 1:
+            if key_len == 0 and attempt < max_retries - 1:
                 # We've cycled through all keys, wait longer before retrying
                 print("Exhausted all API keys.")
                 exit

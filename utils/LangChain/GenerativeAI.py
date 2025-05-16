@@ -29,7 +29,7 @@ from pydantic import BaseModel, Field
 
 import random
 
-current_key_index = 0
+current_index_key = 0
 
 
 class MovieList(BaseModel):
@@ -130,24 +130,26 @@ def callLangChainLLMSummarization(
         Parsed summary of user movie preferences
     """
 
+    global current_index_key
+    current_index_key = random.randint(0, len(api_key) - 1)
+    key_len = len(api_key)
+
     # Create and invoke the chain with the conversation document
     max_retries = 100
-    # Initialize with random key index for load balancing
-    global current_key_index
-    current_key_index = random.randint(0, len(api_key) - 1)
     
     for attempt in range(max_retries):
         try:
-            output = LangChainLLMSummarization(model, api_key[current_key_index]).invoke({"document": document})
+            output = LangChainLLMSummarization(model, api_key[current_index_key]).invoke({"document": document})
             # output = LangChainLLMSummarization(model, api_key).invoke({"document": document})
             return output
 
         except TooManyRequests as e:
             logging.error(f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")         
-            current_key_index = (current_key_index + 1) % len(api_key)
-            print(f"Switching to next API key: {api_key[current_key_index]}")
+            current_index_key = (current_index_key + 1) % len(api_key)
+            key_len -= 1
+            print(f"Switching to next API key : #{current_index_key} ({api_key[current_index_key]})")
             
-            if current_key_index == 0 and attempt < max_retries - 1:
+            if key_len == 0 and attempt < max_retries - 1:
                 # We've cycled through all keys, wait longer before retrying
                 print("Exhausted all API keys.")
                 exit
@@ -258,14 +260,14 @@ def callLangChainLLMReranking(
     """
 
     max_retries = 100
-    global current_key_index
-    # Initialize with random key index for load balancing
-    current_key_index = random.randint(0, len(api_key) - 1)
+    global current_index_key
+    current_index_key = random.randint(0, len(api_key) - 1)
+    key_len = len(api_key)
     
     for attempt in range(max_retries):
         try:
             # Create and invoke chain with all required inputs
-            chain = LangChainLLMReranking(model, api_key[current_key_index])
+            chain = LangChainLLMReranking(model, api_key[current_index_key])
             # chain = LangChainLLMReranking(model, api_key)
             output = chain.invoke(
                 {
@@ -279,10 +281,11 @@ def callLangChainLLMReranking(
         
         except TooManyRequests as e:
             logging.error(f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")
-            current_key_index = (current_key_index + 1) % len(api_key)
-            print(f"Switching to next API key: {api_key[current_key_index]}")
+            current_index_key = (current_index_key + 1) % len(api_key)
+            key_len -= 1
+            print(f"Switching to next API key : #{current_index_key} ({api_key[current_index_key]})")
             
-            if current_key_index == 0 and attempt < max_retries - 1:
+            if key_len == 0 and attempt < max_retries - 1:
                 # We've cycled through all keys, wait longer before retrying
                 print("Exhausted all API keys.")
                 exit
