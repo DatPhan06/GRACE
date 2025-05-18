@@ -1,92 +1,124 @@
-import pandas as pd
 import json
-import yaml
-import tqdm
+import re
+import copy
+import os
 
-with open("config.yaml", "r") as cf:
-    config = yaml.safe_load(cf)
+def process_single_conversation(json_line_str):
+    conversation = json.loads(json_line_str)
+    
+    messages = conversation.get("messages", [])
+    initiator_worker_id = conversation.get("initiatorWorkerId")
+    respondent_worker_id = conversation.get("respondentWorkerId")
+    
+    # Lấy và kiểm tra kiểu của initiatorQuestions và respondentQuestions
+    initiator_questions = conversation.get("initiatorQuestions", {})
+    if not isinstance(initiator_questions, dict):
+        # Nếu là list (ví dụ: []) hoặc kiểu khác, coi như dictionary rỗng
+        initiator_questions = {}
+        
+    respondent_questions = conversation.get("respondentQuestions", {})
+    if not isinstance(respondent_questions, dict):
+        # Nếu là list (ví dụ: []) hoặc kiểu khác, coi như dictionary rỗng
+        respondent_questions = {}
+        
+    movie_mentions = conversation.get("movieMentions", {})
+    
+    sub_dialogs = []
+    processed_target_movie_ids = set()
+    
+    for i, msg in enumerate(messages):
+        sender_id = msg.get("senderWorkerId")
+        text = msg.get("text", "")
+        
+        mentioned_movie_ids_in_text = re.findall(r"@(\d+)", text)
+        unique_movie_ids_to_check = sorted(list(set(mentioned_movie_ids_in_text)))
 
+        for movie_id_str in unique_movie_ids_to_check:
+            is_suggested_by_sender = False
+            if sender_id == initiator_worker_id:
+                if initiator_questions.get(movie_id_str, {}).get("suggested") == 1:
+                    is_suggested_by_sender = True
+            elif sender_id == respondent_worker_id:
+                if respondent_questions.get(movie_id_str, {}).get("suggested") == 1:
+                    is_suggested_by_sender = True
+            
+            if is_suggested_by_sender and movie_id_str not in processed_target_movie_ids:
+                current_dialog_messages = copy.deepcopy(messages[:i+1])
+                
+                formatted_dialog_entries = []
+                for idx, dialog_msg in enumerate(current_dialog_messages):
+                    msg_sender_id = dialog_msg.get("senderWorkerId")
+                    msg_text_to_format = dialog_msg.get("text")
+                    
+                    def replace_non_target_id_with_name(match):
+                        _id = match.group(1)
+                        if _id == movie_id_str and idx == len(current_dialog_messages) - 1:
+                            return "@SUGGESTED_MOVIE"
+                        return movie_mentions.get(_id, f"@UNKNOWN_MOVIE[{_id}]")
+                    
+                    formatted_text = re.sub(r"@(\d+)", replace_non_target_id_with_name, msg_text_to_format)
+                                        
+                    sender_role = "Unknown"
+                    if msg_sender_id == initiator_worker_id:
+                        sender_role = "Initiator" 
+                    elif msg_sender_id == respondent_worker_id:
+                        sender_role = "Respondent"
+                    
+                    formatted_dialog_entries.append(f"{sender_role}: {formatted_text}")
 
-class read_process_data_class:
-    # Replace movie id with movie name in conversation
-    train_data = None
+                target_movie_name_for_output = movie_mentions.get(movie_id_str, f"@UNKNOWN_MOVIE[{movie_id_str}]")
 
-    def add_movie_name_conv(self, turn, movie_mention_list):
-        turn_message = turn["text"]
-        for item in movie_mention_list:
-            if f"@{item}" in turn_message:
-                turn_message = turn_message.replace(f"@{item}", movie_mention_list[item])
-        return turn_message
+                sub_dialogs.append({
+                    "dialog": formatted_dialog_entries,
+                    "target": target_movie_name_for_output
+                })
+                processed_target_movie_ids.add(movie_id_str)
+                
+    return sub_dialogs
 
-    # Add is_recommend, is_liked, is_watched to conversation
-    def add_is_recommender_to_conv(self, turn, movie_question_list, movie_mention_list, recommendWorkerID):
-        is_recommend = 0
-        is_liked = 0
-        is_watched = 0
-        item_recommend_id_list = []
-        item_recommend_name_list = []
-        item_recommend_id = ""
-        item_recommend_name = ""
-        for item in movie_question_list:
-            if f"@{item}" in turn["text"]:
-                # Check if it is a recommend turn
-                if movie_question_list[item]["suggested"] == 1 and recommendWorkerID == turn["senderWorkerId"]:
-                    is_recommend = 1
-                    item_recommend_id_list.append(item)
-                    item_recommend_name_list.append(movie_mention_list[item])
-                item_recommend_id = "|".join(item_recommend_id_list)
-                item_recommend_name = "|".join(item_recommend_name_list)
-                is_liked = movie_question_list[item]["liked"]
-                is_watched = movie_question_list[item]["seen"]
-        return is_recommend, is_liked, is_watched, item_recommend_id, item_recommend_name
+def process_jsonl_file(input_filepath, output_filepath):
+    all_processed_dialogs = []
+    try:
+        with open(input_filepath, 'r', encoding='utf-8') as infile:
+            for line in infile:
+                line = line.strip()
+                if line:
+                    try:
+                        # Xử lý từng dòng (từng cuộc hội thoại)
+                        sub_dialogs_from_line = process_single_conversation(line)
+                        all_processed_dialogs.extend(sub_dialogs_from_line)
+                    except json.JSONDecodeError:
+                        print(f"Cảnh báo: Bỏ qua dòng không phải JSON hợp lệ: {line}")
+                    except Exception as e:
+                        print(f"Cảnh báo: Lỗi khi xử lý dòng: {line}. Lỗi: {e}")
+    except FileNotFoundError:
+        print(f"Lỗi: Không tìm thấy tệp đầu vào '{input_filepath}'")
+        return
+    except Exception as e:
+        print(f"Lỗi khi đọc tệp đầu vào: {e}")
+        return
 
-    # General function
-    def processing_data(self, data_line):
-        movie_mention_list = data_line["movieMentions"]
-        conv_list = data_line["messages"]
-        movie_question_list = data_line["respondentQuestions"]
-        recommender_id = data_line["respondentWorkerId"]
+    try:
+        with open(output_filepath, 'w', encoding='utf-8') as outfile:
+            json.dump(all_processed_dialogs, outfile, indent=2, ensure_ascii=False)
+        print(f"Xử lý hoàn tất. Kết quả đã được lưu vào '{output_filepath}'")
+    except Exception as e:
+        print(f"Lỗi khi ghi tệp đầu ra: {e}")
 
-        convert_conv_list = []
-        for turn in conv_list:
-            turn["convert_text"] = self.add_movie_name_conv(turn, movie_mention_list)
-            (
-                turn["is_recommend"],
-                turn["is_liked"],
-                turn["is_watched"],
-                turn["item_recommend_id"],
-                turn["item_recommend_name"],
-            ) = self.add_is_recommender_to_conv(turn, movie_question_list, movie_mention_list, recommender_id)
-            convert_conv_list.append(turn)
+if __name__ == "__main__":
+    # Thay đổi tên tệp đầu vào và đầu ra nếu cần
+    input_file = "dataset/REDIAL/raw/dialog_data/train_data.jsonl" 
+    output_file = "dataset/REDIAL/processed/dialog_data/train_data.json"
 
-        data_line["messages"] = convert_conv_list
-        return data_line
+    # Tạo một tệp input.jsonl mẫu nếu nó không tồn tại để kiểm thử
+    sample_jsonl_content = ''
+    # Kiểm tra và tạo tệp mẫu nếu nó không tồn tại
+    if not os.path.exists(input_file):
+        print(f"Tạo tệp đầu vào mẫu '{input_file}'...")
+        with open(input_file, 'w', encoding='utf-8') as f_sample:
+            f_sample.write(sample_jsonl_content)
+    
+    process_jsonl_file(input_file, output_file)
 
-    # Process train data function
-    def get_train_data(self, train_data):
-        train_split_conv = []
-        for conv in train_data:
-            turn_list = []
-            for turn in conv["messages"]:
-                turn["respondentWorkerId"] = conv["respondentWorkerId"]
-                turn["initiatorWorkerId"] = conv["initiatorWorkerId"]
-                turn_list.append(turn)
-                if turn["is_recommend"] == 1:
-                    current_turn_list = turn_list.copy()
-                    train_split_conv.append(current_turn_list)
-        return train_split_conv
-
-    def __init__(self):
-        file_path_train = config["RedialDataPath"]["raw"]["dialog"]["train"]
-
-        # Load train data
-        train_data = []
-        for line in open(file_path_train, "r", encoding="utf-8"):
-            data_line = json.loads(line)
-            data_line_processed = self.processing_data(data_line)
-            train_data.append(data_line_processed)
-
-        df_train = pd.DataFrame.from_records(train_data)
-
-        # Process train_data:
-        self.train_data = self.get_train_data(train_data)
+# result = process_single_conversation(json_conversation_line)
+# print(json.dumps(result, indent=2))
