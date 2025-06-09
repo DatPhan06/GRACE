@@ -107,8 +107,8 @@ def process_jsonl_file(input_filepath, output_filepath):
 
 if __name__ == "__main__":
     # Thay đổi tên tệp đầu vào và đầu ra nếu cần
-    input_file = "dataset/REDIAL/raw/dialog_data/train_data.jsonl" 
-    output_file = "dataset/REDIAL/processed/dialog_data/train_data.json"
+    input_file = "dataset/REDIAL/raw/dialog_data/test_data.jsonl" 
+    output_file = "dataset/REDIAL/processed/dialog_data/test_data.json"
 
     # Tạo một tệp input.jsonl mẫu nếu nó không tồn tại để kiểm thử
     sample_jsonl_content = ''

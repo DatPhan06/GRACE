@@ -10,8 +10,9 @@ import time
 from llama_index.core.query_engine import RetrieverQueryEngine
 
 import os
-from typing import Literal
+from typing import Literal, List, Dict
 import random
+from functools import lru_cache
 
 # Chorma Databasse for vector data storage
 import chromadb
@@ -28,8 +29,42 @@ from llama_index.llms.gemini import Gemini
 from google.api_core.exceptions import TooManyRequests
 from llama_index.llms.together import TogetherLLM
 from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core.postprocessor import SimilarityPostprocessor
+
+# Circuit breaker pattern
+class CircuitBreaker:
+    def __init__(self, failure_threshold=5, reset_timeout=60):
+        self.failure_threshold = failure_threshold
+        self.reset_timeout = reset_timeout
+        self.failures = 0
+        self.last_failure_time = 0
+        self.is_open = False
+
+    def record_failure(self):
+        self.failures += 1
+        self.last_failure_time = time.time()
+        if self.failures >= self.failure_threshold:
+            self.is_open = True
+
+    def record_success(self):
+        self.failures = 0
+        self.is_open = False
+
+    def can_execute(self):
+        if not self.is_open:
+            return True
+        if time.time() - self.last_failure_time > self.reset_timeout:
+            self.is_open = False
+            return True
+        return False
+
+# Cache for embeddings
+@lru_cache(maxsize=1000)
+def get_cached_embedding(text: str, model: GeminiEmbedding) -> List[float]:
+    return model.get_text_embedding(text)
 
 current_index_key = 0
+circuit_breaker = CircuitBreaker()
 
 def load_retriever(
     chromadb_path: os.PathLike,
@@ -53,48 +88,67 @@ def load_retriever(
     Returns:
         Advanced query engine with custom retrieval parameters
     """
+    if not circuit_breaker.can_execute():
+        raise Exception("Circuit breaker is open. Please try again later.")
 
-    # Initialize the persistent ChromaDB client pointing to the specified path
-    client = chromadb.PersistentClient(path=chromadb_path)
+    try:
+        # Initialize the persistent ChromaDB client pointing to the specified path
+        client = chromadb.PersistentClient(path=chromadb_path)
 
-    # Get existing collection or create a new one if it doesn't exist
-    chroma_collection = client.get_collection(name=collection_name)
+        # Get existing collection or create a new one if it doesn't exist
+        chroma_collection = client.get_collection(name=collection_name)
 
-    # Create a vector store wrapper around the ChromaDB collection
-    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        # Create a vector store wrapper around the ChromaDB collection
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
-    # Initialize Gemini embedding model with API key
-    gemini_embedding_model = GeminiEmbedding(
-        api_key="AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA", 
-        model_name=f"models/{embedding_model}"
-    )
+        # Initialize Gemini embedding model with API key
+        gemini_embedding_model = GeminiEmbedding(
+            api_key="AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA", 
+            model_name=f"models/{embedding_model}"
+        )
 
-    # Create a vector store index using the vector store and embedding model
-    index = VectorStoreIndex.from_vector_store(vector_store, embed_model=gemini_embedding_model)
+        # Create a vector store index using the vector store and embedding model
+        index = VectorStoreIndex.from_vector_store(vector_store, embed_model=gemini_embedding_model)
 
-    # Create a customized retriever that fetches n most similar documents
-    retriever = VectorIndexRetriever(index=index, similarity_top_k=int(n))
+        # Create hybrid retriever
+        retriever = VectorIndexRetriever(
+            index=index,
+            similarity_top_k=int(n),
+            # Add keyword search
+            search_kwargs={"k": int(n/2)}
+        )
 
-    # Configure response synthesizer with the specified LLM
-    if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
-        # Initialize Google's generative AI with the specified model and API key
-        llm_llama_index = Gemini(api_key=api_key, model_name=f"models/{model}")
+        # Add similarity post-processor
+        similarity_postprocessor = SimilarityPostprocessor(similarity_cutoff=0.7)
+        retriever.postprocessors = [similarity_postprocessor]
 
-    elif model in [
-        "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
-        "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-        "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
-        "meta-llama/Llama-3.2-3B-Instruct-Turbo",
-    ]:
-        llm_llama_index = TogetherLLM(api_key=api_key, model=model)
+        # Configure response synthesizer with the specified LLM
+        if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
+            # Initialize Google's generative AI with the specified model and API key
+            llm_llama_index = Gemini(api_key=api_key, model_name=f"models/{model}")
 
-    response_synthesizer = get_response_synthesizer(llm=llm_llama_index)
+        elif model in [
+            "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
+            "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+            "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+            "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
+            "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+        ]:
+            llm_llama_index = TogetherLLM(api_key=api_key, model=model)
 
-    # Assemble query engine by combining retriever and response synthesizer
-    query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
+        # Create response synthesizer
+        response_synthesizer = get_response_synthesizer(llm=llm_llama_index)
 
-    return query_engine
+        # Assemble query engine by combining retriever and response synthesizer
+        query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
+
+        circuit_breaker.record_success()
+        return query_engine
+
+    except Exception as e:
+        circuit_breaker.record_failure()
+        logging.error(f"Error in load_retriever: {str(e)}")
+        raise
 
 
 

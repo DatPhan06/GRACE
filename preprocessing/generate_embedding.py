@@ -140,3 +140,40 @@ def create_embedding_db(
         embed_model=gemini_embedding_model,
     )
 
+
+# --- MAIN ENTRYPOINT ---
+if __name__ == "__main__":
+    import yaml
+    try:
+        print("[INFO] Đang đọc file config.yaml...")
+        CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.yaml")
+        with open(CONFIG_PATH, "r") as f:
+            config = yaml.safe_load(f)
+        print("[INFO] Đã đọc config.yaml thành công.")
+
+        # Ví dụ: sử dụng REDIAL
+        print("[INFO] Đang lấy các tham số từ config...")
+        db_path = config["VectorDB"]["redial_chroma_db_path"]
+        collection_name = config["VectorDB"]["redial_collection_name"]
+        embedding_model = config["EmbeddingModel"]["gecko"]
+        api_key = config["APIKey"]["GOOGLE_API_KEY_20"]
+        movie_data_path = config["RedialDataPath"]["processed"]["movie"]
+        print(f"[INFO] db_path: {db_path}")
+        print(f"[INFO] collection_name: {collection_name}")
+        print(f"[INFO] embedding_model: {embedding_model}")
+        print(f"[INFO] movie_data_path: {movie_data_path}")
+
+        if not api_key:
+            raise ValueError("Google API key not found in config.yaml.")
+        print("[INFO] Đã lấy đủ tham số, bắt đầu tạo embedding database...")
+        create_embedding_db(
+            db_path=db_path,
+            collection_name=collection_name,
+            embedding_model=embedding_model,
+            api_key=api_key,
+            movie_data_path=movie_data_path,
+        )
+        print(f"[SUCCESS] Embedding database created successfully at {db_path}")
+    except Exception as e:
+        print(f"[ERROR] Đã xảy ra lỗi: {e}")
+

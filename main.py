@@ -38,6 +38,7 @@ with open("config.yaml", "r") as f:
 
 EMBEDDING_MODEL = config['EmbeddingModel']['gecko']
 GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]
+# GENERATIVE_MODEL = config["LlamaModel"]["llama_3.3_70b"]
 
 
 
@@ -49,7 +50,7 @@ GG_API_KEY = [
 
 TOGETHER_API_KEY = [
     config["APIKey"][f"TOGETHER_AI_API_KEY_{i}"]
-    for i in range(13)
+    for i in range(3)
 ]
 
 
@@ -151,7 +152,7 @@ if __name__ == "__main__":
         
         redial_chroma = config["VectorDB"]["redial_chroma_db_path"]
         redial_collection = config["VectorDB"]["redial_collection_name"]
-        redial_train_dialog = config["RedialDataPath"]["processed"]["dialog"]["train"]
+        redial_train_dialog = config["RedialDataPath"]["processed"]["dialog"]["test"]
         redial_movie = config["RedialDataPath"]["raw"]["movie"]
         redial_output = config["OutputPath"]["redial"]
 
@@ -211,7 +212,7 @@ if __name__ == "__main__":
             evaluate(
                 model_name=GENERATIVE_MODEL,
                 re_ranked_list=re_ranking_output,
-                recommend_item=recommend_item,
+                recommend_item=[recommend_item],
                 conv_id=conv_id,
                 summarized_preferences=summarized_conversation,
                 movie_candidate_list=movie_candidate_list,
