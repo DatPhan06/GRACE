@@ -6,6 +6,7 @@ import time
 
 # Import Langchain components for LLM integration
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.exceptions import OutputParserException
 
 # Google's generative AI integration
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -71,7 +72,6 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
     prompt = PromptTemplateLangchain(
         template="""
         This conversation is a discussion between a seeker and a recommender about the seeker's movie preferences. 
-        The conversation begins with "SEEKER(B)/RECOMMENDER(A)" defining the role he/she is a seeker or a recommender.
         Read this conversation, find all the information about the seeker's preferences in movie, actor, genres, countries and 
         content (Do not contain assistant preferences), and summarize them.
         The conversation: {document}
@@ -87,6 +87,8 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
         
         Let's think step by step
         Do the task carefully, or you are going to be severely punished.
+        ONLY return a valid JSON object that matches the schema. 
+        DO NOT add markdown, role names, or any extra text.
         """,
         # Define the variable that will be replaced in the template
         input_variables=["document"],
@@ -135,13 +137,45 @@ def callLangChainLLMSummarization(
     key_len = len(api_key)
 
     # Create and invoke the chain with the conversation document
-    max_retries = 100
+    max_retries = 10
     
     for attempt in range(max_retries):
         try:
             output = LangChainLLMSummarization(model, api_key[current_index_key]).invoke({"document": document})
             # output = LangChainLLMSummarization(model, api_key).invoke({"document": document})
             return output
+
+        except OutputParserException as e:
+            logging.warning(f"Attempt {attempt+1} failed with OutputParserException. Trying to clean and re-parse...")
+            
+            error_string = str(e)
+            try:
+                # The actual output from the LLM is often embedded in the exception string.
+                # We'll try to find the start of the JSON object and parse from there.
+                json_start_index = error_string.find('{')
+                if json_start_index != -1:
+                    json_string = error_string[json_start_index:]
+                    
+                    # Manually create a parser and parse the cleaned string
+                    parser = JsonOutputParser(pydantic_object=UserPreference)
+                    parsed_output = parser.parse(json_string)
+                    
+                    print("Successfully parsed after cleaning the malformed output.")
+                    return parsed_output
+                else:
+                    logging.error(f"Cleaning failed: No JSON object start '{{' found in the output. Full error: {error_string}")
+
+            except Exception as parse_error:
+                # If cleaning and re-parsing fails, log and retry
+                logging.error(f"Failed to parse after cleaning. Error: {parse_error}")
+            
+            # Fall through to retry logic if cleaning fails
+            if attempt < max_retries - 1:
+                print("Retrying in 5 seconds...")
+                time.sleep(5)
+            else:
+                print("All retries failed after attempting to clean, returning fallback response")
+                return {"user_preferences": ""}
 
         except TooManyRequests as e:
             logging.error(f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")         
@@ -152,7 +186,7 @@ def callLangChainLLMSummarization(
             if key_len == 0 and attempt < max_retries - 1:
                 # We've cycled through all keys, wait longer before retrying
                 print("Exhausted all API keys.")
-                exit
+                exit()
             else:
                 # Wait briefly before retrying with the new key
                 print("Retrying with new API key in 5 seconds...")
@@ -288,7 +322,7 @@ def callLangChainLLMReranking(
             if key_len == 0 and attempt < max_retries - 1:
                 # We've cycled through all keys, wait longer before retrying
                 print("Exhausted all API keys.")
-                exit
+                exit()
             else:
                 # Wait briefly before retrying with the new key
                 print("Retrying with new API key in 5 seconds")
@@ -299,4 +333,9 @@ def callLangChainLLMReranking(
             logging.error(f"Attempt {attempt+1} failed: {str(e)}")
             
             if attempt < max_retries - 1:
-                print
+                print(f"Retrying in 5 seconds...")
+                time.sleep(5)
+            else:
+                # Fallback mechanism - return a simple structure that matches the expected format
+                print("All retries failed, returning fallback response")
+                return {"user_preferences": ""}

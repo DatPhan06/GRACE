@@ -45,8 +45,9 @@ GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]
 # API_KEY = config["APIKey"]["GOOGLE_API_KEY_2"]
 GG_API_KEY = [
     config["APIKey"][f"GOOGLE_API_KEY_{i}"] 
-    for i in range(27)
+    for i in range(1)
 ]
+
 
 TOGETHER_API_KEY = [
     config["APIKey"][f"TOGETHER_AI_API_KEY_{i}"]
@@ -174,6 +175,10 @@ if __name__ == "__main__":
             recommend_item = conv["target"]
             print(f"Conversation {conv_id}")
 
+            print("--------------------------------")
+            print("API KEY: ", GG_API_KEY[0])
+            print("--------------------------------")
+
             summarized_conversation = callLangChainLLMSummarization(
                 document=context, 
                 model=GENERATIVE_MODEL, 
@@ -193,6 +198,10 @@ if __name__ == "__main__":
                                                       api_key=GG_API_KEY, 
                                                       n=n_sample)
 
+
+            print("--------------------------------")
+            print("Movie candidate list: ", movie_candidate_list)
+            print("--------------------------------")
 
             # Re-ranking:
             re_ranking_output = callLangChainLLMReranking(

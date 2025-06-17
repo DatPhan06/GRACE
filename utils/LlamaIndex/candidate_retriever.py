@@ -297,6 +297,7 @@ def query_parse_output(
 
             # Print the number of retrieved nodes
             print("Nodes:", len(streaming_response.source_nodes))
+            print("Streaming response:", streamcó cing_response)
 
             # Exit the retry loop if successful
             break
