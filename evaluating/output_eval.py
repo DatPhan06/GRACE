@@ -114,7 +114,7 @@ def evaluate(
         "summarized_conversation": summarized_preferences,
         # "recommend_movie_list": "|".join(re_ranked_list["movie_list"].split("|")),
         "recommend_movie_list": "|".join(re_ranked_list["movie_list"]),
-        "movie_candidate_list": movie_candidate_list,
+        "movie_candidate_list": "|".join(movie_candidate_list),
     }
 
     # Calculate recall if recommendations exist

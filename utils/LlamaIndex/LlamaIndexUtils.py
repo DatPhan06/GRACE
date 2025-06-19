@@ -41,7 +41,7 @@ def load_retriever(
     """
 
     # Initialize the persistent ChromaDB client pointing to the specified path
-    client = chromadb.PersistentClient(path=chromadb_path)
+    client = chromadb.PersistentClient(path=str(chromadb_path))
 
     # Get existing collection or create a new one if it doesn't exist
     chroma_collection = client.get_collection(name=collection_name)

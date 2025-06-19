@@ -55,7 +55,7 @@ def load_retriever(
     """
 
     # Initialize the persistent ChromaDB client pointing to the specified path
-    client = chromadb.PersistentClient(path=chromadb_path)
+    client = chromadb.PersistentClient(path=str(chromadb_path))
 
     # Get existing collection or create a new one if it doesn't exist
     chroma_collection = client.get_collection(name=collection_name)
@@ -103,108 +103,6 @@ def load_retriever(
 
     return query_engine
 
-
-
-# def query_parse_output(
-#     retriever_engine: RetrieverQueryEngine, df_movie: pd.DataFrame, summarized_preferences: str, data: str
-# ) -> str:
-#     """
-#     Query the retriever engine with user preferences and parse movie recommendations.
-
-#     Args:
-#         retriever_engine: LlamaIndex retriever query engine for semantic search
-#         df_movie: DataFrame containing movie metadata
-#         summarized_preferences: String containing user's movie preferences
-
-#     Returns:
-#         String containing pipe-separated list of recommended movie names
-#     """
-
-#     # Set maximum number of retry attempts
-#     max_retries = 100
-
-#     # Attempt to query the retriever with automatic retries on failure
-#     for attempt in range(max_retries):
-#         try:
-#             # Query the retriever engine with the user's preferences
-#             streaming_response = retriever_engine.query(summarized_preferences)
-
-#             # Print source nodes for debugging
-#             # /
-
-#             # Print the number of retrieved nodes
-#             print("Nodes:", len(streaming_response.source_nodes))
-
-#             # Exit the retry loop if successful
-#             break
-
-#         except Exception as e:
-#             # Log the failed attempt details
-#             print(f"Attempt {attempt+1} failed: {str(e)}")
-
-#             # Implement backoff strategy if not the last attempt
-#             if attempt < max_retries - 1:
-#                 # Log retry information
-#                 logging.error(f"Retrying in 5 seconds...")
-
-#                 # Wait before retrying
-#                 time.sleep(5)
-#             else:
-#                 # Return empty dict if all retries fail
-#                 print("All retries failed, returning fallback response")
-#                 return {}
-
-#     # Initialize list to store retrieved movie names
-#     movie_name = []
-
-#     # Process each node in the retrieval results
-    
-#     # data: inspired/redial
-#     for idx in range(len(streaming_response.source_nodes)):
-#         if data == "inspired":
-#             try:
-#                 # Extract movie ID from the source node
-#                 movie_idx = streaming_response.source_nodes[idx].node.source_node.node_id
-
-#                 # Look up the movie name in the DataFrame and clean it
-#                 movie_name_idx = df_movie.loc[df_movie["imdb_id"] == movie_idx]["title"].iloc[0].replace("  ", " ")
-
-#                 # Add movie name to the list
-#                 movie_name.append(movie_name_idx)
-
-#             except Exception as e:
-#                 # Log errors for movies that can't be found
-#                 logging.error(f"{e}, movie {movie_idx} does not exist")
-
-#                 # Continue to the next movie
-#                 continue
-        
-#         elif data == "redial":
-#             try:
-#                 # Extract movie ID from the source node
-#                 movie_idx = int(streaming_response.source_nodes[idx].node.source_node.node_id)
-
-#                 # Look up the movie name in the DataFrame and clean it
-#                 movie_name_idx = df_movie.loc[df_movie["movieId"] == movie_idx]["movieName"].iloc[0].replace("  ", " ")
-
-#                 # Add movie name to the list
-#                 movie_name.append(movie_name_idx)
-
-#             except Exception as e:
-#                 # Log errors for movies that can't be found
-#                 logging.error(f"{e}, movie {movie_idx} does not exist")
-
-#                 # Continue to the next movie
-#                 continue
-
-#     # Join all movie names with pipe separator
-#     movie_str = "|".join(movie_name)
-
-#     print("Done retrieving candidates")
-
-#     return movie_str
-
-
 def query_parse_output(
     df_movie: pd.DataFrame, 
     summarized_preferences: str, 
@@ -213,9 +111,9 @@ def query_parse_output(
     collection_name: str,
     embedding_model: str,
     model: str,
-    api_key: str,
+    api_key: list[str],
     n: Literal[100, 200, 300, 400, 500, 600] = 100
-) -> str:
+) -> list[str]:
     """
     Query the retriever engine with user preferences and parse movie recommendations.
 
@@ -260,7 +158,7 @@ def query_parse_output(
 
             # Print token usage information
             try:
-                usage = streaming_response.metadata.get("usage", {})
+                usage = streaming_response.metadata.get("usage", {}) if streaming_response.metadata else {}                
                 prompt_tokens = usage.get("promptTokenCount", 0)
                 candidates_tokens = usage.get("candidatesTokenCount", 0)
                 total_tokens = usage.get("totalTokenCount", 0)
@@ -292,7 +190,7 @@ def query_parse_output(
             if key_len == 0 and attempt < max_retries - 1:
                 # We've cycled through all keys, wait longer before retrying
                 print("Exhausted all API keys.")
-                exit
+                exit()
             else:
                 # Wait briefly before retrying with the new key
                 print("Retrying with new API key in 5 seconds...")
@@ -312,7 +210,7 @@ def query_parse_output(
             else:
                 # Return empty dict if all retries fail
                 print("All retries failed, returning fallback response")
-                return {}
+                return []
 
     # Initialize list to store retrieved movie names
     movie_name = []
@@ -323,8 +221,10 @@ def query_parse_output(
         if data == "inspired":
             try:
                 # Extract movie ID from the source node
-                movie_idx = streaming_response.source_nodes[idx].node.source_node.node_id
-
+                source_node = streaming_response.source_nodes[idx].node.source_node
+                if source_node is None:
+                    continue
+                movie_idx = int(source_node.node_id)
                 # Look up the movie name in the DataFrame and clean it
                 movie_name_idx = df_movie.loc[df_movie["imdb_id"] == movie_idx]["title"].iloc[0].replace("  ", " ")
 
@@ -341,7 +241,10 @@ def query_parse_output(
         elif data == "redial":
             try:
                 # Extract movie ID from the source node
-                movie_idx = int(streaming_response.source_nodes[idx].node.source_node.node_id)
+                source_node = streaming_response.source_nodes[idx].node.source_node
+                if source_node is None:
+                    continue
+                movie_idx = int(source_node.node_id)
 
                 # Look up the movie name in the DataFrame and clean it
                 movie_name_idx = df_movie.loc[df_movie["movieId"] == movie_idx]["movieName"].iloc[0].replace("  ", " ")
@@ -356,9 +259,6 @@ def query_parse_output(
                 # Continue to the next movie
                 continue
 
-    # Join all movie names with pipe separator
-    movie_str = "|".join(movie_name)
-
     print("Done retrieving candidates")
 
-    return movie_str
+    return movie_name

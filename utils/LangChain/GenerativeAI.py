@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Literal
 # Import Pydantic for data validation and parsing
 # BaseModel for schema definition, Field for field validation
 from pydantic import BaseModel, Field
+from pydantic import SecretStr
 
 import random
 
@@ -107,7 +108,7 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
         "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
         "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     ]:
-        llm_langchain = ChatTogether(model=model, api_key=api_key)
+        llm_langchain = ChatTogether(model=model, api_key=SecretStr(api_key))
 
     # Create processing pipeline: prompt -> LLM -> parser
     llm_chain = prompt | llm_langchain | parser
@@ -117,7 +118,7 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
 
 def callLangChainLLMSummarization(
     document: Any,
-    api_key: str,
+    api_key: list[str],
     model: str,
 ) -> Dict[str, str]:
     """
@@ -142,7 +143,6 @@ def callLangChainLLMSummarization(
     for attempt in range(max_retries):
         try:
             output = LangChainLLMSummarization(model, api_key[current_index_key]).invoke({"document": document})
-            # output = LangChainLLMSummarization(model, api_key).invoke({"document": document})
             return output
 
         except OutputParserException as e:
@@ -202,6 +202,7 @@ def callLangChainLLMSummarization(
                 # Fallback mechanism - return a simple structure that matches the expected format
                 print("All retries failed, returning fallback response")
                 return {"user_preferences": ""}
+    return {"user_preferences": ""}
 
 
 # ------------------- RE-RANKING OUTPUT ------------------------------
@@ -253,7 +254,7 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
 
     if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
         # Initialize Google's generative AI with the specified model and API key
-        llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key)
+        llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key, max_output_tokens=10000)
 
     elif model in [
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
@@ -262,7 +263,7 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
         "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
         "meta-llama/Llama-3.2-3B-Instruct-Turbo",
     ]:
-        llm_langchain = ChatTogether(model=model, api_key=api_key)
+        llm_langchain = ChatTogether(model=model, api_key=SecretStr(api_key))
 
     # Create processing pipeline: prompt -> LLM -> parser
     llm_chain = prompt | llm_langchain | parser
@@ -275,7 +276,7 @@ def callLangChainLLMReranking(
     user_preferences: str,
     movie_str: str,
     model: str,
-    api_key: str, 
+    api_key: list[str], 
     k: Literal[1, 5, 10, 50] = 50 
 ):
     """
