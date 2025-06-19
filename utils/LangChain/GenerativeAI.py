@@ -98,7 +98,7 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
 
     if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
         # Initialize Google's generative AI with the specified model and API key
-        llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key)
+        llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key, max_output_tokens=10000)
 
     elif model in [
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",

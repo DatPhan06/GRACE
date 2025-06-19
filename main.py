@@ -175,9 +175,6 @@ if __name__ == "__main__":
             recommend_item = conv["target"]
             print(f"Conversation {conv_id}")
 
-            print("--------------------------------")
-            print("API KEY: ", GG_API_KEY[0])
-            print("--------------------------------")
 
             summarized_conversation = callLangChainLLMSummarization(
                 document=context, 
@@ -198,10 +195,6 @@ if __name__ == "__main__":
                                                       api_key=GG_API_KEY, 
                                                       n=n_sample)
 
-
-            print("--------------------------------")
-            print("Movie candidate list: ", movie_candidate_list)
-            print("--------------------------------")
 
             # Re-ranking:
             re_ranking_output = callLangChainLLMReranking(

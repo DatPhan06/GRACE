@@ -87,7 +87,7 @@ def chain_llm_summarize(gen_model: str, api_key: str) -> LLMChain:
     )
 
     # Initialize Google's generative AI with the specified model and API key
-    llm_langchain = ChatGoogleGenerativeAI(model=gen_model, google_api_key=api_key)
+    llm_langchain = ChatGoogleGenerativeAI(model=gen_model, google_api_key=api_key, max_output_tokens=10000)
 
     # Create processing pipeline: prompt -> LLM -> parser
     llm_chain = prompt | llm_langchain | parser

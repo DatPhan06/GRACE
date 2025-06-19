@@ -10,9 +10,8 @@ import time
 from llama_index.core.query_engine import RetrieverQueryEngine
 
 import os
-from typing import Literal, List, Dict
+from typing import Literal
 import random
-from functools import lru_cache
 
 # Chorma Databasse for vector data storage
 import chromadb
@@ -29,42 +28,8 @@ from llama_index.llms.gemini import Gemini
 from google.api_core.exceptions import TooManyRequests
 from llama_index.llms.together import TogetherLLM
 from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.core.postprocessor import SimilarityPostprocessor
-
-# Circuit breaker pattern
-class CircuitBreaker:
-    def __init__(self, failure_threshold=5, reset_timeout=60):
-        self.failure_threshold = failure_threshold
-        self.reset_timeout = reset_timeout
-        self.failures = 0
-        self.last_failure_time = 0
-        self.is_open = False
-
-    def record_failure(self):
-        self.failures += 1
-        self.last_failure_time = time.time()
-        if self.failures >= self.failure_threshold:
-            self.is_open = True
-
-    def record_success(self):
-        self.failures = 0
-        self.is_open = False
-
-    def can_execute(self):
-        if not self.is_open:
-            return True
-        if time.time() - self.last_failure_time > self.reset_timeout:
-            self.is_open = False
-            return True
-        return False
-
-# Cache for embeddings
-@lru_cache(maxsize=1000)
-def get_cached_embedding(text: str, model: GeminiEmbedding) -> List[float]:
-    return model.get_text_embedding(text)
 
 current_index_key = 0
-circuit_breaker = CircuitBreaker()
 
 def load_retriever(
     chromadb_path: os.PathLike,
@@ -88,67 +53,55 @@ def load_retriever(
     Returns:
         Advanced query engine with custom retrieval parameters
     """
-    if not circuit_breaker.can_execute():
-        raise Exception("Circuit breaker is open. Please try again later.")
 
-    try:
-        # Initialize the persistent ChromaDB client pointing to the specified path
-        client = chromadb.PersistentClient(path=chromadb_path)
+    # Initialize the persistent ChromaDB client pointing to the specified path
+    client = chromadb.PersistentClient(path=chromadb_path)
 
-        # Get existing collection or create a new one if it doesn't exist
-        chroma_collection = client.get_collection(name=collection_name)
+    # Get existing collection or create a new one if it doesn't exist
+    chroma_collection = client.get_collection(name=collection_name)
 
-        # Create a vector store wrapper around the ChromaDB collection
-        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+    # Create a vector store wrapper around the ChromaDB collection
+    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
-        # Initialize Gemini embedding model with API key
-        gemini_embedding_model = GeminiEmbedding(
-            api_key="AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA", 
-            model_name=f"models/{embedding_model}"
+    # Initialize Gemini embedding model with API key
+    gemini_embedding_model = GeminiEmbedding(
+        api_key="AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA", 
+        model_name=f"models/{embedding_model}"
+    )
+
+    # Create a vector store index using the vector store and embedding model
+    index = VectorStoreIndex.from_vector_store(vector_store, embed_model=gemini_embedding_model)
+
+    # Create a customized retriever that fetches n most similar documents
+    retriever = VectorIndexRetriever(index=index, similarity_top_k=int(n))
+
+    # Configure response synthesizer with the specified LLM
+    if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
+        # Initialize Google's generative AI with the specified model and API key
+        llm_llama_index = Gemini(
+            api_key=api_key, 
+            model_name=f"models/{model}",
+            max_output_tokens=10000,  # Tăng lên để xử lý 50 bộ phim
+            temperature=0.7,
+            top_p=0.95,
+            top_k=50
         )
 
-        # Create a vector store index using the vector store and embedding model
-        index = VectorStoreIndex.from_vector_store(vector_store, embed_model=gemini_embedding_model)
+    elif model in [
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
+        "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+    ]:
+        llm_llama_index = TogetherLLM(api_key=api_key, model=model)
 
-        # Create hybrid retriever
-        retriever = VectorIndexRetriever(
-            index=index,
-            similarity_top_k=int(n),
-            # Add keyword search
-            search_kwargs={"k": int(n/2)}
-        )
+    response_synthesizer = get_response_synthesizer(llm=llm_llama_index)
 
-        # Add similarity post-processor
-        similarity_postprocessor = SimilarityPostprocessor(similarity_cutoff=0.7)
-        retriever.postprocessors = [similarity_postprocessor]
+    # Assemble query engine by combining retriever and response synthesizer
+    query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
 
-        # Configure response synthesizer with the specified LLM
-        if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
-            # Initialize Google's generative AI with the specified model and API key
-            llm_llama_index = Gemini(api_key=api_key, model_name=f"models/{model}")
-
-        elif model in [
-            "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
-            "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-            "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-            "meta-llama/Meta-Llama-3-8B-Instruct-Turbo",
-            "meta-llama/Llama-3.2-3B-Instruct-Turbo",
-        ]:
-            llm_llama_index = TogetherLLM(api_key=api_key, model=model)
-
-        # Create response synthesizer
-        response_synthesizer = get_response_synthesizer(llm=llm_llama_index)
-
-        # Assemble query engine by combining retriever and response synthesizer
-        query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
-
-        circuit_breaker.record_success()
-        return query_engine
-
-    except Exception as e:
-        circuit_breaker.record_failure()
-        logging.error(f"Error in load_retriever: {str(e)}")
-        raise
+    return query_engine
 
 
 
@@ -289,15 +242,42 @@ def query_parse_output(
     # Attempt to query the retriever with automatic retries on failure
     for attempt in range(max_retries):
         try:
+            # Check token count before querying
+            print("\nChecking token count...")
+            try:
+                # Estimate token count (rough estimate: 1 token ≈ 4 characters)
+                estimated_tokens = len(summarized_preferences) // 4
+                print(f"Estimated input tokens: {estimated_tokens}")
+                
+                if estimated_tokens > 6000:  # Giới hạn an toàn cho Gemini
+                    print("Warning: Input text might be too long. Truncating...")
+                    summarized_preferences = summarized_preferences[:24000]  # Giới hạn khoảng 6000 tokens
+            except Exception as e:
+                print("Error estimating tokens:", str(e))
+
             # Query the retriever engine with the user's preferences
             streaming_response = retriever_engine.query(summarized_preferences)
 
-            # Print source nodes for debugging
-            # /
+            # Print token usage information
+            try:
+                usage = streaming_response.metadata.get("usage", {})
+                prompt_tokens = usage.get("promptTokenCount", 0)
+                candidates_tokens = usage.get("candidatesTokenCount", 0)
+                total_tokens = usage.get("totalTokenCount", 0)
+                
+                print("\nToken Usage:")
+                print(f"Prompt tokens: {prompt_tokens}")
+                print(f"Candidates tokens: {candidates_tokens}")
+                print(f"Total tokens: {total_tokens}")
+                
+                # Kiểm tra nếu tổng token vượt quá giới hạn
+                if total_tokens > 8000:  # Giới hạn an toàn cho Gemini
+                    print("Warning: Total tokens exceeded safe limit!")
+            except Exception as e:
+                print("Could not get token usage information:", str(e))
 
             # Print the number of retrieved nodes
             print("Nodes:", len(streaming_response.source_nodes))
-            print("Streaming response:", streaming_response)
 
             # Exit the retry loop if successful
             break

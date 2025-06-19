@@ -1,0 +1,135 @@
+nohup: ignoring input
+None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+0it [00:00, ?it/s]1it [00:15, 15.91s/it]2it [00:29, 14.83s/it]ERROR:root:Retrying in 5 seconds...
+ERROR:root:Retrying in 5 seconds...
+ERROR:root:Retrying in 5 seconds...
+3it [02:30, 63.11s/it]4it [02:49, 45.62s/it]ERROR:root:Retrying in 5 seconds...
+ERROR:root:Retrying in 5 seconds...
+ERROR:root:Retrying in 5 seconds...
+ERROR:root:Retrying in 5 seconds...
+5it [06:36, 110.99s/it]ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 2 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+Conversation 3309
+Done summarizing
+
+Checking token count...
+Estimated input tokens: 13
+
+Token Usage:
+Prompt tokens: 0
+Candidates tokens: 0
+Total tokens: 0
+Nodes: 442
+Done retrieving candidates
+{'movie_list': ['Shaun of the Dead (2004)', 'Tucker & Dale vs. Evil (2010)', 'Zombieland (2009)', 'Scary Movie (2000)', 'Scary Movie 4 (2006)', 'Beetlejuice (1988)', 'Evil Dead II (1987)', 'What We Do in the Shadows (2014)', 'Army of Darkness (1992)', 'Ghostbusters (2016)', 'Ghostbusters II (1989)', 'Happy Death Day (2017)', 'Deathgasm (2015)', 'Little Monsters (1989)', 'Scouts Guide to the Zombie Apocalypse (2015)', 'Scream (1981)', 'Scream 3 (2000)', 'Scream 4 (2011)', 'The Final Girls (2015)', 'A Haunted House 2 (2014)', 'Deadpool (2016)', 'Deadpool 2 (2018)', 'Warm Bodies (2013)', 'Goosebumps (2015)', 'The Nice Guys (2016)', 'Krampus (2015)', 'An American Werewolf in London (1981)', 'Fright Night (1985)', 'House of 1000 Corpses (2003)', 'The Texas Chainsaw Massacre 2 (1986)', 'Friday the 13th (1980)', 'Leprechaun 2 (1994)', 'Leprechaun 3 (1995)', 'The Monster Squad (1987)', 'Gremlins (1984)', 'Critters (1986)', 'Re-Animator (1985)', 'Idle Hands (1999)', "Jennifer's Body (2009)", 'Club Dread (2004)', 'Tales from the Darkside: The Movie (1990)', 'Bordello of Blood (1996)', 'Student Bodies (1981)', 'Return of the Killer Tomatoes (1988)', 'Killer Klowns from Outer Space (1988)', 'Zombeavers (2014)', 'Cooties (2014)', 'Blood Diner (1987)', 'Bad Taste (1987)', 'Frankenhooker (1990)']}
+Done re-ranking
+Conversation 3310
+Done summarizing
+
+Checking token count...
+Estimated input tokens: 19
+
+Token Usage:
+Prompt tokens: 0
+Candidates tokens: 0
+Total tokens: 0
+Nodes: 442
+Done retrieving candidates
+{'movie_list': ['Scary Movie', 'Scary Movie 2', 'Scary Movie 3', 'Scary Movie 4', 'Shaun of the Dead', 'Tucker & Dale vs. Evil', 'Zombieland', 'What We Do in the Shadows', 'The Final Girls', 'A Haunted House', 'A Haunted House 2', 'Deathgasm', 'House of 1000 Corpses', 'Evil Dead II', 'Army of Darkness', 'Idle Hands', "Jennifer's Body", 'Slither', 'Goosebumps', 'Happy Death Day', 'Freaky Friday', 'Cooties', 'The Babysitter', 'Sausage Party', 'Little Shop of Horrors', 'Killer Klowns from Outer Space', 'Beetlejuice', 'The Rocky Horror Picture Show', 'Gremlins', 'Tremors', 'An American Werewolf in London', 'Fright Night', 'Re-Animator', 'Return of the Living Dead', 'Student Bodies', 'Club Dread', 'Poultrygeist: Night of the Chicken Dead', 'Evil Aliens', 'Gingerdead Man 2: Passion of the Crust', 'Stan Helsing', 'Shriek If You Know What I Did Last Friday the Thirteenth', 'Not Another Teen Movie', 'The Kentucky Fried Movie', 'Spaceballs', 'Young Frankenstein', 'Dracula: Dead and Loving It', 'Transylvania 6-5000', 'Frankenweenie', 'Ghostbusters', 'Ghostbusters II']}
+Done re-ranking
+Conversation 3311
+Done summarizing
+
+Checking token count...
+Estimated input tokens: 33
+Attempt 1 failed: Response was terminated early: MAX_TOKENS
+
+Checking token count...
+Estimated input tokens: 33
+Attempt 2 failed: Response was terminated early: MAX_TOKENS
+
+Checking token count...
+Estimated input tokens: 33
+Attempt 3 failed: Response was terminated early: MAX_TOKENS
+
+Checking token count...
+Estimated input tokens: 33
+
+Token Usage:
+Prompt tokens: 0
+Candidates tokens: 0
+Total tokens: 0
+Nodes: 442
+Done retrieving candidates
+{'movie_list': ['Scary Movie', 'Scream', 'Scream 2', 'Scary Movie 2', 'Scream 3', 'Scary Movie 3', 'Scream 4', 'Scary Movie 4', 'Shriek If You Know What I Did Last Friday the Thirteenth', 'Zombieland', 'Tucker & Dale vs. Evil', 'Happy Death Day', 'Shaun of the Dead', 'The Final Girls', 'Behind the Mask: The Rise of Leslie Vernon', 'Idle Hands', 'Student Bodies', 'What We Do in the Shadows', 'Housebound', 'American Psycho', 'Evil Dead II', 'Evil Dead (2013)', 'Army of Darkness', 'The Cabin in the Woods', 'Ready or Not', 'Freaky', 'Cooties', 'Goosebumps', "Jennifer's Body", 'Beetlejuice', 'The Rocky Horror Picture Show', 'Killer Klowns from Outer Space', 'Gremlins', 'Critters', 'Tremors', 'An American Werewolf in London', 'The Lost Boys', 'Fright Night (1985)', 'Buffy the Vampire Slayer (1992)', 'Little Shop of Horrors (1986)', 'Club Dread', 'Slither', 'Deathgasm', 'Re-Animator', 'Return of the Living Dead', 'Braindead', "Peter Jackson's Meet the Feebles", 'Black Sheep', 'The Monster Squad', 'House (1985)']}
+Done re-ranking
+Conversation 3312
+Done summarizing
+
+Checking token count...
+Estimated input tokens: 10
+
+Token Usage:
+Prompt tokens: 0
+Candidates tokens: 0
+Total tokens: 0
+Nodes: 458
+Done retrieving candidates
+{'movie_list': ['The Sound of Music (1965)', "Singin' in the Rain (1952)", 'The Music Man (1962)', 'Hello, Dolly! (1969)', 'Cabaret (1972)', 'Guys and Dolls (1955)', 'The Greatest Showman (2017)', 'Hairspray (2007)', 'Xanadu (1980)', 'Oliver! (1968)', 'The Last Five Years (2014)', 'Cats (1998)', 'The Wiz (1978)', 'Fiddler on the Roof (1971)', 'Into the Woods (2014)', 'Anything Goes (1956)', 'Rock of Ages (2012)', 'The King and I (1999)', 'Carousel (1956)', 'Moulin Rouge! (2001)', 'Burlesque (2010)', 'The Jazz Singer (1927)', 'Funny Girl (1968)', 'Spamalot', 'A Star Is Born (1954)', 'Annie Get Your Gun (1950)', 'Summer Stock (1950)', 'All That Jazz (1979)', 'Hair (1979)', "Dr. Horrible's Sing-Along Blog", 'Sister Act (1992)', 'Seven Brides for Seven Brothers (1954)', 'La La Land (2016)', 'Little Shop of Horrors (1986)', 'Gentlemen Prefer Blondes (1953)', 'Mamma Mia! (2008)', 'My Fair Lady (1964)', 'Walk Hard: The Dewey Cox Story (2007)', 'Chicago (2002)', 'Funny Face (1957)', 'Happy Feet (2006)', 'The Muppets (2011)', 'Aladdin (1992)', 'Pitch Perfect', 'The Wizard of Oz (1982)', 'Billy Elliot (2000)', 'Grease (1978)', 'Tommy (1975)', 'Once (2007)', 'Willy Wonka & the Chocolate Factory (1971)']}
+Done re-ranking
+Conversation 3313
+Done summarizing
+
+Checking token count...
+Estimated input tokens: 10
+Attempt 1 failed: Response was terminated early: MAX_TOKENS
+
+Checking token count...
+Estimated input tokens: 10
+Attempt 2 failed: Response was terminated early: MAX_TOKENS
+
+Checking token count...
+Estimated input tokens: 10
+Attempt 3 failed: Response was terminated early: MAX_TOKENS
+
+Checking token count...
+Estimated input tokens: 10
+Attempt 4 failed: Response was terminated early: MAX_TOKENS
+
+Checking token count...
+Estimated input tokens: 10
+
+Token Usage:
+Prompt tokens: 0
+Candidates tokens: 0
+Total tokens: 0
+Nodes: 458
+Done retrieving candidates
+{'movie_list': ['La La Land (2016)', "Singin' in the Rain (1952)", 'The Sound of Music (1965)', 'West Side Story (1961)', 'Grease (1978)', 'The Greatest Showman (2017)', 'Mamma Mia! (2008)', 'Chicago (2002)', 'Hairspray (2007)', 'Les Misérables (1948)', 'Rent (2005)', 'The Rocky Horror Picture Show (1975)', 'Fiddler on the Roof (1971)', 'My Fair Lady (1964)', 'The Music Man (1962)', 'Hello, Dolly! (1969)', 'Cabaret (1972)', 'Guys and Dolls (1955)', 'South Pacific (1958)', 'The King and I (1999)', 'Oklahoma! (1955)', 'Anything Goes (1956)', 'Seven Brides for Seven Brothers (1954)', 'Funny Girl (1968)', 'Little Shop of Horrors (1986)', 'Sweeney Todd: The Demon Barber of Fleet Street (2007)', 'Across the Universe (2007)', 'The Phantom of the Opera at the Royal Albert Hall (2011)', 'The Phantom of the Opera (1925)', 'The Phantom of the Opera (1943)', 'Jesus Christ Superstar (1973)', 'Godspell (1973)', 'Tommy (1975)', 'Moulin Rouge! (2001)', 'The Wiz (1978)', 'Xanadu (1980)', 'Little Voice (1998)', 'All That Jazz (1979)', 'White Christmas (1954)', 'Meet Me in St. Louis', 'Mary Poppins (1964)', 'The Little Mermaid (1989)', 'Beauty and the Beast: The Enchanted Christmas (1997)', 'The Lion King (1994)', 'Aladdin (1992)', 'Willy Wonka & the Chocolate Factory (1971)', 'The Blues Brothers (1980)', 'A Christmas Carol (2009)', 'The Muppet Christmas Carol (1992)']}
+Done re-ranking
+Conversation 3314
+Done summarizing
+
+Checking token count...
+Estimated input tokens: 44
+Switching to next API key : #0 (AIzaSyAZ4gdYg3NALmTJk1dJg4gETL4GHTf7wUI)
+Exhausted all API keys.
+
+Checking token count...
+Estimated input tokens: 44
+Switching to next API key : #0 (AIzaSyAZ4gdYg3NALmTJk1dJg4gETL4GHTf7wUI)
+Retrying with new API key in 5 seconds...
+
+Checking token count...ERROR:root:Attempt 3 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 4 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 5 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 6 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 7 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 8 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 9 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 10 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 11 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 12 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 13 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 14 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+ERROR:root:Attempt 15 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
