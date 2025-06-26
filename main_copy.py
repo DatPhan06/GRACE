@@ -42,10 +42,9 @@ GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]
 
 
 
-# API_KEY = config["APIKey"]["GOOGLE_API_KEY_2"]
 GG_API_KEY = [
     config["APIKey"][f"GOOGLE_API_KEY_{i}"] 
-    for i in reversed(range(27))
+    for i in reversed(range(26))
 ]
 
 
@@ -124,7 +123,7 @@ if __name__ == "__main__":
             re_ranking_output = callLangChainLLMReranking(
                 context=context,
                 user_preferences=summarized_conversation,
-                movie_str=movie_candidate_list,
+                movie_str="|".join(movie_candidate_list),
                 model=GENERATIVE_MODEL,
                 api_key=GG_API_KEY,
                 k=k
@@ -132,6 +131,9 @@ if __name__ == "__main__":
             print(re_ranking_output)
             print("Done re-ranking")
             
+            # Ensure re_ranking_output is a dict for evaluate
+            if not isinstance(re_ranking_output, dict):
+                re_ranking_output = {}
 
             # Output evaluation
             # For Inspired
@@ -200,15 +202,17 @@ if __name__ == "__main__":
             re_ranking_output = callLangChainLLMReranking(
                 context=context,
                 user_preferences=summarized_conversation,
-                movie_str=movie_candidate_list,
+                movie_str="|".join(movie_candidate_list),
                 model=GENERATIVE_MODEL,
                 api_key=GG_API_KEY,
                 k=k
             )
-            print("--------------------------------")
+            print(re_ranking_output)
             print("Done re-ranking")
-            print("--------------------------------")
             
+            # Ensure re_ranking_output is a dict for evaluate
+            if not isinstance(re_ranking_output, dict):
+                re_ranking_output = {}
 
             # Output evaluation
             # For Inspired

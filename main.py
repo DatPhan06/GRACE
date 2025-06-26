@@ -9,7 +9,7 @@ import argparse
 
 from evaluating.output_eval import evaluate
 from utils.LangChain import *
-
+from utils.LangChain.GenerativeAI_redial import callLangChainLLMReranking_redial, callLangChainLLMSummarization_redial
 from utils.LangChain.GenerativeAI import callLangChainLLMReranking, callLangChainLLMSummarization
 from utils.LlamaIndex import *
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
         redial_collection = config["VectorDB"]["redial_collection_name"]
         redial_train_dialog = config["RedialDataPath"]["processed"]["dialog"]["test"]
         redial_movie = config["RedialDataPath"]["raw"]["movie"]
-        redial_output = config["OutputPath"]["redial"]
+        redial_output = config["OutputPath"]["redial_test"]
 
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
@@ -178,7 +178,7 @@ if __name__ == "__main__":
             print(f"Conversation {conv_id}")
 
 
-            summarized_conversation = callLangChainLLMSummarization(
+            summarized_conversation = callLangChainLLMSummarization_redial(
                 document=context, 
                 model=GENERATIVE_MODEL, 
                 api_key=GG_API_KEY)["user_preferences"]
@@ -199,7 +199,7 @@ if __name__ == "__main__":
 
 
             # Re-ranking:
-            re_ranking_output = callLangChainLLMReranking(
+            re_ranking_output = callLangChainLLMReranking_redial(
                 context=context,
                 user_preferences=summarized_conversation,
                 movie_str="|".join(movie_candidate_list),
