@@ -19,7 +19,7 @@ from preprocessing import *
 
 from tqdm import tqdm
 
-from utils.LlamaIndex.candidate_retriever import query_parse_output
+from utils.LlamaIndex.candidate_retriever_hybrid import query_parse_output
 
 def input_parse():
     parser = argparse.ArgumentParser(description="Process some integers.")
@@ -157,6 +157,7 @@ if __name__ == "__main__":
         redial_collection = config["VectorDB"]["redial_collection_name"]
         redial_train_dialog = config["RedialDataPath"]["processed"]["dialog"]["test"]
         redial_movie = config["RedialDataPath"]["raw"]["movie"]
+        redial_movie_processed = config["RedialDataPath"]["processed"]["movie"]
         redial_output = config["OutputPath"]["redial_test"]
 
         # n_sample: [100, 200, 300, 400, 500, 600]
@@ -170,6 +171,12 @@ if __name__ == "__main__":
         movie = pd.read_csv(redial_movie, encoding="utf-8")
         df_movie = pd.DataFrame(movie)
         
+        # Load detailed metadata from processed JSON (movie_fix_year)
+        with open(redial_movie_processed, "r", encoding="utf-8") as file:
+            movie_info = [json.loads(line) for line in file if line.strip()]
+        df_movie_info = pd.DataFrame(movie_info)
+
+        
         for index, conv in tqdm(enumerate(input_data[start:], start=start)):
 
             conv_id = index
@@ -178,7 +185,7 @@ if __name__ == "__main__":
             print(f"Conversation {conv_id}")
 
 
-            summarized_conversation = callLangChainLLMSummarization_redial(
+            summarized_conversation = callLangChainLLMSummarization(
                 document=context, 
                 model=GENERATIVE_MODEL, 
                 api_key=GG_API_KEY)["user_preferences"]
