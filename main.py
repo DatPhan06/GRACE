@@ -9,7 +9,7 @@ import argparse
 
 from evaluating.output_eval import evaluate
 from utils.LangChain import *
-
+from utils.LangChain.GenerativeAI_redial import callLangChainLLMReranking_redial, callLangChainLLMSummarization_redial
 from utils.LangChain.GenerativeAI import callLangChainLLMReranking, callLangChainLLMSummarization
 from utils.LlamaIndex import *
 
@@ -19,7 +19,7 @@ from preprocessing import *
 
 from tqdm import tqdm
 
-from utils.LlamaIndex.candidate_retriever import query_parse_output
+from utils.LlamaIndex.candidate_retriever_hybrid import query_parse_output
 
 def input_parse():
     parser = argparse.ArgumentParser(description="Process some integers.")
@@ -157,7 +157,8 @@ if __name__ == "__main__":
         redial_collection = config["VectorDB"]["redial_collection_name"]
         redial_train_dialog = config["RedialDataPath"]["processed"]["dialog"]["test"]
         redial_movie = config["RedialDataPath"]["raw"]["movie"]
-        redial_output = config["OutputPath"]["redial"]
+        redial_movie_processed = config["RedialDataPath"]["processed"]["movie"]
+        redial_output = config["OutputPath"]["redial_test"]
 
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
@@ -169,6 +170,12 @@ if __name__ == "__main__":
 
         movie = pd.read_csv(redial_movie, encoding="utf-8")
         df_movie = pd.DataFrame(movie)
+        
+        # Load detailed metadata from processed JSON (movie_fix_year)
+        with open(redial_movie_processed, "r", encoding="utf-8") as file:
+            movie_info = [json.loads(line) for line in file if line.strip()]
+        df_movie_info = pd.DataFrame(movie_info)
+
         
         for index, conv in tqdm(enumerate(input_data[start:], start=start)):
 
@@ -199,7 +206,7 @@ if __name__ == "__main__":
 
 
             # Re-ranking:
-            re_ranking_output = callLangChainLLMReranking(
+            re_ranking_output = callLangChainLLMReranking_redial(
                 context=context,
                 user_preferences=summarized_conversation,
                 movie_str="|".join(movie_candidate_list),

@@ -48,6 +48,7 @@ RedialDataPath:
 
 OutputPath:
     redial: "output/REDIAL/"
+    redial_test: "output/REDIAL/test/"
     inspired: "output/INSPIRED/new/unmasked_all"
 
 VectorDB:
@@ -71,7 +72,7 @@ APIKey:
     # TOGETHER_AI_API_KEY_11: "tgp_v1_s26ewyjimy_GHEChCBjVXKNg-82WlwPiTb6HGMbhTPw"
     # TOGETHER_AI_API_KEY_12: "tgp_v1_jYdMe3cC_30MyKggenhAd3lXrICq7EITvvgYs3-KHL0"
 
-    GOOGLE_API_KEY_0: "AIzaSyAZ4gdYg3NALmTJk1dJg4gETL4GHTf7wUI"   
+    GOOGLE_API_KEY_0: "AIzaSyBTcsJj8gajm8mErqM5oRP0V9yZ6Eih47U"   
     GOOGLE_API_KEY_1: "AIzaSyDtDikFdHea1JyDtxIypUrv0m-Z4LGjDjA"
 
 

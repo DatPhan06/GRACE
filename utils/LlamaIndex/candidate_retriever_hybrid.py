@@ -262,7 +262,7 @@ def query_parse_output(
     model: str,
     api_key: str,
     n: Literal[100, 200, 300, 400, 500, 600] = 100
-) -> str:
+) -> List[str]:
     """
     Query the retriever engine with user preferences and parse movie recommendations.
 
@@ -376,8 +376,8 @@ def query_parse_output(
                 continue
 
     # Join all movie names with pipe separator
-    movie_str = "|".join(movie_name)
+    # movie_str = "|".join(movie_name)
 
     print("Done retrieving candidates")
 
-    return movie_str
+    return movie_name
