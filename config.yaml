@@ -6,6 +6,7 @@ GeminiModel:
     1.5_flash: "gemini-1.5-flash"
     2.0_flash: "gemini-2.0-flash"
     2.0_flash_thinking_exp: "gemini-2.0-flash-thinking-exp-01-21"
+    2.5_flash_lite: "gemini-2.5-flash-lite"
     2.5_pro_exp: "gemini-2.5-pro-exp-03-25"
 
 DeepSeekModel:
@@ -27,8 +28,9 @@ InspiredDataPath:
         movie: "dataset/INSPIRED/raw/movie_data/movie_database.tsv"
     processed:
         dialog:
-            test: "dataset/INSPIRED/processed/dialog_data/test.json"
-            train: "dataset/INSPIRED/processed/dialog_data/train_processed.json"
+            test: "dataset/INSPIRED/processed/dialog_data/test_new_processed.json"
+            test_response: "dataset/INSPIRED/processed/dialog_data/test_processed_response.json"
+            train: "dataset/INSPIRED/processed/dialog_data/train_processed_all.json"
         movie: "dataset/INSPIRED/processed/movie_data/movie_database_no_missing.json"
 
 RedialDataPath:
@@ -40,12 +42,13 @@ RedialDataPath:
     processed:
         dialog:
             test: "dataset/REDIAL/processed/dialog_data/test_data.json"
+            test_response: "dataset/REDIAL/processed/dialog_data/test_processed_response.json"
             train: "dataset/REDIAL/processed/dialog_data/train_data.json"
         movie: "dataset/REDIAL/processed/movie_data/movie_fix_year.json"
 
 OutputPath:
     redial: "output/REDIAL/"
-    inspired: "output/INSPIRED/"
+    inspired: "output/INSPIRED/new/unmasked_all"
 
 VectorDB:
     redial_chroma_db_path: "dataset/embeddings/REDIAL"
