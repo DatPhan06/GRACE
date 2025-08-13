@@ -1,0 +1,394 @@
+nohup: ignoring input
+0it [00:00, ?it/s]1it [00:05,  5.71s/it]2it [00:10,  5.17s/it]Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+3it [00:23,  8.77s/it]4it [00:28,  7.39s/it]5it [00:34,  6.60s/it]6it [00:39,  6.09s/it]7it [00:44,  5.86s/it]8it [00:50,  5.95s/it]9it [00:56,  5.78s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+10it [01:03,  6.44s/it]11it [01:09,  6.20s/it]12it [01:15,  5.95s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 2 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 3 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 4 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 5 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 6 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 7 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 8 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 9 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 10 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+Conversation 0
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 477
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Super Troopers', '21 Jump Street', '22 Jump Street', 'The Naked Gun: From the Files of Police Squad!', 'Top Secret!', 'Hot Shots! Part Deux', 'Three Amigos!', 'The Cannonball Run', 'Starsky & Hutch', 'Police Story', 'Harold & Kumar Go to White Castle', 'Jay and Silent Bob Strike Back', 'Role Models', "The 'Burbs"]}
+Done re-ranking
+Conversation 1
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 471
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Super Troopers', 'American Pie', 'Police Academy', 'The Naked Gun: From the Files of Police Squad!', 'Airplane!', 'Hot Shots! Part Deux', 'Top Secret!', 'The Blues Brothers', 'This Is Spinal Tap', 'Monty Python and the Holy Grail']}
+Done re-ranking
+Conversation 2
+Switching to next API key : #18 (AIzaSyDOmpaYdphk797Zh07GNwDDtXUoPsMTw7M)
+Retrying with new API key in 5 seconds...
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 480
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['American Pie', 'Super Troopers', 'The Naked Gun: From the Files of Police Squad!', 'Dumb and Dumber', 'Wedding Crashers', 'The Hangover', 'Role Models', 'Harold & Kumar Go to White Castle', 'Superbad', 'Zack and Miri Make a Porno']}
+Done re-ranking
+Conversation 3
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 470
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Super Troopers', 'American Pie 2', 'American Pie', 'The Naked Gun: From the Files of Police Squad!', 'Airplane!', 'Monty Python and the Holy Grail', 'Blazing Saddles', 'Young Frankenstein', 'This Is Spinal Tap', 'The Blues Brothers']}
+Done re-ranking
+Conversation 4
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 470
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Super Troopers', 'American Pie 2', 'American Pie', 'The Hangover', 'Wedding Crashers', 'The Naked Gun: From the Files of Police Squad!', 'Airplane!', 'Monty Python and the Holy Grail', 'The Blues Brothers', 'Hot Shots! Part Deux']}
+Done re-ranking
+Conversation 5
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 476
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['A Nightmare on Elm Street', 'The Silence of the Lambs', 'Psycho', 'Alien', 'The Shining', 'Aliens', 'It', 'Poltergeist', 'The Texas Chain Saw Massacre', 'The Evil Dead']}
+Done re-ranking
+Conversation 6
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 466
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['A Nightmare on Elm Street', 'The Last House on the Left', 'Happy Death Day', 'Halloween', 'The Shining', 'Psycho', 'Alien', 'The Exorcist', 'The Thing', 'Night of the Living Dead']}
+Done re-ranking
+Conversation 7
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 464
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['A Nightmare on Elm Street', 'Annabelle', 'The Forest', 'The Last House on the Left', 'Halloween', 'Evil Dead II', 'Psycho', 'The Shining', 'Scream', 'The Evil Dead']}
+Done re-ranking
+Conversation 8
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 462
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['A Nightmare on Elm Street', 'Annabelle', 'The Forest', 'A Quiet Place', 'The Conjuring', 'It', 'Scream', 'Halloween', 'The Evil Dead', 'The Texas Chain Saw Massacre']}
+Done re-ranking
+Conversation 9
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 461
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['A Nightmare on Elm Street', 'Annabelle', 'The Forest', 'The Last House on the Left', 'Halloween', 'The Conjuring', 'Scream', 'The Texas Chain Saw Massacre', 'The Evil Dead', 'The Shining']}
+Done re-ranking
+Conversation 10
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 461
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['A Nightmare on Elm Street', 'Annabelle', 'The Forest', 'The Conjuring', 'A Quiet Place', 'Scream', 'Evil Dead', 'The Texas Chain Saw Massacre', 'The Exorcist', 'The Shining']}
+Done re-ranking
+Conversation 11
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 476
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Easy A (2010)', 'Mean Girls', 'Superbad', 'Not Another Teen Movie', 'The Edge of Seventeen', 'Crazy, Stupid, Love.', 'American Beauty', 'Closer', 'Reality Bites', 'The Spectacular Now']}
+Done re-ranking
+Conversation 12
+Switching to next API key : #11 (AIzaSyC7RGtwoeNG5nuDl8ZDrkFL4ClXTAucZpw)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #12 (AIzaSyAMtg-x4rNX54uCJdZZ--8PO0267cL65SM)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #13 (AIzaSyDsjtDUVMziI99cEPUOwKNG4j8-qNb6jLo)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #14 (AIzaSyARfEA94aB_ChrxONk_VGwELeXguME32h8)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #15 (AIzaSyBTcsJj8gajm8mErqM5oRP0V9yZ6Eih47U)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #16 (AIzaSyBbJYAELfJsahzw-Kn408pShDH9ZB-HJdo)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #17 (AIzaSyAdQijuP2jhQq0vFiStItIUApKMczVDE1U)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #18 (AIzaSyDOmpaYdphk797Zh07GNwDDtXUoPsMTw7M)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #19 (AIzaSyD2RTa-h15KGmI6mSjxEHQUaQquToA7rrM)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #20 (AIzaSyCqoMxTlyDJI1CVeC1xiQ5dt5nBLtoTlzQ)
+Retrying with new API key in 5 seconds...
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering13it [02:31, 27.41s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 2 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 3 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 4 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+14it [03:07, 29.98s/it]15it [03:13, 22.61s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.0-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 200
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 26
+}
+].
+16it [03:20, 18.11s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 2 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+17it [03:41, 18.80s/it]18it [03:46, 14.76s/it]19it [03:51, 11.90s/it]20it [03:57,  9.90s/it]21it [04:02,  8.45s/it]22it [04:07,  7.41s/it]23it [04:12,  6.87s/it]24it [04:17,  6.32s/it]25it [04:23,  6.02s/it]
+Final unique movies retrieved: 318
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Godfather', 'The Godfather Part II', 'The Godfather Saga', 'Goodfellas', 'Casino', 'Scarface', 'Pulp Fiction', 'The Dark Knight', 'Inception']}
+Done re-ranking
+Conversation 13
+Switching to next API key : #4 (AIzaSyDnwh-JgJlkq8agkfl8JDpQhC4xl2Pl6oQ)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #5 (AIzaSyAgGyG5MbSXWyr43kooFL_xqcrqGPmGVPo)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #6 (AIzaSyD61mfpS4pZEZxJJzi8z3QsvSfEEXTaqAg)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #7 (AIzaSyDgobcDPlUWIsz2pLv7F0gnuPNGypGH2U8)
+Retrying with new API key in 5 seconds...
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 476
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Easy A', 'Superbad', '21 Jump Street', '22 Jump Street', 'The Nice Guys', 'This Is Elvis', 'Some Like It Hot', 'Shaun of the Dead', 'The Lego Movie', 'Despicable Me']}
+Done re-ranking
+Conversation 14
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 476
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Easy A', 'Superbad', '21 Jump Street', '22 Jump Street', 'The Nice Guys', 'This Is the End', 'Forgetting Sarah Marshall', 'Crazy, Stupid, Love.', 'The Fundamentals of Caring', 'Dumb and Dumber']}
+Done re-ranking
+Conversation 15
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 116 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 440
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Avengers', 'Guardians of the Galaxy', 'Thor: Ragnarok', 'Captain America: Civil War', 'Guardians of the Galaxy Vol. 2', 'Doctor Strange', 'Ant-Man', 'Avengers: Age of Ultron', 'Black Panther']}
+Done re-ranking
+Conversation 16
+Switching to next API key : #6 (AIzaSyD61mfpS4pZEZxJJzi8z3QsvSfEEXTaqAg)
+Retrying with new API key in 5 seconds...
+Switching to next API key : #7 (AIzaSyDgobcDPlUWIsz2pLv7F0gnuPNGypGH2U8)
+Retrying with new API key in 5 seconds...
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 116 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 440
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Avengers', 'Guardians of the Galaxy', 'Captain America: Civil War', 'Thor: Ragnarok', 'Avengers: Age of Ultron', 'Black Panther', 'Ant-Man', 'Ant-Man and the Wasp', 'Iron Man 2']}
+Done re-ranking
+Conversation 17
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 116 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 438
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Avengers', 'Iron Man 2', 'Guardians of the Galaxy', 'Thor: Ragnarok', 'Iron Man', 'Winter Soldier', 'Captain America: Civil War', 'Ant-Man', 'Avengers: Age of Ultron', 'Black Panther']}
+Done re-ranking
+Conversation 18
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 475
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['The Godfather', 'The Godfather Part II', 'The Godfather Saga', 'Pulp Fiction', 'The Shawshank Redemption', 'The Dark Knight', 'Fight Club', 'Inception', 'Goodfellas', 'The Silence of the Lambs']}
+Done re-ranking
+Conversation 19
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 478
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Dark Knight', 'Inception', 'The Matrix', 'Interstellar', 'The Dark Knight Rises', 'Gladiator', 'Star Wars: Episode V - The Empire Strikes Back: Deleted Scenes', 'Star Wars: Episode IV - A New Hope', 'Star Wars: The Clone Wars']}
+Done re-ranking
+Conversation 20
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 116 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 439
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Avengers', 'Guardians of the Galaxy', 'Thor: Ragnarok', 'Captain America: Civil War', 'Guardians of the Galaxy Vol. 2', 'Spider-Man', 'Spider-Man 2', 'Spider-Man: Homecoming', 'The Amazing Spider-Man']}
+Done re-ranking
+Conversation 21
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 116 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 439
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Avengers', 'Guardians of the Galaxy', 'X-Men: First Class', 'Spider-Man', 'Captain America: Civil War', 'Thor: Ragnarok', 'X-Men: Days of Future Past', 'Spider-Man 2', 'Deadpool']}
+Done re-ranking
+Conversation 22
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 467
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'The Avengers', 'Iron Man', 'Spider-Man', 'Guardians of the Galaxy', 'X-Men: First Class', 'Captain America: Civil War', 'Thor: Ragnarok', 'Deadpool', 'Ant-Man']}
+Done re-ranking
+Conversation 23
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 166 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 480
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['The Silence of the Lambs', 'Psycho', 'The Shining', 'Alien', 'Aliens', 'Let Me Out', 'It', 'The Evil Dead', 'Scream', 'Poltergeist']}
+Done re-ranking
+Conversation 24
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 116 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 438
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['Avengers: Infinity War', 'Scream', 'Poltergeist', 'The Descent', 'Fright Night', 'The Babadook', 'REC', 'The Haunting in Connecticut', 'A Nightmare on Elm Street', 'Evil Dead']}
+Done re-ranking
+Conversation 25
+Done summarizing
+Successfully connected to Neo4j for retrieval.
+Retrieved 166 movies via semantic similarity
+Retrieved 116 movies via content filtering
+Retrieved 166 movies via collaborative filtering
+Final unique movies retrieved: 439
+Done retrieving candidates from graph database
+Neo4j connection closed.
+{'movie_list': ['It (2017)', 'Avengers: Infinity War', 'A Nightmare on Elm Street', 'Poltergeist', 'The Babadook', 'The Descent', 'Evil Dead', 'Paranormal Activity', 'Scream', 'The Haunting in Connecticut']}26it [04:28,  5.80s/it]27it [04:33,  5.64s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+28it [04:46,  7.76s/it]29it [04:52,  7.11s/it]30it [04:57,  6.47s/it]31it [05:01,  5.93s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+32it [05:14,  7.91s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+33it [05:26,  9.35s/it]34it [05:32,  8.09s/it]35it [05:36,  7.10s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 2 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 3 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+36it [06:04, 13.23s/it]WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 1 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 2 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 3 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
+WARNING:langchain_google_genai.chat_models:Retrying langchain_google_genai.chat_models._chat_with_retry.<locals>._chat_with_retry in 2.0 seconds as it raised ResourceExhausted: 429 Resource has been exhausted (e.g. check quota)..
+ERROR:root:Attempt 4 failed. HTTP error occurred: 429 Resource has been exhausted (e.g. check quota).
