@@ -292,7 +292,7 @@ class Inspired:
         "targets": ["Terminator: Dark Fate (2019)", "Rambo: Last Blood (2019)"]
         
         Let's think step by step.
-        Do the task carefully, as any mistakes will be severely punished.
+        Be concise and careful.
         """
         
         prompt = PromptTemplate(
@@ -373,7 +373,7 @@ class Inspired:
         
         {format_instructions}
         
-        Please think step by step, carefully identifying each direct reference to the target movies. Ensure that you mask all such references accurately, as any mistakes will be severely punished.
+        Please think step by step, carefully identifying each direct reference to the target movies. Ensure that you mask all such references accurately.
         """
 
         prompt = PromptTemplate(

@@ -43,6 +43,7 @@ RedialDataPath:
         dialog:
             test: "dataset/REDIAL/processed/dialog_data/test_data.json"
             test_response: "dataset/REDIAL/processed/dialog_data/test_processed_response.json"
+            test_with_liked_movies: "dataset/REDIAL/processed/dialog_data/data_test_with_liked_movies.json"
             train: "dataset/REDIAL/processed/dialog_data/train_data.json"
         movie: "dataset/REDIAL/processed/movie_data/movie_fix_year.json"
 

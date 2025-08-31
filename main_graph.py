@@ -96,6 +96,7 @@ if __name__ == "__main__":
 
             conv_id = f"{index} {conv['conv_id']}"
             context = conv["processed_dialog"]
+
             recommend_item = conv["target"]
             print(f"Conversation {conv_id}")
 
@@ -151,17 +152,17 @@ if __name__ == "__main__":
         
         redial_chroma = config["VectorDB"]["redial_chroma_db_path"]
         redial_collection = config["VectorDB"]["redial_collection_name"]
-        redial_train_dialog = config["RedialDataPath"]["processed"]["dialog"]["test"]
+        redial_test_dialog = config["RedialDataPath"]["processed"]["dialog"]["test_with_liked_movies"]
         redial_movie = config["RedialDataPath"]["raw"]["movie"]
         redial_movie_processed = config["RedialDataPath"]["processed"]["movie"]
-        redial_output = config["OutputPath"]["redial_test"]
+        redial_output = config["OutputPath"]["redial"]
 
         # n_sample: [100, 200, 300, 400, 500, 600]
         # k: [1, 5, 10, 50]
         # n_sample = 600
         # k = 50
 
-        with open(redial_train_dialog, "r", encoding="utf-8") as file:
+        with open(redial_test_dialog, "r", encoding="utf-8") as file:
             input_data = json.load(file)
 
         movie = pd.read_csv(redial_movie, encoding="utf-8")
@@ -178,7 +179,8 @@ if __name__ == "__main__":
             conv_id = index
             context = conv["dialog"]
             recommend_item = conv["target"]
-            print(f"Conversation {conv_id}")
+            liked_movies = conv["liked_movies"]
+            print(f"Conversation {conv_id} - {liked_movies}")
 
 
             summarized_conversation = callLangChainLLMSummarization(
@@ -193,7 +195,9 @@ if __name__ == "__main__":
             movie_candidate_list = query_parse_output_graph(df_movie, 
                                                             summarized_conversation, 
                                                             data, 
-                                                            n=n_sample
+                                                            liked_movies=liked_movies,
+                                                            n=n_sample,
+                                                            config=config
                                                             )
 
 
@@ -201,20 +205,21 @@ if __name__ == "__main__":
             re_ranking_output = callLangChainLLMReranking_redial(
                 context=context,
                 user_preferences=summarized_conversation,
-                movie_str="|".join(movie_candidate_list),
+                movie_list=movie_candidate_list,
+                movie_data_path="",
                 model=GENERATIVE_MODEL,
                 api_key=GG_API_KEY,
                 k=k
             )
-            print(re_ranking_output)
+            # print(re_ranking_output)
             print("Done re-ranking")
             
             # Ensure re_ranking_output is a dict for evaluate
-            if not isinstance(re_ranking_output, dict):
-                re_ranking_output = {}
+            # if not isinstance(re_ranking_output, dict):
+            #     re_ranking_output = {}
 
             # Output evaluation
-            # For Inspired
+            # For Redial
             evaluate(
                 model_name=GENERATIVE_MODEL,
                 re_ranked_list=re_ranking_output,
@@ -227,4 +232,15 @@ if __name__ == "__main__":
                 top_k=k
             )
 
+            # evaluate(
+            #     model_name=GENERATIVE_MODEL,
+            #     re_ranked_list={"movie_list": []},
+            #     recommend_item=[recommend_item],
+            #     conv_id=conv_id,
+            #     summarized_preferences=summarized_conversation,
+            #     movie_candidate_list=movie_candidate_list,
+            #     output_dir=redial_output,
+            #     n=n_sample,
+            #     top_k=k
+            # )
         time.sleep(5)

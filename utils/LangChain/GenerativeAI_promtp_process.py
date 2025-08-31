@@ -9,6 +9,7 @@ from langchain_core.output_parsers import JsonOutputParser
 
 # Google's generative AI integration
 from langchain_google_genai import ChatGoogleGenerativeAI
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 # Together's generative AI integration
 from langchain_together import ChatTogether
@@ -78,7 +79,7 @@ def chain_llm_summarize(gen_model: str, api_key: str) -> LLMChain:
         {format_instructions}
         The summarization must not contain anything directly related to the item which is recommended.
         Item recommeded: {item}
-        Do the task carefully, or you are going to be severely punished.
+        Let's think step by step. Be concise and careful.
         """,
         # Define the variable that will be replaced in the template
         input_variables=["document", 'item'],
@@ -87,7 +88,17 @@ def chain_llm_summarize(gen_model: str, api_key: str) -> LLMChain:
     )
 
     # Initialize Google's generative AI with the specified model and API key
-    llm_langchain = ChatGoogleGenerativeAI(model=gen_model, google_api_key=api_key, max_output_tokens=10000)
+    llm_langchain = ChatGoogleGenerativeAI(
+        model=gen_model,
+        google_api_key=api_key,
+        max_output_tokens=10000,
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        },
+    )
 
     # Create processing pipeline: prompt -> LLM -> parser
     llm_chain = prompt | llm_langchain | parser
