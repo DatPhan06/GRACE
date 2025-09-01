@@ -10,6 +10,7 @@ from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerCli
 from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.llms.gemini import Gemini as GeminiLlamaIndex
 from langchain_google_genai import ChatGoogleGenerativeAI
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 # ---------------------------------------------------------------------------
 # Azure OpenAI configuration
@@ -118,7 +119,17 @@ def create_gemini_llamaindex_llm(api_key: str, model_name: str, **kwargs) -> Gem
 
 def create_gemini_langchain_llm(api_key: str, model_name: str, **kwargs) -> ChatGoogleGenerativeAI:
     """Return a LangChain ChatGoogleGenerativeAI instance using Gemini models."""
-    return ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key, **kwargs)
+    return ChatGoogleGenerativeAI(
+        model=model_name,
+        google_api_key=api_key,
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        },
+        **kwargs,
+    )
 
 
 # Exported names – helps linters/IDE completion

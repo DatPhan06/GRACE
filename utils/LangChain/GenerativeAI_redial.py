@@ -82,12 +82,6 @@ def get_movie_details_as_string(movie_titles: list[str], movie_data_path: str) -
         if movie:
             details = {
                 "Title": movie.get("title"),
-                "Year": movie.get("year"),
-                "Rated": movie.get("rated"),
-                "Runtime": movie.get("runtime"),
-                "Genre": movie.get("genre"),
-                "Director": movie.get("director"),
-                "Actors": movie.get("actors"),
                 "Plot": movie.get("plot"),
             }
             # Format the details into a string, filtering out empty values
@@ -399,7 +393,8 @@ Candidate Movie List: {movie_list}
 def callLangChainLLMReranking_redial(
     context: Any,
     user_preferences: str,
-    movie_str: str,
+    movie_list: list[str],
+    movie_data_path: str,
     model: str,
     api_key: list[str],
     k: Literal[1, 5, 10, 50] = 50
@@ -410,7 +405,7 @@ def callLangChainLLMReranking_redial(
     Args:
         context_str: The conversation text for context
         user_preferences: Summarized user preferences
-        movie_str: List of candidate movies to re-rank
+        movie_list: List of candidate movies to re-rank (or '|' separated string for backward compatibility)
         k: Top k movies to return
         gen_model: The generative model name/identifier
         api_key: Google API key for authentication
@@ -419,51 +414,103 @@ def callLangChainLLMReranking_redial(
     Returns:
         Parsed re-ranked list of movies tailored to the user's preferences
     """
+    # Helper to invoke reranking on a given movie list string with retries and key rotation
+    def _invoke_rerank(batch_movie_str: str, top_k: int, batch_titles: list[str]) -> Dict[str, str]:
+        max_retries = 100
+        nonlocal api_key
+        global current_index_key
+        local_key_len = len(api_key)
 
-    max_retries = 100
+        for attempt in range(max_retries):
+            try:
+                # Build augmented context with movie plots (if available)
+                augmented_document = context
+                try:
+                    if movie_data_path:
+                        details_text = get_movie_details_as_string(batch_titles, movie_data_path)
+                        if details_text and isinstance(details_text, str) and details_text.strip():
+                            augmented_document = f"{context}\n\nAdditional movie details about candidates:\n{details_text}"
+                except Exception as _:
+                    # If any error occurs in details retrieval, fall back to original context
+                    augmented_document = context
+
+                chain = LangChainLLMReranking(model, api_key[current_index_key])
+                return chain.invoke(
+                    {
+                        "document": augmented_document,
+                        "summary_preference": user_preferences,
+                        "movie_list": batch_movie_str,
+                        "k": top_k,
+                    }
+                )
+            except TooManyRequests as e:
+                logging.error(
+                    f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")
+                current_index_key = (current_index_key + 1) % len(api_key)
+                local_key_len -= 1
+                print(
+                    f"Switching to next API key : #{current_index_key} ({api_key[current_index_key]})")
+
+                if local_key_len == 0 and attempt < max_retries - 1:
+                    print("Exhausted all API keys.")
+                    exit()
+                else:
+                    print("Retrying with new API key in 5 seconds")
+                    time.sleep(5)
+            except Exception as e:
+                logging.error(f"Attempt {attempt+1} failed: {str(e)}")
+                if attempt < max_retries - 1:
+                    print("Retrying in 5 seconds...")
+                    time.sleep(5)
+                else:
+                    print("All retries failed, returning fallback response")
+                    return {"movie_list": []}
+
+        return {"movie_list": []}
+
+    # Initialize key rotation
     global current_index_key
     current_index_key = random.randint(0, len(api_key) - 1)
-    key_len = len(api_key)
 
-    for attempt in range(max_retries):
+    # Parse input movies (accept list or '|' separated string for backward compatibility)
+    if isinstance(movie_list, str):
+        movies = [m.strip() for m in (movie_list or "").split("|") if m.strip()]
+    else:
         try:
-            # Create and invoke chain with all required inputs
-            chain = LangChainLLMReranking(model, api_key[current_index_key])
-            # chain = LangChainLLMReranking(model, api_key)
-            output = chain.invoke(
-                {
-                    "document": context,
-                    "summary_preference": user_preferences,
-                    "movie_list": movie_str,
-                    "k": k,
-                }
-            )
-            return output
+            movies = [str(m).strip() for m in (movie_list or []) if str(m).strip()]
+        except Exception:
+            movies = []
+    if not movies:
+        return {"movie_list": []}
 
-        except TooManyRequests as e:
-            logging.error(
-                f"Attempt {attempt+1} failed. HTTP error occurred: {str(e)}")
-            current_index_key = (current_index_key + 1) % len(api_key)
-            key_len -= 1
-            print(
-                f"Switching to next API key : #{current_index_key} ({api_key[current_index_key]})")
+    # If small enough, do a single rerank
+    if len(movies) <= 100:
+        return _invoke_rerank("|".join(movies), min(k, len(movies)), movies)
 
-            if key_len == 0 and attempt < max_retries - 1:
-                # We've cycled through all keys, wait longer before retrying
-                print("Exhausted all API keys.")
-                exit()
-            else:
-                # Wait briefly before retrying with the new key
-                print("Retrying with new API key in 5 seconds")
-                time.sleep(5)
+    # 1) Batch rerank: 100 per batch -> take top 20 from each
+    batch_size = 100
+    per_batch_top = 20
+    shortlisted: list[str] = []
 
-        except Exception as e:
-            logging.error(f"Attempt {attempt+1} failed: {str(e)}")
+    for i in range(0, len(movies), batch_size):
+        batch = movies[i:i + batch_size]
+        batch_input = "|".join(batch)
+        result = _invoke_rerank(batch_input, min(per_batch_top, len(batch)), batch)
+        if isinstance(result, dict) and "movie_list" in result and isinstance(result["movie_list"], list):
+            shortlisted.extend(result["movie_list"][:min(per_batch_top, len(batch))])
+        else:
+            # Fallback: keep first N from the batch to avoid losing candidates
+            shortlisted.extend(batch[:min(per_batch_top, len(batch))])
 
-            if attempt < max_retries - 1:
-                print(f"Retrying in 5 seconds...")
-                time.sleep(5)
-            else:
-                # Fallback mechanism - return a simple structure that matches the expected format
-                print("All retries failed, returning fallback response")
-                return {"user_preferences": ""}
+    if not shortlisted:
+        return {"movie_list": movies[:k]}
+
+    # 2) Final rerank on the concatenated shortlist to get top-k
+    final_result = _invoke_rerank("|".join(shortlisted), min(k, len(shortlisted)), shortlisted)
+    if isinstance(final_result, dict) and "movie_list" in final_result:
+        # Ensure only top-k returned
+        final_result["movie_list"] = final_result.get("movie_list", [])[:min(k, len(shortlisted))]
+        return final_result
+
+    # Final fallback
+    return {"movie_list": shortlisted[:k]}

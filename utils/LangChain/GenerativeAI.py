@@ -10,6 +10,7 @@ from langchain_core.exceptions import OutputParserException
 
 # Google's generative AI integration
 from langchain_google_genai import ChatGoogleGenerativeAI
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from google.api_core.exceptions import TooManyRequests
 
 # Together's generative AI integration
@@ -86,8 +87,8 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
         - Example 2: The seeker enjoys comedy and horror movies, particularly R-rated ones. His/her favorite actors include Seth Rogan and Seth MacFarlane. He/she recently watched and enjoyed the movie 'Ted'. He/she is potentially interested in the movie 'Superbad' and inquired about its rating and if it contains nudity, indicating a preference for content without explicit nudity.
         - Example 3: The seekr is interested in fantasy or animated movies. He/she have watched Frozen 2. He/she are concerned about violence and age appropriateness for his/her niece. He/she accepted a recommendation for an animated movie about a dragon and a boy, with a PG age rating, produced by 20th Century Fox, released in 2014, and 104 minutes long (How to Train Your Dragon 2). They prefer family-friendly movies.
         
-        Let's think step by step
-        Do the task carefully, or you are going to be severely punished.
+        Let's think step by step.
+        Be concise and careful.
         ONLY return a valid JSON object that matches the schema. 
         DO NOT add markdown, role names, or any extra text.
         """,
@@ -99,7 +100,17 @@ def LangChainLLMSummarization(model: str, api_key: str) -> LLMChain:
 
     if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
         # Initialize Google's generative AI with the specified model and API key
-        llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key, max_output_tokens=10000)
+        llm_langchain = ChatGoogleGenerativeAI(
+            model=model,
+            google_api_key=api_key,
+            max_output_tokens=10000,
+            safety_settings={
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        },
+        )
 
     elif model in [
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
@@ -238,8 +249,8 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
         Your response must follow the instruction below:
         {format_instructions}
         
-        Let's think step by step. 
-        Do the task carefully, or you are going to be severely punished.
+        Let's think step by step.
+        Be concise and careful.
         """,
         # Define variables that will be replaced in the template
         input_variables=[
@@ -254,7 +265,17 @@ def LangChainLLMReranking(model: str, api_key: str) -> LLMChain:
 
     if model in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-thinking-exp-01-21", "gemini-2.5-pro-exp-03-25"]:
         # Initialize Google's generative AI with the specified model and API key
-        llm_langchain = ChatGoogleGenerativeAI(model=model, google_api_key=api_key, max_output_tokens=10000)
+        llm_langchain = ChatGoogleGenerativeAI(
+            model=model,
+            google_api_key=api_key,
+            max_output_tokens=10000,
+            safety_settings={
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            },
+        )
 
     elif model in [
         "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",

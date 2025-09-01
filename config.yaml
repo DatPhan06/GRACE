@@ -43,6 +43,7 @@ RedialDataPath:
         dialog:
             test: "dataset/REDIAL/processed/dialog_data/test_data.json"
             test_response: "dataset/REDIAL/processed/dialog_data/test_processed_response.json"
+            test_with_liked_movies: "dataset/REDIAL/processed/dialog_data/data_test_with_liked_movies.json"
             train: "dataset/REDIAL/processed/dialog_data/train_data.json"
         movie: "dataset/REDIAL/processed/movie_data/movie_fix_year.json"
 
@@ -57,52 +58,5 @@ VectorDB:
     insp_chroma_db_path: "dataset/embeddings/INSPIRED"
     insp_collection_name: "inspMovie"
 
-APIKey:
-    TOGETHER_AI_API_KEY_0: "6c8713173b68e1a57c67094466985b0bc17832e008420df60abca654f6baa0a7"
-    TOGETHER_AI_API_KEY_1: "c1fa71b898de637ef9971f4575453559a80f614fd78bc6d4977ba5cfdd6b8a33"
-    TOGETHER_AI_API_KEY_2: "tgp_v1_JxQKbkQA4dytmaZac0ldwwnwpUMNa5ZSSRiHDBx92Os"
-    # TOGETHER_AI_API_KEY_3: "tgp_v1_56UsacTCZ8vmG4j_-55JrJgrhcg0L-r0XcBtW_4zsvE"
-    # TOGETHER_AI_API_KEY_4: "tgp_v1_jg-k1B23IMtu7tSFxzPionDmaN3ZNC1edhVb8WNvXSU"
-    # TOGETHER_AI_API_KEY_5: "tgp_v1_nCy65UdI-xzvjaAMjKY2o4kPUoC_PUm-XpZdUYzCJXw"
-    # TOGETHER_AI_API_KEY_6: "tgp_v1_JxfO8akOO8Va0PRqaTdGQ0l1gVZXOYroq1Zacr8haXU"
-    # TOGETHER_AI_API_KEY_7: "tgp_v1__u1Ricll621dBncqoXaztLcqBDxv4etWVpdKUd_gq7M"
-    # TOGETHER_AI_API_KEY_8: "tgp_v1_XjK6FPac87JIjEYnXHF4gNZzaG7M1aXKzYeppA-KnqA"
-    # TOGETHER_AI_API_KEY_9: "tgp_v1_sPU-7FDZrzBrgCwX932nWqWj3Bkp2rVbyBPdMaKJpeo"
-    # TOGETHER_AI_API_KEY_10: "tgp_v1_-4b6ngIG9qGd281iCNioxBAUnsiiaciXujqwIpiKArE"
-    # TOGETHER_AI_API_KEY_11: "tgp_v1_s26ewyjimy_GHEChCBjVXKNg-82WlwPiTb6HGMbhTPw"
-    # TOGETHER_AI_API_KEY_12: "tgp_v1_jYdMe3cC_30MyKggenhAd3lXrICq7EITvvgYs3-KHL0"
-
-    GOOGLE_API_KEY_0: "AIzaSyBTcsJj8gajm8mErqM5oRP0V9yZ6Eih47U"   
-    GOOGLE_API_KEY_1: "AIzaSyDtDikFdHea1JyDtxIypUrv0m-Z4LGjDjA"
-
-
-    GOOGLE_API_KEY_2: "AIzaSyDPZD0vm7XjdySa5_sTkNa9JSfLqI5Tt4A"
-    GOOGLE_API_KEY_3: "AIzaSyC8s1mBOG8SHqbohcdG79eI4L064t4q3wc"
-    GOOGLE_API_KEY_4: "AIzaSyDnwh-JgJlkq8agkfl8JDpQhC4xl2Pl6oQ"
-
-    GOOGLE_API_KEY_5: "AIzaSyAgGyG5MbSXWyr43kooFL_xqcrqGPmGVPo"
-    GOOGLE_API_KEY_6: "AIzaSyD61mfpS4pZEZxJJzi8z3QsvSfEEXTaqAg"
-    GOOGLE_API_KEY_7: "AIzaSyDgobcDPlUWIsz2pLv7F0gnuPNGypGH2U8"
-    GOOGLE_API_KEY_8: "AIzaSyAhOBLKUUhjw9BXMyZmYP8yuN4hFbfv5NU"
-
-    GOOGLE_API_KEY_9: "AIzaSyD6X3y_l5Emp2ucgKCtemxZh9lx43Cij8M"
-    GOOGLE_API_KEY_10: "AIzaSyDqo1CyKZb9MFyI83Tqar5J_vlYS82-qYw"
-
-    GOOGLE_API_KEY_11: "AIzaSyC7RGtwoeNG5nuDl8ZDrkFL4ClXTAucZpw"
-    GOOGLE_API_KEY_12: "AIzaSyAMtg-x4rNX54uCJdZZ--8PO0267cL65SM"
-    GOOGLE_API_KEY_13: "AIzaSyDsjtDUVMziI99cEPUOwKNG4j8-qNb6jLo"
-    GOOGLE_API_KEY_14: "AIzaSyARfEA94aB_ChrxONk_VGwELeXguME32h8"
-    GOOGLE_API_KEY_15: "AIzaSyBTcsJj8gajm8mErqM5oRP0V9yZ6Eih47U"
-    GOOGLE_API_KEY_16: "AIzaSyBbJYAELfJsahzw-Kn408pShDH9ZB-HJdo"
-    GOOGLE_API_KEY_17: "AIzaSyAdQijuP2jhQq0vFiStItIUApKMczVDE1U"
-    GOOGLE_API_KEY_18: "AIzaSyDOmpaYdphk797Zh07GNwDDtXUoPsMTw7M"
-    GOOGLE_API_KEY_19: "AIzaSyD2RTa-h15KGmI6mSjxEHQUaQquToA7rrM"
-    GOOGLE_API_KEY_20: "AIzaSyCqoMxTlyDJI1CVeC1xiQ5dt5nBLtoTlzQ"
-    GOOGLE_API_KEY_21: "AIzaSyDxMqfyXxz5vW-g4rUm1PLFu5d45uQyQEA"
-    GOOGLE_API_KEY_22: "AIzaSyCWuy4Js_NbzwF1LMKm0EcDtsH8Q9GUBi8"
-    GOOGLE_API_KEY_23: "AIzaSyBU8GpBvLKLKErAguusBoTCR5NFtxZf9F8"
-    GOOGLE_API_KEY_24: "AIzaSyAHgc9WAmS7tYt6WnUmZY8d1u3LJrvJsSw"
-    GOOGLE_API_KEY_25: "AIzaSyCZ-XNdpy6NIKrDM_4jMY2j5r4fqHX-eQA"
-    GOOGLE_API_KEY_26: "AIzaSyCKrc7OHNBlgjEaPhjL7d3GmaDItwjQdSo"
-
-    OMDB_API_KEY: "8f2d33cd"
+# API Keys are now loaded from environment variables (.env file)
+# See utils/config_loader.py for loading functions
