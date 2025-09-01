@@ -20,6 +20,7 @@ from preprocessing import *
 from tqdm import tqdm
 
 from utils.GraphDB.graph_retriever import query_parse_output_graph
+from utils.config_loader import get_api_key_config
 
 def input_parse():
     parser = argparse.ArgumentParser(description="Process some integers.")
@@ -35,6 +36,8 @@ def input_parse():
 with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
+# Load API keys from environment variables
+api_keys = get_api_key_config()
 
 EMBEDDING_MODEL = config['EmbeddingModel']['gecko']
 GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]
@@ -43,14 +46,16 @@ GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]
 
 
 GG_API_KEY = [
-    config["APIKey"][f"GOOGLE_API_KEY_{i}"] 
+    api_keys[f"GOOGLE_API_KEY_{i}"] 
     for i in range(26)
+    if f"GOOGLE_API_KEY_{i}" in api_keys
 ]
 
 
 TOGETHER_API_KEY = [
-    config["APIKey"][f"TOGETHER_AI_API_KEY_{i}"]
+    api_keys[f"TOGETHER_AI_API_KEY_{i}"]
     for i in range(3)
+    if f"TOGETHER_AI_API_KEY_{i}" in api_keys
 ]
 
 

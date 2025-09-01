@@ -151,12 +151,20 @@ if __name__ == "__main__":
             config = yaml.safe_load(f)
         print("[INFO] Đã đọc config.yaml thành công.")
 
+        # Import config loader for API keys
+        import sys
+        sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+        from utils.config_loader import get_api_key_config
+        
+        # Load API keys from environment variables
+        api_keys = get_api_key_config()
+
         # Ví dụ: sử dụng REDIAL
         print("[INFO] Đang lấy các tham số từ config...")
         db_path = config["VectorDB"]["redial_chroma_db_path"]
         collection_name = config["VectorDB"]["redial_collection_name"]
         embedding_model = config["EmbeddingModel"]["gecko"]
-        api_key = config["APIKey"]["GOOGLE_API_KEY_20"]
+        api_key = api_keys.get("GOOGLE_API_KEY_20", "")
         movie_data_path = config["RedialDataPath"]["processed"]["movie"]
         print(f"[INFO] db_path: {db_path}")
         print(f"[INFO] collection_name: {collection_name}")

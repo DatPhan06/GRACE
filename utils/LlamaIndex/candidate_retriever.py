@@ -64,8 +64,9 @@ def load_retriever(
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
     # Initialize Gemini embedding model with API key
+    from utils.config_loader import get_google_api_key_by_index
     gemini_embedding_model = GeminiEmbedding(
-        api_key="AIzaSyA3ssFZiquFJYz4Mi29rIFUE5SsdGzrwLA", 
+        api_key=get_google_api_key_by_index(0), 
         model_name=f"models/{embedding_model}"
     )
 
