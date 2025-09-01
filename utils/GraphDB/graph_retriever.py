@@ -863,11 +863,18 @@ def query_parse_output_graph(
             # Get LLM model from config (same as main_graph.py)
             llm_model = config.get("GeminiModel", {}).get("2.0_flash")
             
-            # Get API keys from config (same as main_graph.py)
+            # Import config loader for API keys
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            from utils.config_loader import get_api_key_config
+            
+            # Get API keys from environment variables (same as main_graph.py)
+            api_keys = get_api_key_config()
             llm_api_keys = [
-                config.get("APIKey", {}).get(f"GOOGLE_API_KEY_{i}") 
+                api_keys.get(f"GOOGLE_API_KEY_{i}") 
                 for i in range(26)
-                if config.get("APIKey", {}).get(f"GOOGLE_API_KEY_{i}")
+                if api_keys.get(f"GOOGLE_API_KEY_{i}")
             ]
             
             print(f"Initialized LLM: model={llm_model}, api_keys_count={len(llm_api_keys)}")

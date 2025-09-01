@@ -9,8 +9,8 @@ import argparse
 
 from evaluating.output_eval import evaluate
 from utils.LangChain import *
-from utils.LangChain.GenerativeAI_redial import callLangChainLLMReranking_redial, callLangChainLLMSummarization_redial
-from utils.LangChain.GenerativeAI import callLangChainLLMReranking, callLangChainLLMSummarization
+from utils.LangChain.GenerativeAI_redial import callLangChainLLMReranking_redial as callLangChainLLMReranking
+from utils.LangChain.GenerativeAI import callLangChainLLMSummarization
 from utils.LlamaIndex import *
 
 from evaluating import *
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     if data == "inspired":
         # Load config:
-        # For Insired
+        # For Inspired
         insp_chroma = config["VectorDB"]["insp_chroma_db_path"]
         insp_collection = config["VectorDB"]["insp_collection_name"]
         insp_movie = config['InspiredDataPath']['processed']['movie']
@@ -80,16 +80,7 @@ if __name__ == "__main__":
         # n_sample = 600
         # k = 5
 
-        # retriever_engine = load_retriever(
-        #     chromadb_path=insp_chroma,
-        #     collection_name=insp_collection,
-        #     embedding_model=EMBEDDING_MODEL,
-        #     model=GENERATIVE_MODEL,
-        #     api_key=API_KEY,
-        #     n=n_sample,
-        # )
-
-        # For Inspried
+        # For Inspired
         with open(insp_train_dialog, "r", encoding="utf-8") as file:
             input_data = json.load(file)
 
@@ -112,20 +103,39 @@ if __name__ == "__main__":
 
             print("Done summarizing")
             
+            # Extract liked movies from conversation context for INSPIRED
+            # Since INSPIRED doesn't have explicit liked_movies field, we'll extract them from the conversation
+            liked_movies = []
+            try:
+                # Try to extract movie mentions from the conversation
+                # This is a simple approach - in practice, you might want to use LLM to extract movie titles
+                import re
+                # Look for movie titles mentioned in the conversation (basic pattern matching)
+                movie_mentions = re.findall(r'[A-Z][a-zA-Z\s]+(?:\([0-9]{4}\))?', context)
+                # Filter out common words and keep potential movie titles
+                common_words = {'RECOMMENDER', 'SEEKER', 'Hi', 'There', 'What', 'types', 'movies', 'like', 'watch', 'Yes', 'No', 'Thanks', 'Thank', 'you'}
+                liked_movies = [mention.strip() for mention in movie_mentions if mention.strip() not in common_words and len(mention.strip()) > 3][:5]  # Limit to 5 movies
+            except Exception as e:
+                print(f"Could not extract liked movies: {e}")
+                liked_movies = []
 
-            # Retrieve similar movie using graph database
+            print(f"Extracted liked movies: {liked_movies}")
+
+            # Retrieve similar movie using graph database (now with liked_movies like REDIAL)
             movie_candidate_list = query_parse_output_graph(df_movie, 
-                                                                   summarized_conversation, 
-                                                                   data, 
-                                                                   n=n_sample,
-                                                                   config=config)
+                                                        summarized_conversation, 
+                                                        data, 
+                                                        liked_movies=liked_movies,
+                                                        n=n_sample,
+                                                        config=config)
 
 
             # Re-ranking:
             re_ranking_output = callLangChainLLMReranking(
                 context=context,
                 user_preferences=summarized_conversation,
-                movie_str="|".join(movie_candidate_list),
+                movie_list=movie_candidate_list,
+                movie_data_path="",
                 model=GENERATIVE_MODEL,
                 api_key=GG_API_KEY,
                 k=k
@@ -133,16 +143,12 @@ if __name__ == "__main__":
             print(re_ranking_output)
             print("Done re-ranking")
             
-            # Ensure re_ranking_output is a dict for evaluate
-            if not isinstance(re_ranking_output, dict):
-                re_ranking_output = {}
-
             # Output evaluation
-            # For Inspired
+            # For Inspired (now using same format as REDIAL)
             evaluate(
                 model_name=GENERATIVE_MODEL,
                 re_ranked_list=re_ranking_output,
-                recommend_item=recommend_item,
+                recommend_item=[recommend_item],
                 conv_id=conv_id,
                 summarized_preferences=summarized_conversation,
                 movie_candidate_list=movie_candidate_list,
@@ -207,7 +213,7 @@ if __name__ == "__main__":
 
 
             # Re-ranking:
-            re_ranking_output = callLangChainLLMReranking_redial(
+            re_ranking_output = callLangChainLLMReranking(
                 context=context,
                 user_preferences=summarized_conversation,
                 movie_list=movie_candidate_list,
@@ -219,9 +225,6 @@ if __name__ == "__main__":
             # print(re_ranking_output)
             print("Done re-ranking")
             
-            # Ensure re_ranking_output is a dict for evaluate
-            # if not isinstance(re_ranking_output, dict):
-            #     re_ranking_output = {}
 
             # Output evaluation
             # For Redial
@@ -237,15 +240,4 @@ if __name__ == "__main__":
                 top_k=k
             )
 
-            # evaluate(
-            #     model_name=GENERATIVE_MODEL,
-            #     re_ranked_list={"movie_list": []},
-            #     recommend_item=[recommend_item],
-            #     conv_id=conv_id,
-            #     summarized_preferences=summarized_conversation,
-            #     movie_candidate_list=movie_candidate_list,
-            #     output_dir=redial_output,
-            #     n=n_sample,
-            #     top_k=k
-            # )
         time.sleep(5)
