@@ -829,11 +829,22 @@ def query_parse_output_graph(
         List of recommended movie titles
     """
     
-    # Initialize Neo4j connection
+    # Initialize Neo4j connection based on dataset type
     NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost")
-    NEO4J_PORT = os.getenv("NEO4J_PORT", "7687")
+    
+    # Set port based on dataset type
+    if data == "inspired":
+        NEO4J_PORT = os.getenv("NEO4J_PORT_INSPIRED", "7688")
+    elif data == "redial":
+        NEO4J_PORT = os.getenv("NEO4J_PORT_REDIAL", "7687")
+    else:
+        # Default fallback
+        NEO4J_PORT = os.getenv("NEO4J_PORT", "7687")
+    
     NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
     NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
+    
+    print(f"Connecting to Neo4j for dataset '{data}' on port {NEO4J_PORT}")
     
     # Initialize embedding client
     embedding_client = None
@@ -894,16 +905,31 @@ def query_parse_output_graph(
         movie_titles = retriever.retrieve_movies_hybrid(summarized_preferences, n, liked_movies)
         
         if not movie_titles:
-            print("No movies retrieved from graph database, using fallback...")
+            print(f"No movies retrieved from graph database for dataset '{data}', using fallback...")
             # Fallback: return some popular movies from DataFrame
-            if data == "inspired":
-                fallback_movies = df_movie.head(n)['title'].tolist()
-            elif data == "redial":
-                fallback_movies = df_movie.head(n)['movieName'].tolist()
-            else:
-                fallback_movies = []
-            
-            return fallback_movies[:n]
+            try:
+                if data == "inspired":
+                    if 'title' in df_movie.columns:
+                        fallback_movies = df_movie.head(n)['title'].tolist()
+                    else:
+                        print("Warning: 'title' column not found in DataFrame for inspired dataset")
+                        fallback_movies = []
+                elif data == "redial":
+                    if 'movieName' in df_movie.columns:
+                        fallback_movies = df_movie.head(n)['movieName'].tolist()
+                    else:
+                        print("Warning: 'movieName' column not found in DataFrame for redial dataset")
+                        fallback_movies = []
+                else:
+                    print(f"Warning: Unknown dataset '{data}', no fallback movies available")
+                    fallback_movies = []
+                
+                print(f"Fallback: Retrieved {len(fallback_movies)} movies from DataFrame")
+                return fallback_movies[:n]
+                
+            except Exception as fallback_error:
+                print(f"Error in fallback logic: {fallback_error}")
+                return []
         
         print("Done retrieving candidates from graph database")
         return movie_titles
