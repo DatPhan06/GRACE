@@ -375,23 +375,6 @@ class GraphRetriever:
                                 f.year DESC
                         LIMIT $limit
                     """, genres=found_genres, limit=n)
-                else:
-                    # Enhanced fallback: get diverse highly rated movies
-                    print("No specific genres found, using enhanced fallback strategy")
-                    result = session.run("""
-                        MATCH (f:Film)-[:HAS_RATING]->(r:ImdbRating)
-                        WHERE r.value >= 6.5
-                        OPTIONAL MATCH (f)-[:IN_GENRE]->(g:Genre)
-                        WITH f, r, count(DISTINCT g) AS genreCount
-                        RETURN f.movieId AS movieId,
-                            f.title AS title,
-                            f.plot AS plot,
-                            f.year AS year,
-                            r.value AS imdbRating,
-                            genreCount
-                        ORDER BY r.value DESC, genreCount DESC, f.year DESC
-                        LIMIT $limit
-                    """, limit=n)
                 
                 movies = []
                 for record in result:
