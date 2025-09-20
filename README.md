@@ -236,7 +236,6 @@ The system provides comprehensive evaluation metrics:
 ```python
 # In main_graph.py, modify these lines:
 GENERATIVE_MODEL = config["GeminiModel"]["2.0_flash"]  # Change model here
-EMBEDDING_MODEL = config['EmbeddingModel']['gecko']    # Change embedding model
 ```
 
 ### Batch Processing
@@ -317,5 +316,6 @@ For questions and support:
 - Review the configuration examples
 
 ---
+
 
 **Note**: This system requires significant computational resources and API access. Ensure you have adequate quotas and system specifications before running large-scale experiments.
