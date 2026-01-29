@@ -3,7 +3,8 @@ from neo4j import GraphDatabase
 import os
 import re
 from dotenv import load_dotenv
-from openai import AsyncAzureOpenAI
+# from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 import asyncio
 import yaml
 
@@ -44,7 +45,16 @@ def clean_movie_data_for_cypher(movie_data):
     for raw_key, cypher_key in list_keys.items():
         value = movie_data.get(raw_key)
         if isinstance(value, str):
-            params[cypher_key] = [item.strip() for item in value.split(',') if item.strip()]
+            items = []
+            for item in value.split(','):
+                cleaned_item = item.strip()
+                # Filter out empty strings and "N/A"
+                if cleaned_item and cleaned_item.upper() != "N/A":
+                    # Normalize casing for specific fields to ensure consistency
+                    if cypher_key in ["genre", "language", "country"]:
+                        cleaned_item = cleaned_item.title()
+                    items.append(cleaned_item)
+            params[cypher_key] = items
         else:
             params[cypher_key] = []
     
@@ -155,13 +165,15 @@ def load_movies_from_file(filepath):
 
 async def main():
     print("[INFO] Đang đọc file config.yaml...")
-    CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.yaml")
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+    CONFIG_PATH = os.path.join(PROJECT_ROOT, "config.yaml")
     with open(CONFIG_PATH, "r") as f:
         config = yaml.safe_load(f)
     print("[INFO] Đã đọc config.yaml thành công.")
 
     print("[INFO] Đang lấy các tham số từ config...")
     movie_file_path = config["RedialDataPath"]["processed"]["movie"]
+    movie_file_path = os.path.join(PROJECT_ROOT, movie_file_path)
     all_movies = load_movies_from_file(movie_file_path)
     
     if not all_movies:
@@ -172,22 +184,27 @@ async def main():
     NEO4J_PORT = os.getenv("NEO4J_PORT", "7687")
     NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
     NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
-    embedding_api_key = os.getenv("EMBEDDING__KEY")
-    embedding_api_version = os.getenv("EMBEDDING__API_VERSION")
-    embedding_azure_endpoint = os.getenv("EMBEDDING__ENDPOINT")
-    embedding_deployment_name = os.getenv("EMBEDDING__DEPLOYMENT_NAME")
+    # embedding_api_key = os.getenv("EMBEDDING__KEY")
+    # embedding_api_version = os.getenv("EMBEDDING__API_VERSION")
+    # embedding_azure_endpoint = os.getenv("EMBEDDING__ENDPOINT")
+    # embedding_deployment_name = os.getenv("EMBEDDING__DEPLOYMENT_NAME")
+    
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    
     CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", "10"))
 
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
-    azure_embedding_client = AsyncAzureOpenAI(
-        api_key=embedding_api_key,
-        api_version=embedding_api_version,
-        azure_endpoint=embedding_azure_endpoint,
-    )
+    # azure_embedding_client = AsyncAzureOpenAI(
+    #     api_key=embedding_api_key,
+    #     api_version=embedding_api_version,
+    #     azure_endpoint=embedding_azure_endpoint,
+    # )
+    openai_client = AsyncOpenAI(api_key=openai_api_key)
 
     builder = GraphBuilder(
         NEO4J_URI, NEO4J_PORT, NEO4J_USER, NEO4J_PASSWORD,
-        azure_embedding_client, embedding_deployment_name
+        openai_client, embedding_model
     )
     
     async def insert_with_semaphore(movie_data):
