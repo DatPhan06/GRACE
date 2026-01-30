@@ -1,11 +1,11 @@
 from typing import Optional
 import openai
 from infra.llm.base import BaseLLM
-from infra.config import settings
+from shared.settings.config import settings
 
 class OpenAILLM(BaseLLM):
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or settings.OPENAI_API_KEY
+        self.api_key = api_key or settings.llm.OPENAI_API_KEY
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY is not set")
         self.client = openai.Client(api_key=self.api_key)

@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from typing import Generator
-from infra.config import settings
+from shared.settings.config import settings
 
-engine = create_engine(settings.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
+engine = create_engine(settings.postgres.SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

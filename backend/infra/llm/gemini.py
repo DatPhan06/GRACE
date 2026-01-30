@@ -1,11 +1,11 @@
 from typing import Optional
 import google.generativeai as genai
 from infra.llm.base import BaseLLM
-from infra.config import settings
+from shared.settings.config import settings
 
 class GeminiLLM(BaseLLM):
     def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or settings.GEMINI_API_KEY
+        self.api_key = api_key or settings.llm.GEMINI_API_KEY
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY is not set")
         genai.configure(api_key=self.api_key)

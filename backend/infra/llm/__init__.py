@@ -1,5 +1,5 @@
 from typing import Optional
-from infra.config import settings
+from shared.settings.config import settings
 from infra.llm.base import BaseLLM
 from infra.llm.openai import OpenAILLM
 from infra.llm.gemini import GeminiLLM
@@ -10,7 +10,7 @@ class LLMService:
     @classmethod
     def get_llm(cls) -> BaseLLM:
         if cls._instance is None:
-            provider = settings.LLM_PROVIDER.lower()
+            provider = settings.llm.LLM_PROVIDER.lower()
             if provider == "openai":
                 cls._instance = OpenAILLM()
             elif provider == "gemini":
