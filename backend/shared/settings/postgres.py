@@ -1,5 +1,5 @@
 from pydantic import PostgresDsn, computed_field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class PostgresSettings(BaseSettings):
     POSTGRES_SERVER: str = "localhost"
@@ -7,6 +7,12 @@ class PostgresSettings(BaseSettings):
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "app"
     POSTGRES_PORT: int = 5432
+
+    model_config = SettingsConfigDict(
+        env_file=[".env", "../.env"],
+        env_ignore_empty=True,
+        extra="ignore"
+    )
 
     @computed_field
     @property
