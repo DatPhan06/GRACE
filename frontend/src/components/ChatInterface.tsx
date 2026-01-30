@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Film, Sparkles, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { sendMessage, type ChatResponse, type MovieRecommendation } from '@/lib/api';
-import { cn } from '@/lib/utils'; // Assuming you have this utility from shadcn setup
+import { cn } from '@/lib/utils';
 
 interface Message {
     id: string;
@@ -102,12 +104,18 @@ export default function ChatInterface() {
 
                         <div className="space-y-4">
                             <div className={cn(
-                                "p-4 rounded-2xl shadow-sm text-base leading-relaxed",
+                                "p-4 rounded-2xl shadow-sm text-base leading-relaxed overflow-hidden",
                                 msg.role === 'ai'
-                                    ? "bg-white/60 backdrop-blur-sm border border-white/50 text-gray-800 rounded-tl-none"
+                                    ? "bg-white/60 backdrop-blur-sm border border-white/50 text-gray-800 rounded-tl-none prose prose-slate max-w-none"
                                     : "bg-blue-600 text-white rounded-tr-none"
                             )}>
-                                {msg.content}
+                                {msg.role === 'ai' ? (
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {msg.content}
+                                    </ReactMarkdown>
+                                ) : (
+                                    msg.content
+                                )}
                             </div>
 
                             {/* Recommendations Grid */}
