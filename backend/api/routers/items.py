@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from domain import schemas
+from infra.db import schemas
 from app.services import ItemService
 from infra.db.database import get_db
 

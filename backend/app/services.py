@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from domain import schemas
+from infra.db import schemas
 from infra.db import models
 
 class ItemService:
