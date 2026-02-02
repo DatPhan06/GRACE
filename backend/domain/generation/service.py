@@ -1,4 +1,10 @@
 from infra.llm import get_llm_client
+from domain.generation.prompts import (
+    SUMMARIZE_CONVERSATION_SYSTEM_PROMPT,
+    SUMMARIZE_CONVERSATION_USER_PROMPT,
+    RECOMMENDATION_RESPONSE_SYSTEM_PROMPT,
+    RECOMMENDATION_RESPONSE_USER_PROMPT
+)
 from pydantic import BaseModel, Field
 import json
 import logging
@@ -15,24 +21,13 @@ class GenerationService:
         """
         Summarize the conversation to extract user preferences and liked movies.
         """
-        prompt = f"""
-        This conversation is a discussion between a seeker and a recommender.
-        Read this conversation, find all the information about the seeker's preferences in movie, actor, genres, etc.
-        Also extract any specific movies the seeker has mentioned liking.
-        
-        The conversation: {conversation}
-        
-        Return the result as a JSON object with the following format:
-        {{
-            "user_preferences": "Detailed summary of preferences...",
-            "liked_movies": ["Movie 1", "Movie 2"]
-        }}
-        
-        Ensure valid JSON output only.
-        """
+        prompt = SUMMARIZE_CONVERSATION_USER_PROMPT.format(conversation=conversation)
         
         try:
-            response = await self.llm_client.agenerate(prompt)
+            response = await self.llm_client.agenerate(
+                prompt=prompt,
+                system_instruction=SUMMARIZE_CONVERSATION_SYSTEM_PROMPT
+            )
             # Basic cleanup if markdown checks block it
             cleaned_response = response.replace("```json", "").replace("```", "").strip()
             # Find the JSON object
@@ -54,10 +49,8 @@ class GenerationService:
         Generate a final response to the user based on recommendations.
         """
         movies_str = ", ".join([f"{m['title']} ({m.get('year', 'N/A')})" for m in recommendations])
-        prompt = f"""
-        User Preferences: {user_preferences}
-        Recommended Movies: {movies_str}
-        
-        Generate a friendly message recommending these movies to the user, explaining why they fit their preferences.
-        """
-        return await self.llm_client.agenerate(prompt)
+        prompt = RECOMMENDATION_RESPONSE_USER_PROMPT.format(user_preferences=user_preferences, movies_str=movies_str)
+        return await self.llm_client.agenerate(
+            prompt=prompt,
+            system_instruction=RECOMMENDATION_RESPONSE_SYSTEM_PROMPT
+        )

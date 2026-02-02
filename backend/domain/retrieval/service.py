@@ -1,5 +1,6 @@
 import logging
 from typing import List, Dict, Any, Optional
+from domain.retrieval.prompts import EXTRACT_GENRES_SYSTEM_PROMPT, EXTRACT_GENRES_USER_PROMPT
 from shared.settings.config import settings
 from infra.neo4j import get_neo4j_client
 from infra.llm import get_llm_client
@@ -25,27 +26,11 @@ class RetrievalService:
             return []
             
         try:
-            prompt = f"""
-            Based on the following user conversation about movie preferences, extract the movie genres they are interested in.
-            
-            User conversation:
-            {preferences}
-            
-            Available genres: action, comedy, drama, horror, romance, thriller, sci-fi, science fiction, fantasy, animation, documentary, mystery, adventure, crime, family, war, western, musical, biography, historical, psychological, supernatural, martial arts, sports, dance, music
-            
-            Instructions:
-            - Return only the genre names that are clearly mentioned or strongly implied
-            - Use lowercase
-            - Separate multiple genres with commas
-            - If sci-fi or science fiction is mentioned, return "sci-fi"
-            - If no clear genres are found, return "none"
-            
-            Extracted genres:"""
-            
-            # Use generate from infra.llm (synchronous or async depending on implementation)
-            # Assuming generate is synchronous for now based on base.py, but used in async context
-            # We will wrap it or use async if available. BaseLLM has agenerate.
-            response = await self.llm_client.agenerate(prompt)
+            prompt = EXTRACT_GENRES_USER_PROMPT.format(preferences=preferences)
+            response = await self.llm_client.agenerate(
+                prompt=prompt,
+                system_instruction=EXTRACT_GENRES_SYSTEM_PROMPT
+            )
             extracted_text = response.strip().lower()
             
             if extracted_text == "none" or not extracted_text:

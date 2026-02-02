@@ -12,20 +12,30 @@ class OpenAILLM(BaseLLM):
         self.aclient = openai.AsyncClient(api_key=self.api_key)
         self.model = "gpt-4o" # Default model, could be configurable
 
-    def generate(self, prompt: str, **kwargs) -> str:
+    def generate(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
         model = kwargs.get("model", self.model)
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+        
         response = self.client.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
             **kwargs
         )
         return response.choices[0].message.content or ""
 
-    async def agenerate(self, prompt: str, **kwargs) -> str:
+    async def agenerate(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
         model = kwargs.get("model", self.model)
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+        
         response = await self.aclient.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
             **kwargs
         )
         return response.choices[0].message.content or ""

@@ -3,11 +3,11 @@ from typing import Optional, List, Dict, Any
 
 class BaseLLM(ABC):
     @abstractmethod
-    def generate(self, prompt: str, **kwargs) -> str:
+    def generate(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
         """Generate text from a prompt."""
         pass
     
     @abstractmethod
-    async def agenerate(self, prompt: str, **kwargs) -> str:
+    async def agenerate(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
         """Asynchronously generate text from a prompt."""
         pass

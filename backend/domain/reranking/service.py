@@ -1,4 +1,5 @@
 from infra.llm import get_llm_client
+from domain.reranking.prompts import RERANK_MOVIES_SYSTEM_PROMPT, RERANK_MOVIES_USER_PROMPT
 from typing import List, Dict, Any
 import logging
 import json
@@ -17,22 +18,17 @@ class RerankingService:
         candidate_titles = [f"{m['title']} (Year: {m.get('year')})" for m in candidates]
         candidates_str = "\n".join(candidate_titles)
         
-        prompt = f"""
-        You are a movie recommendation expert.
-        User Preferences: {user_preferences}
-        
-        Candidate Movies:
-        {candidates_str}
-        
-        Please rank these movies from most suitable to least suitable for the user.
-        Return the top {top_k} movies as a JSON list of titles.
-        
-        Example output:
-        ["Movie A", "Movie B", "Movie C"]
-        """
+        prompt = RERANK_MOVIES_USER_PROMPT.format(
+            user_preferences=user_preferences, 
+            candidates_str=candidates_str, 
+            top_k=top_k
+        )
         
         try:
-            response = await self.llm_client.agenerate(prompt)
+            response = await self.llm_client.agenerate(
+                prompt=prompt,
+                system_instruction=RERANK_MOVIES_SYSTEM_PROMPT
+            )
             cleaned_response = response.replace("```json", "").replace("```", "").strip()
             start = cleaned_response.find("[")
             end = cleaned_response.rfind("]") + 1

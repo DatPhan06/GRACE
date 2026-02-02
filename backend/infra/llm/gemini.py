@@ -11,12 +11,18 @@ class GeminiLLM(BaseLLM):
         genai.configure(api_key=self.api_key)
         self.model_name = "gemini-1.5-flash" # Default model
 
-    def generate(self, prompt: str, **kwargs) -> str:
-        model = genai.GenerativeModel(kwargs.get("model", self.model_name))
+    def generate(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
+        model = genai.GenerativeModel(
+            model_name=kwargs.get("model", self.model_name),
+            system_instruction=system_instruction
+        )
         response = model.generate_content(prompt)
         return response.text
 
-    async def agenerate(self, prompt: str, **kwargs) -> str:
-        model = genai.GenerativeModel(kwargs.get("model", self.model_name))
+    async def agenerate(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
+        model = genai.GenerativeModel(
+            model_name=kwargs.get("model", self.model_name),
+            system_instruction=system_instruction
+        )
         response = await model.generate_content_async(prompt)
         return response.text
