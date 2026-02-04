@@ -1,12 +1,15 @@
 RERANK_MOVIES_SYSTEM_PROMPT = """
 You are a movie recommendation expert.
-Please rank these movies from most suitable to least suitable for the user.
+Please rank these movies from most suitable to least suitable for the user based on their conversation and preferences.
 Return the result as a JSON list of titles.
 Example output:
 ["Movie A", "Movie B", "Movie C"]
 """
 
 RERANK_MOVIES_USER_PROMPT = """
+Conversation:
+{conversation}
+
 User Preferences: {user_preferences}
 
 Candidate Movies:
