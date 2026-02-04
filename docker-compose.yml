@@ -8,6 +8,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./dataset:/app/dataset
+      - ./output:/app/output
     environment:
       - POSTGRES_SERVER=grace-postgres
       - POSTGRES_PORT=5432

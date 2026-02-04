@@ -1,21 +1,39 @@
-FROM python:3.12-slim
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
-# Install system dependencies (needed for psycopg2, etc.)
-RUN apt-get update && apt-get install -y \
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+# Prevent venv from being shadowed by bind mount
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv"
+
+# Install system dependencies
+# Use cache mount to speed up apt-get
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
+# Copy dependencies definitions
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies using uv with cache mount
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
+
+# Copy the project files
 COPY . .
 
-# Install dependencies
-# Using pip to install directly from pyproject.toml
-RUN pip install --no-cache-dir .
+# Install the project with cache mount
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-# Expose port
+# Add virtual environment to PATH
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Expose port (default 8000, but compose might map it)
 EXPOSE 8000
 
 # Command to run the application
