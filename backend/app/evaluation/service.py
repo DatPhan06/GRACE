@@ -4,6 +4,7 @@ import json
 import pandas as pd
 from pathlib import Path
 from typing import Literal, Dict, Any, List
+import random
 
 # Domain services
 from domain.generation.service import GenerationService
@@ -12,6 +13,9 @@ from domain.reranking.service import RerankingService
 from domain.evaluation import EvaluationDomainService
 from domain.evaluation_storage.service import EvaluationStorageService
 from shared.settings.config import settings
+from shared.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 
 class EvaluationService:
@@ -61,8 +65,12 @@ class EvaluationService:
             raise ValueError(f"Unknown dataset: {dataset}")
 
         # Sampling
-        end_index = min(start_index + sample_size, len(all_conversations))
-        return all_conversations[start_index:end_index], df_movie
+        # Random Sampling
+        if sample_size > len(all_conversations):
+            logger.warning(f"Sample size {sample_size} is larger than dataset size {len(all_conversations)}. Returning full dataset.")
+            return all_conversations, df_movie
+            
+        return random.sample(all_conversations, sample_size), df_movie
 
     async def evaluate(
         self,
