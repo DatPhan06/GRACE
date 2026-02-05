@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from infra.db.database import SessionLocal
 from infra.db.crud import CRUDBase
 from infra.db.models import EvaluationRunModel, EvaluationResultModel
@@ -13,6 +13,22 @@ class EvaluationStorageService:
     
     def __init__(self):
         self.run_crud = CRUDBase(EvaluationRunModel)
+        
+    def get_runs(self, skip: int = 0, limit: int = 100) -> List[EvaluationRunModel]:
+        """Get list of evaluation runs."""
+        db = SessionLocal()
+        try:
+            return self.run_crud.get_multi(db, skip=skip, limit=limit)
+        finally:
+            db.close()
+
+    def get_run(self, run_id: int) -> Optional[EvaluationRunModel]:
+        """Get a single evaluation run by ID with details."""
+        db = SessionLocal()
+        try:
+            return self.run_crud.get(db, id=run_id)
+        finally:
+            db.close()
         
     def save_run(self, run_data: Dict[str, Any]) -> None:
         """

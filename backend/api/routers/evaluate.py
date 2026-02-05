@@ -172,3 +172,77 @@ async def get_evaluation_info():
         ],
         "metrics": ["recall@k"]
     }
+
+
+# History API Models
+
+class EvaluationResultResponse(BaseModel):
+    """Detailed result for a single conversation in a run."""
+    conv_id: str
+    recall: float
+    ground_truth: List[str] | Any | None = None
+    recommendations: List[str] | Any | None = None
+    candidate_count: int | None = None
+    
+    # Granular metrics
+    recall_retrieval: float | None = None
+    recall_semantic: float | None = None
+    recall_content: float | None = None
+    recall_collab: float | None = None
+    
+    semantic_count: int | None = None
+    content_count: int | None = None
+    collab_count: int | None = None
+    
+    error: str | None = None
+
+    class Config:
+        orm_mode = True
+
+
+class EvaluationRunResponse(BaseModel):
+    """Summary of an evaluation run."""
+    id: int
+    dataset: str
+    sample_size: int
+    n_sample: int
+    top_k: int
+    model: str
+    avg_recall: float
+    
+    # Granular aggregates
+    avg_recall_retrieval: float | None = None
+    avg_recall_semantic: float | None = None
+    avg_recall_content: float | None = None
+    avg_recall_collab: float | None = None
+    
+    timestamp: Any = None
+
+    class Config:
+        orm_mode = True
+
+
+class EvaluationRunDetailResponse(EvaluationRunResponse):
+    """Detailed evaluation run with all results."""
+    results: List[EvaluationResultResponse] = []
+
+
+@router.get("/runs", response_model=List[EvaluationRunResponse])
+async def get_evaluation_runs(skip: int = 0, limit: int = 100):
+    """
+    Get history of evaluation runs.
+    """
+    service = EvaluationService()
+    return service.evaluation_storage_service.get_runs(skip=skip, limit=limit)
+
+
+@router.get("/runs/{run_id}", response_model=EvaluationRunDetailResponse)
+async def get_evaluation_run(run_id: int):
+    """
+    Get details of a specific evaluation run.
+    """
+    service = EvaluationService()
+    run = service.evaluation_storage_service.get_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Evaluation run not found")
+    return run
