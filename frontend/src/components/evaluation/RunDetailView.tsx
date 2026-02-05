@@ -27,19 +27,19 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
                     <div className="bg-white p-3 rounded border">
                         <span className="text-gray-500 block">Avg Recall (Final)</span>
-                        <span className="font-bold text-lg text-blue-600">{run.avg_recall?.toFixed(4)}</span>
+                        <span className="font-bold text-lg text-blue-600">{run.avg_recall?.toFixed(3)}</span>
                     </div>
                     <div className="bg-white p-3 rounded border">
                         <span className="text-gray-500 block">Retrieval Recall</span>
-                        <span className="font-bold text-lg text-gray-700">{run.avg_recall_retrieval?.toFixed(4) || "0.0000"}</span>
+                        <span className="font-bold text-lg text-gray-700">{run.avg_recall_retrieval?.toFixed(3) || "0.000"}</span>
                     </div>
                     <div className="bg-white p-3 rounded border">
                         <span className="text-gray-500 block">Semantic Recall</span>
-                        <span className="font-bold text-lg text-gray-700">{run.avg_recall_semantic?.toFixed(4) || "0.0000"}</span>
+                        <span className="font-bold text-lg text-gray-700">{run.avg_recall_semantic?.toFixed(3) || "0.000"}</span>
                     </div>
                     <div className="bg-white p-3 rounded border">
                         <span className="text-gray-500 block">Content Recall</span>
-                        <span className="font-bold text-lg text-gray-700">{run.avg_recall_content?.toFixed(4) || "0.0000"}</span>
+                        <span className="font-bold text-lg text-gray-700">{run.avg_recall_content?.toFixed(3) || "0.000"}</span>
                     </div>
                 </div>
             </div>
@@ -68,10 +68,16 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
                                         {expandedRows.has(res.conv_id) ? '▼' : '▶'}
                                     </td>
                                     <td className="px-6 py-4 font-medium">{res.conv_id}</td>
-                                    <td className="px-6 py-4 font-semibold text-blue-600">{res.recall}</td>
-                                    <td className="px-6 py-4 text-gray-600">{res.recall_retrieval}</td>
+                                    <td className="px-6 py-4 font-semibold text-blue-600">
+                                        {typeof res.recall === 'number' ? res.recall.toFixed(3) : res.recall}
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-600">
+                                        {typeof res.recall_retrieval === 'number' ? res.recall_retrieval.toFixed(3) : '-'}
+                                    </td>
                                     <td className="px-6 py-4 text-xs text-gray-500">
-                                        {res.recall_semantic} / {res.recall_content} / {res.recall_collab}
+                                        {typeof res.recall_semantic === 'number' ? res.recall_semantic.toFixed(3) : '-'} /
+                                        {typeof res.recall_content === 'number' ? res.recall_content.toFixed(3) : '-'} /
+                                        {typeof res.recall_collab === 'number' ? res.recall_collab.toFixed(3) : '-'}
                                     </td>
                                     <td className="px-6 py-4">
                                         {res.error ? (
@@ -99,7 +105,7 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
                                                     <div className="mb-2">
                                                         <span className="font-medium text-xs uppercase text-gray-500">Ground Truth:</span>
                                                         <p className="font-mono text-xs bg-white p-2 border rounded mt-1">
-                                                            {Array.isArray(res.ground_truth) ? res.ground_truth.join(", ") : res.ground_truth}
+                                                            {Array.isArray(res.ground_truth) ? res.ground_truth.join(", ") : String(res.ground_truth)}
                                                         </p>
                                                     </div>
                                                     <div>

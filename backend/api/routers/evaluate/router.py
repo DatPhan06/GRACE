@@ -48,7 +48,7 @@ async def evaluate_endpoint(request: EvaluateRequest):
         # Add success message
         result["message"] = (
             f"Successfully evaluated {result['sample_size']} samples from {result['dataset']} dataset. "
-            f"Average Recall@{request.top_k}: {result['avg_recall']:.4f}"
+            f"Average Recall@{request.top_k}: {result['avg_recall']:.3f}"
         )
         
         return EvaluateResponse(**result)

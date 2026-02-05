@@ -49,27 +49,29 @@ class EvaluationStorageService:
                 n_sample=run_data["n_sample"],
                 top_k=run_data["top_k"],
                 model=run_data["model"],
-                avg_recall=run_data["avg_recall"],
-                avg_recall_retrieval=run_data.get("avg_recall_retrieval"),
-                avg_recall_semantic=run_data.get("avg_recall_semantic"),
-                avg_recall_content=run_data.get("avg_recall_content"),
-                avg_recall_collab=run_data.get("avg_recall_collab")
+                avg_recall=round(run_data["avg_recall"], 3),
+                avg_recall_retrieval=round(run_data["avg_recall_retrieval"], 3) if run_data.get("avg_recall_retrieval") is not None else None,
+                avg_recall_semantic=round(run_data["avg_recall_semantic"], 3) if run_data.get("avg_recall_semantic") is not None else None,
+                avg_recall_content=round(run_data["avg_recall_content"], 3) if run_data.get("avg_recall_content") is not None else None,
+                avg_recall_collab=round(run_data["avg_recall_collab"], 3) if run_data.get("avg_recall_collab") is not None else None
             )
             
             # Add results as children
             for res in run_data.get("results", []):
+                recall = res.get("recall_final") if res.get("recall_final") is not None else res.get("recall", 0.0)
+                
                 result_model = EvaluationResultModel(
                     conv_id=str(res.get("conv_id")),
-                    recall=res.get("recall_final") if res.get("recall_final") is not None else res.get("recall", 0.0), # Fallback to 0.0 or legacy key
+                    recall=round(recall, 3), 
                     ground_truth=res.get("ground_truth"),
                     recommendations=res.get("recommendations"),
                     candidate_count=res.get("candidate_count"),
                     
                     # Detailed Metrics
-                    recall_retrieval=res.get("recall_retrieval"),
-                    recall_semantic=res.get("recall_semantic"),
-                    recall_content=res.get("recall_content"),
-                    recall_collab=res.get("recall_collab"),
+                    recall_retrieval=round(res["recall_retrieval"], 3) if res.get("recall_retrieval") is not None else None,
+                    recall_semantic=round(res["recall_semantic"], 3) if res.get("recall_semantic") is not None else None,
+                    recall_content=round(res["recall_content"], 3) if res.get("recall_content") is not None else None,
+                    recall_collab=round(res["recall_collab"], 3) if res.get("recall_collab") is not None else None,
                     
                     # Counts
                     semantic_count=res.get("semantic_count"),
