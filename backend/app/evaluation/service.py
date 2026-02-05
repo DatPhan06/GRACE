@@ -78,7 +78,8 @@ class EvaluationService:
         sample_size: int = 40,
         start_index: int = 0,
         n_sample: int = 100,
-        top_k: int = 10
+        top_k: int = 10,
+        model: Literal["llm", "cohere"] = "cohere"
     ) -> Dict[str, Any]:
         """
         Run the full evaluation pipeline on a dataset sample.
@@ -124,13 +125,12 @@ class EvaluationService:
                 )
 
                 # 3. Reranking (Domain: Reranking)
-                # Explicitly use 'llm' model as requested for OpenAI usage
                 reranked = await self.reranking_service.rerank_movies(
                     user_preferences=user_preferences,
                     candidates=candidates,
                     conversation=context,
                     top_k=top_k,
-                    model="cohere"
+                    model=model
                 )
 
                 # 4. Evaluation (Domain: Evaluation)
@@ -167,8 +167,7 @@ class EvaluationService:
             "start_index": start_index,
             "n_sample": n_sample,
             "top_k": top_k,
-            # Hardcoded for now as we force "llm" model which implies OpenAI in default setup
-            "model": "openai",
+            "model": model,
             # Placeholder or actual output dir
             "output_dir": str(self.project_root / "output"),
             "avg_recall": avg_recall,

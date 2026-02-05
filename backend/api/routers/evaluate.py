@@ -36,6 +36,10 @@ class EvaluateRequest(BaseModel):
         le=50,
         description="Top-k movies to re-rank (1-50)"
     )
+    model: Literal["llm", "cohere"] = Field(
+        default="cohere",
+        description="Reranking model to use (llm or cohere)"
+    )
 
 
 class ConversationResult(BaseModel):
@@ -92,7 +96,8 @@ async def evaluate_endpoint(request: EvaluateRequest):
             sample_size=request.sample_size,
             start_index=request.start_index,
             n_sample=request.n_sample,
-            top_k=request.top_k
+            top_k=request.top_k,
+            model=request.model
         )
         
         # Add success message
@@ -152,6 +157,11 @@ async def get_evaluation_info():
                 "range": "1-50",
                 "default": 10,
                 "options": [1, 5, 10, 50]
+            },
+            "model": {
+                "description": "Reranking model to use",
+                "default": "cohere",
+                "options": ["llm", "cohere"]
             }
         },
         "pipeline_steps": [

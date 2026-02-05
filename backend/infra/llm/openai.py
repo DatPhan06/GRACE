@@ -10,7 +10,7 @@ class OpenAILLM(BaseLLM):
             raise ValueError("OPENAI_API_KEY is not set")
         self.client = openai.Client(api_key=self.api_key)
         self.aclient = openai.AsyncClient(api_key=self.api_key)
-        self.model = "gpt-4o" # Default model, could be configurable
+        self.model = "gpt-5-mini"
 
     def generate(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
         model = kwargs.get("model", self.model)
