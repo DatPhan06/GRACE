@@ -24,6 +24,10 @@ class EvaluationRunModel(Base):
     top_k = Column(Integer)
     model = Column(String)
     avg_recall = Column(Float)
+    avg_recall_retrieval = Column(Float, nullable=True)
+    avg_recall_semantic = Column(Float, nullable=True)
+    avg_recall_content = Column(Float, nullable=True)
+    avg_recall_collab = Column(Float, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relationship
@@ -40,6 +44,14 @@ class EvaluationResultModel(Base):
     ground_truth = Column(JSON)  # Store list of strings
     recommendations = Column(JSON)  # Store list of strings
     candidate_count = Column(Integer)
+    semantic_count = Column(Integer, nullable=True)
+    content_count = Column(Integer, nullable=True)
+    collab_count = Column(Integer, nullable=True)
+
+    recall_retrieval = Column(Float, nullable=True)
+    recall_semantic = Column(Float, nullable=True)
+    recall_content = Column(Float, nullable=True)
+    recall_collab = Column(Float, nullable=True)
     error = Column(String, nullable=True)
 
     # Relationship
