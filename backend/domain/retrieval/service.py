@@ -22,32 +22,44 @@ class RetrievalService:
 
     async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = [], n: int = 100) -> List[Dict[str, Any]]:
         """
-        Retrieve movies using hybrid approach (Semantic + Content + Collab).
+        Retrieve movies using hybrid approach (Semantic + Content + Collab) in parallel.
         """
+        import asyncio
+
+        # Define internal flows
+        async def _semantic_flow():
+            # Use roughly n/2 for semantic if available
+            embedding = await self.semantic_retriever.get_query_embedding(user_preferences)
+            if embedding:
+                return await self.semantic_retriever.retrieve(embedding, n // 2)
+            return []
+
+        async def _content_flow():
+            content_n = n // 2
+            found_genres = await self.genre_extractor.extract_genres(user_preferences)
+            if found_genres:
+                return await self.content_retriever.retrieve(found_genres, content_n)
+            return []
+
+        async def _collab_flow():
+            if liked_movies:
+                collab_n = n // 2
+                return await self.collab_retriever.retrieve(liked_movies, collab_n)
+            return []
+
+        # Execute in parallel
+        results = await asyncio.gather(
+            _semantic_flow(),
+            _content_flow(),
+            _collab_flow()
+        )
+
+        semantic_movies, content_movies, collab_movies = results
+        
         all_movies = []
-
-        # 1. Semantic Similarity (OpenAI)
-        # Use roughly n/2 for semantic if available
-        embedding = await self.semantic_retriever.get_query_embedding(user_preferences)
-        if embedding:
-            semantic_movies = await self.semantic_retriever.retrieve(embedding, n // 2)
-            all_movies.extend(semantic_movies)
-
-        # 2. Content-based filtering (via Genres)
-        content_n = n // 2
-        
-        # Extract genres using the component
-        found_genres = await self.genre_extractor.extract_genres(user_preferences)
-        
-        if found_genres:
-            content_movies = await self.content_retriever.retrieve(found_genres, content_n)
-            all_movies.extend(content_movies)
-
-        # 3. Collaborative filtering (via Liked Movies)
-        if liked_movies:
-            collab_n = n // 2
-            collab_movies = await self.collab_retriever.retrieve(liked_movies, collab_n)
-            all_movies.extend(collab_movies)
+        all_movies.extend(semantic_movies)
+        all_movies.extend(content_movies)
+        all_movies.extend(collab_movies)
 
         # Deduplicate
         unique_movies = {}
