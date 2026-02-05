@@ -118,11 +118,17 @@ class EvaluationService:
                 user_preferences = user_pref_obj.user_preferences
 
                 # 2. Retrieval (Domain: Retrieval)
-                candidates = await self.retrieval_service.retrieve_movies(
+                # Returns dict with keys: 'combined', 'semantic', 'content', 'collaborative'
+                retrieval_results = await self.retrieval_service.retrieve_movies(
                     user_preferences=user_preferences,
                     liked_movies=liked_movies,
                     n=n_sample
                 )
+                
+                candidates = retrieval_results['combined']
+                semantic_cands = retrieval_results['semantic']
+                content_cands = retrieval_results['content']
+                collab_cands = retrieval_results['collaborative']
 
                 # 3. Reranking (Domain: Reranking)
                 reranked = await self.reranking_service.rerank_movies(
@@ -135,21 +141,63 @@ class EvaluationService:
 
                 # 4. Evaluation (Domain: Evaluation)
                 ground_truth = [target] if isinstance(target, str) else target
-                recommendations = [m['title'] for m in reranked]
-
-                recall = self.evaluation_domain_service.calculate_recall(
-                    recommendations=recommendations,
+                
+                # Helper to extract titles
+                get_titles = lambda movies: [m['title'] for m in movies]
+                
+                # Post-Rerank Recall
+                final_recs = get_titles(reranked)
+                recall_final = self.evaluation_domain_service.calculate_recall(
+                    recommendations=final_recs,
                     ground_truth=ground_truth,
                     top_k=top_k
                 )
 
-                recalls.append(recall)
+                # Pre-Rerank Metrics (Recall@N)
+                # Note: We use n_sample here as the k for pre-rerank evaluation, 
+                # or user might want to see if the target was in the retrieved set at all.
+                # Usually we measure Recall@N (retrieval size) for retrieval.
+                
+                recall_combined_retrieval = self.evaluation_domain_service.calculate_recall(
+                    recommendations=get_titles(candidates),
+                    ground_truth=ground_truth,
+                    top_k=n_sample
+                )
+                
+                recall_semantic = self.evaluation_domain_service.calculate_recall(
+                    recommendations=get_titles(semantic_cands),
+                    ground_truth=ground_truth,
+                    top_k=n_sample
+                )
+                
+                recall_content = self.evaluation_domain_service.calculate_recall(
+                    recommendations=get_titles(content_cands),
+                    ground_truth=ground_truth,
+                    top_k=n_sample
+                )
+                
+                recall_collab = self.evaluation_domain_service.calculate_recall(
+                    recommendations=get_titles(collab_cands),
+                    ground_truth=ground_truth,
+                    top_k=n_sample
+                )
+
+                recalls.append(recall_final)
                 results.append({
                     "conv_id": conv_id,
-                    "recall": recall,
                     "ground_truth": ground_truth,
-                    "recommendations": recommendations,
-                    "candidate_count": len(candidates)
+                    # Metrics
+                    "recall_final": recall_final, # Post-rerank Recall@K
+                    "recall_retrieval": recall_combined_retrieval, # Combined Pre-rerank Recall@N
+                    "recall_semantic": recall_semantic,
+                    "recall_content": recall_content,
+                    "recall_collab": recall_collab,
+                    # Data
+                    "recommendations": final_recs,
+                    "candidate_count": len(candidates),
+                    "semantic_count": len(semantic_cands),
+                    "content_count": len(content_cands),
+                    "collab_count": len(collab_cands)
                 })
 
             except Exception as e:
@@ -159,7 +207,18 @@ class EvaluationService:
                     "error": str(e)
                 })
 
+        # Calculate averages
         avg_recall = sum(recalls) / len(recalls) if recalls else 0.0
+        
+        # Calculate averages for detailed metrics
+        def safe_avg(key):
+            valid_entries = [r[key] for r in results if key in r]
+            return sum(valid_entries) / len(valid_entries) if valid_entries else 0.0
+
+        avg_recall_retrieval = safe_avg("recall_retrieval")
+        avg_recall_semantic = safe_avg("recall_semantic")
+        avg_recall_content = safe_avg("recall_content")
+        avg_recall_collab = safe_avg("recall_collab")
 
         result_data = {
             "dataset": dataset,
@@ -171,6 +230,10 @@ class EvaluationService:
             # Placeholder or actual output dir
             "output_dir": str(self.project_root / "output"),
             "avg_recall": avg_recall,
+            "avg_recall_retrieval": avg_recall_retrieval,
+            "avg_recall_semantic": avg_recall_semantic,
+            "avg_recall_content": avg_recall_content,
+            "avg_recall_collab": avg_recall_collab,
             "results": results,
             "message": f"Evaluated {len(conversations)} samples. Avg Recall@{top_k}: {avg_recall:.4f}"
         }

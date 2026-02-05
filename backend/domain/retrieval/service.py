@@ -20,7 +20,7 @@ class RetrievalService:
         self.content_retriever = ContentRetriever()
         self.collab_retriever = CollaborativeRetriever()
 
-    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = [], n: int = 100) -> List[Dict[str, Any]]:
+    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = [], n: int = 100) -> Dict[str, List[Dict[str, Any]]]:
         """
         Retrieve movies using hybrid approach (Semantic + Content + Collab) in parallel.
         """
@@ -68,4 +68,10 @@ class RetrievalService:
 
         final_list = list(unique_movies.values())
         logger.info(f"Retrieved {len(final_list)} unique candidates (Requested n={n})")
-        return final_list[:n]
+        
+        return {
+            "combined": final_list[:n],
+            "semantic": semantic_movies,
+            "content": content_movies,
+            "collaborative": collab_movies
+        }
