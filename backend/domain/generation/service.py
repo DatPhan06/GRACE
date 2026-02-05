@@ -7,7 +7,10 @@ from domain.generation.prompts import (
 )
 from pydantic import BaseModel, Field
 import json
-import logging
+import json
+from shared.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 class UserPreference(BaseModel):
     user_preferences: str = Field(description="Summarized seeker's preferences")
@@ -21,6 +24,7 @@ class GenerationService:
         """
         Summarize the conversation to extract user preferences and liked movies.
         """
+        logger.info(f"Summarizing conversation with length: {len(conversation)}")
         prompt = SUMMARIZE_CONVERSATION_USER_PROMPT.format(conversation=conversation)
         
         try:
@@ -41,7 +45,7 @@ class GenerationService:
                 logging.error("Could not find JSON in response")
                 return UserPreference(user_preferences=response, liked_movies=[])
         except Exception as e:
-            logging.error(f"Error during summarization: {e}")
+            logger.error(f"Error during summarization: {e}")
             return UserPreference(user_preferences="", liked_movies=[])
 
     async def generate_response(self, user_preferences: str, recommendations: list) -> str:

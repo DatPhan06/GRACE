@@ -1,6 +1,9 @@
 """Evaluation domain service."""
 import re
 from typing import List, Dict, Any, Union
+from shared.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 class EvaluationDomainService:
     """
@@ -44,4 +47,5 @@ class EvaluationDomainService:
         matches = sum(1 for m in normalized_truth if m in ranked_movies)
         recall = matches / len(normalized_truth)
         
+        logger.debug(f"Recall@K: {recall} (Matches: {matches}/{len(normalized_truth)})")
         return recall

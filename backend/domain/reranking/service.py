@@ -2,8 +2,10 @@ from infra.llm import get_llm_client
 from infra.llm.cohere_client import get_cohere_client
 from domain.reranking.prompts import RERANK_MOVIES_SYSTEM_PROMPT, RERANK_MOVIES_USER_PROMPT
 from typing import List, Dict, Any, Optional, Literal
-import logging
 import json
+from shared.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 
 class RerankingService:
@@ -23,6 +25,7 @@ class RerankingService:
         """
         Rerank a list of candidate movies based on user preferences.
         """
+        logger.info(f"Reranking {len(candidates)} candidates using model: {model}")
         if not candidates:
             return []
 
@@ -56,7 +59,7 @@ class RerankingService:
 
             return ranked_movies
         except Exception as e:
-            logging.error(f"Error during Cohere reranking: {e}")
+            logger.error(f"Error during Cohere reranking: {e}")
             # Fallback to returning top_k of original
             return candidates[:top_k]
 
@@ -108,5 +111,5 @@ class RerankingService:
                 # Fallback: return original order
                 return candidates[:top_k]
         except Exception as e:
-            logging.error(f"Error during reranking: {e}")
+            logger.error(f"Error during reranking: {e}")
             return candidates[:top_k]

@@ -2,6 +2,9 @@ from typing import Dict, Any
 from infra.db.database import SessionLocal
 from infra.db.crud import CRUDBase
 from infra.db.models import EvaluationRunModel, EvaluationResultModel
+from shared.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 class EvaluationStorageService:
     """
@@ -46,8 +49,10 @@ class EvaluationStorageService:
             
             # Use Generic CRUD to Create
             self.run_crud.create(db, run_model)
+            logger.info(f"Successfully saved evaluation run {run_model.id} with dataset {run_data.get('dataset')}")
             
         except Exception as e:
+            logger.error(f"Failed to save evaluation run: {e}")
             db.rollback()
             raise e
         finally:

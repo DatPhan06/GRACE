@@ -1,4 +1,6 @@
-import logging
+from shared.utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 import os
 from typing import List, Dict, Any, Optional
 from domain.retrieval.prompts import EXTRACT_GENRES_SYSTEM_PROMPT, EXTRACT_GENRES_USER_PROMPT
@@ -123,6 +125,7 @@ class RetrievalService:
             unique_movies[m['movieId']] = m
 
         final_list = list(unique_movies.values())
+        logger.info(f"Retrieved {len(final_list)} unique candidates (Requested n={n})")
         return final_list[:n]
 
     async def get_movies_by_similarity(self, query_embedding: List[float], n: int = 50) -> List[Dict[str, Any]]:
