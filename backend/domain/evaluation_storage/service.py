@@ -24,9 +24,10 @@ class EvaluationStorageService:
 
     def get_run(self, run_id: int) -> Optional[EvaluationRunModel]:
         """Get a single evaluation run by ID with details."""
+        from sqlalchemy.orm import joinedload
         db = SessionLocal()
         try:
-            return self.run_crud.get(db, id=run_id)
+            return db.query(EvaluationRunModel).options(joinedload(EvaluationRunModel.results)).filter(EvaluationRunModel.id == run_id).first()
         finally:
             db.close()
         

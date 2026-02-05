@@ -78,11 +78,11 @@ class EvaluationRunResponse(BaseModel):
     """Summary of an evaluation run."""
     id: int
     dataset: str
-    sample_size: int
-    n_sample: int
-    top_k: int
-    model: str
-    avg_recall: float
+    sample_size: int | None = None
+    n_sample: int | None = None
+    top_k: int | None = None
+    model: str | None = None
+    avg_recall: float | None = None
     
     # Granular aggregates
     avg_recall_retrieval: float | None = None
