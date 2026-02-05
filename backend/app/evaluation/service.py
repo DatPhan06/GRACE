@@ -10,6 +10,7 @@ from domain.generation.service import GenerationService
 from domain.retrieval.service import RetrievalService
 from domain.reranking.service import RerankingService
 from domain.evaluation import EvaluationDomainService
+from domain.evaluation_storage.service import EvaluationStorageService
 from shared.settings.config import settings
 
 
@@ -24,6 +25,7 @@ class EvaluationService:
         self.retrieval_service = RetrievalService()
         self.reranking_service = RerankingService()
         self.evaluation_domain_service = EvaluationDomainService()
+        self.evaluation_storage_service = EvaluationStorageService()
 
         # Config is now handled via settings
         self.project_root = Path(__file__).parent.parent.parent.parent
@@ -151,7 +153,7 @@ class EvaluationService:
 
         avg_recall = sum(recalls) / len(recalls) if recalls else 0.0
 
-        return {
+        result_data = {
             "dataset": dataset,
             "sample_size": len(conversations),
             "start_index": start_index,
@@ -165,3 +167,11 @@ class EvaluationService:
             "results": results,
             "message": f"Evaluated {len(conversations)} samples. Avg Recall@{top_k}: {avg_recall:.4f}"
         }
+        
+        # Save to database
+        try:
+            self.evaluation_storage_service.save_run(result_data)
+        except Exception as e:
+            print(f"Failed to save evaluation results to DB: {e}")
+            
+        return result_data
