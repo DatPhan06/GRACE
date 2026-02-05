@@ -72,13 +72,15 @@ class RerankingService:
             conversation=conversation,
             user_preferences=user_preferences,
             candidates_str=candidates_str,
-            top_k=top_k
         )
 
         try:
+            # Format the system prompt with top_k
+            formatted_system_prompt = RERANK_MOVIES_SYSTEM_PROMPT.format(top_k=top_k)
+            
             response = await self.llm_client.agenerate(
                 prompt=prompt,
-                system_instruction=RERANK_MOVIES_SYSTEM_PROMPT
+                system_instruction=formatted_system_prompt
             )
             cleaned_response = response.replace(
                 "```json", "").replace("```", "").strip()
