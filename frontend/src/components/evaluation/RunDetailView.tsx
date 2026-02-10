@@ -21,10 +21,10 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
     const results = run.results || [];
 
     return (
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-800">Run Details #{run.id}</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
+        <div className="mt-4">
+            <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-6">
+                {/* <h3 className="text-lg font-semibold text-gray-800">Run Details #{run.id}</h3> */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div className="bg-white p-3 rounded border">
                         <span className="text-gray-500 block">Avg Recall (Final)</span>
                         <span className="font-bold text-lg text-blue-600">{run.avg_recall?.toFixed(3)}</span>
@@ -38,13 +38,12 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
                         <span className="font-bold text-lg text-gray-700">{run.avg_recall_semantic?.toFixed(3) || "0.000"}</span>
                     </div>
                     <div className="bg-white p-3 rounded border">
-                        <span className="text-gray-500 block">Content Recall</span>
                         <span className="font-bold text-lg text-gray-700">{run.avg_recall_content?.toFixed(3) || "0.000"}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
                 <table className="w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
                         <tr>
