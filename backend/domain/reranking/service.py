@@ -42,6 +42,11 @@ class RerankingService:
             f"{m['title']} (Year: {m.get('year')}) - {m.get('plot', '')}"
             for m in candidates
         ]
+        
+        # Debug log for empty plots
+        empty_plots = sum(1 for m in candidates if not m.get('plot'))
+        if empty_plots > 0:
+            logger.warning(f"Cohere Rerank: {empty_plots}/{len(candidates)} candidates have empty plots!")
 
         try:
             response = self.cohere_client.rerank(
@@ -54,7 +59,10 @@ class RerankingService:
             ranked_movies = []
             # response.results is typically list of RerankResult
             if hasattr(response, 'results'):
-                for result in response.results:
+                for i, result in enumerate(response.results):
+                    # Log top 3 scores for debugging
+                    if i < 3:
+                        logger.info(f"Cohere Top-{i+1}: {candidates[result.index]['title']} (Score: {result.relevance_score:.4f})")
                     ranked_movies.append(candidates[result.index])
 
             return ranked_movies
@@ -65,7 +73,9 @@ class RerankingService:
 
     async def _rerank_with_llm(self, user_preferences: str, candidates: List[Dict[str, Any]], conversation: str, top_k: int) -> List[Dict[str, Any]]:
         candidate_titles = [
-            f"{m['title']} (Year: {m.get('year')})" for m in candidates]
+            f"- {m['title']} (Year: {m.get('year')}): {m.get('plot', 'No plot available')}" 
+            for m in candidates
+        ]
         candidates_str = "\n".join(candidate_titles)
 
         prompt = RERANK_MOVIES_USER_PROMPT.format(
