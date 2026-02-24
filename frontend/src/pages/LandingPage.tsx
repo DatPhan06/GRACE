@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { MessageSquare, BarChart2, Menu } from 'lucide-react';
+import { MessageSquare, BarChart2, Menu, Layers } from 'lucide-react';
 import ChatInterface from '@/components/ChatInterface';
 import EvaluationPage from '@/pages/EvaluationPage';
+import StepEvaluationPage from '@/pages/StepEvaluationPage';
 
 export default function LandingPage() {
-    const [activeTab, setActiveTab] = useState<'chat' | 'evaluation'>('chat');
+    const [activeTab, setActiveTab] = useState<'chat' | 'evaluation' | 'step-evaluation'>('chat');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-    const NavItem = ({ id, label, icon: Icon }: { id: 'chat' | 'evaluation', label: string, icon: any }) => (
+    const NavItem = ({ id, label, icon: Icon }: { id: 'chat' | 'evaluation' | 'step-evaluation', label: string, icon: any }) => (
         <button
             onClick={() => setActiveTab(id)}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors mb-1 ${activeTab === id
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                ? 'bg-blue-50 text-blue-700 font-medium'
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
         >
             <Icon size={20} />
@@ -41,6 +42,7 @@ export default function LandingPage() {
                 <nav className="flex-1 p-4 py-6">
                     <NavItem id="chat" label="Assistant" icon={MessageSquare} />
                     <NavItem id="evaluation" label="Evaluation" icon={BarChart2} />
+                    <NavItem id="step-evaluation" label="Step Optimization" icon={Layers} />
                 </nav>
 
                 {/* Footer User Profile (Optional placeholder) */}
@@ -64,20 +66,19 @@ export default function LandingPage() {
                         <Menu size={24} />
                     </button>
                     <span className="ml-4 font-semibold text-gray-800">
-                        {activeTab === 'chat' ? 'Chat Assistant' : 'Evaluation Dashboard'}
+                        {activeTab === 'chat' ? 'Chat Assistant' : activeTab === 'evaluation' ? 'Evaluation Dashboard' : 'Step Optimization'}
                     </span>
                 </header>
 
                 <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
                     <div className="max-w-7xl mx-auto h-full">
-                        {activeTab === 'chat' ? (
-                            <ChatInterface />
-                        ) : (
-                            <EvaluationPage />
-                        )}
+                        {activeTab === 'chat' && <ChatInterface />}
+                        {activeTab === 'evaluation' && <EvaluationPage />}
+                        {activeTab === 'step-evaluation' && <StepEvaluationPage />}
                     </div>
                 </div>
             </main>
         </div>
     );
 }
+
