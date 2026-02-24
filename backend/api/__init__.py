@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from infra.db.database import engine, Base
-from api.routers import items, chat, evaluate
+from api.routers import items, chat, evaluate, tracing
 
 # Create tables (for simplicity in this example)
 Base.metadata.create_all(bind=engine)
@@ -24,6 +24,7 @@ app.add_middleware(
 app.include_router(items.router)
 app.include_router(chat.router)
 app.include_router(evaluate.router)
+app.include_router(tracing.router)
 
 @app.get("/")
 def read_root():

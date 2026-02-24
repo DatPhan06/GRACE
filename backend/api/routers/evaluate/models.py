@@ -50,52 +50,28 @@ class EvaluateResponse(BaseModel):
     message: str
 
 
-class EvaluationResultResponse(BaseModel):
-    """Detailed result for a single conversation in a run."""
-    conv_id: str
-    recall: float
-    ground_truth: List[str] | Any | None = None
-    recommendations: List[str] | Any | None = None
-    candidate_count: int | None = None
-    
-    # Granular metrics
-    recall_retrieval: float | None = None
-    recall_semantic: float | None = None
-    recall_content: float | None = None
-    recall_collab: float | None = None
-    
-    semantic_count: int | None = None
-    content_count: int | None = None
-    collab_count: int | None = None
-    
-    error: str | None = None
-
-    class Config:
-        orm_mode = True
 
 
-class EvaluationRunResponse(BaseModel):
-    """Summary of an evaluation run."""
-    id: int
-    dataset: str
-    sample_size: int | None = None
-    n_sample: int | None = None
-    top_k: int | None = None
-    model: str | None = None
-    avg_recall: float | None = None
-    
-    # Granular aggregates
-    avg_recall_retrieval: float | None = None
-    avg_recall_semantic: float | None = None
-    avg_recall_content: float | None = None
-    avg_recall_collab: float | None = None
-    
-    timestamp: Any = None
-
-    class Config:
-        orm_mode = True
 
 
-class EvaluationRunDetailResponse(EvaluationRunResponse):
-    """Detailed evaluation run with all results."""
-    results: List[EvaluationResultResponse] = []
+class InitRunRequest(BaseModel):
+    dataset: Literal["inspired", "redial"] = Field(default="redial")
+    sample_size: int = Field(default=50, ge=1, le=1000)
+    start_index: int = Field(default=0, ge=0)
+
+
+class SummarizationStepRequest(BaseModel):
+    run_id: int
+
+class RetrievalStepRequest(BaseModel):
+    run_id: int
+    n_sample: int = Field(default=100, ge=10, le=600)
+    input_batch_id: int | None = None
+
+class RerankingStepRequest(BaseModel):
+    run_id: int
+    top_k: int = Field(default=10, ge=1, le=50)
+    model: Literal["llm", "cohere"] = Field(default="cohere")
+    input_batch_id: int | None = None
+
+

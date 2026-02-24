@@ -16,7 +16,8 @@ class ChatService:
         liked_movies = preferences_data.liked_movies
         
         # 2. Retrieve candidates
-        candidates = await self.retrieval_service.retrieve_movies(user_preferences, liked_movies, n=20)
+        retrieval_results = await self.retrieval_service.retrieve_movies(user_preferences, liked_movies, n=20)
+        candidates = retrieval_results.get("combined", [])
         
         # 3. Rerank candidates
         final_movies = await self.reranking_service.rerank_movies(user_preferences, candidates, top_k=5)

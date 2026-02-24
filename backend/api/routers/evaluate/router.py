@@ -4,8 +4,10 @@ from app.evaluation import EvaluationService
 from .models import (
     EvaluateRequest,
     EvaluateResponse,
-    EvaluationRunResponse,
-    EvaluationRunDetailResponse
+    InitRunRequest,
+    SummarizationStepRequest,
+    RetrievalStepRequest,
+    RerankingStepRequest
 )
 
 router = APIRouter(prefix="/evaluate", tags=["evaluation"])
@@ -70,6 +72,59 @@ async def evaluate_endpoint(request: EvaluateRequest):
         )
 
 
+@router.post("/init")
+async def initialize_run(request: InitRunRequest):
+    """Initialize a new evaluation run."""
+    service = EvaluationService()
+    try:
+        return await service.initialize_run(
+            dataset=request.dataset,
+            sample_size=request.sample_size,
+            start_index=request.start_index
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/step/summarize")
+async def run_summarization_step(request: SummarizationStepRequest):
+    """Run summarization step for a specific run."""
+    service = EvaluationService()
+    try:
+        return await service.run_summarization_step(run_id=request.run_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/step/retrieve")
+async def run_retrieval_step(request: RetrievalStepRequest):
+    """Run retrieval step for a specific run."""
+    service = EvaluationService()
+    try:
+        return await service.run_retrieval_step(
+            run_id=request.run_id,
+            n_sample=request.n_sample,
+            summarization_batch_id=request.input_batch_id
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/step/rerank")
+async def run_reranking_step(request: RerankingStepRequest):
+    """Run reranking step for a specific run."""
+    service = EvaluationService()
+    try:
+        return await service.run_reranking_step(
+            run_id=request.run_id,
+            top_k=request.top_k,
+            model=request.model,
+            retrieval_batch_id=request.input_batch_id
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/info")
 async def get_evaluation_info():
     """
@@ -119,22 +174,3 @@ async def get_evaluation_info():
     }
 
 
-@router.get("/runs", response_model=List[EvaluationRunResponse])
-async def get_evaluation_runs(skip: int = 0, limit: int = 100):
-    """
-    Get history of evaluation runs.
-    """
-    service = EvaluationService()
-    return service.evaluation_storage_service.get_runs(skip=skip, limit=limit)
-
-
-@router.get("/runs/{run_id}", response_model=EvaluationRunDetailResponse)
-async def get_evaluation_run(run_id: int):
-    """
-    Get details of a specific evaluation run.
-    """
-    service = EvaluationService()
-    run = service.evaluation_storage_service.get_run(run_id)
-    if not run:
-        raise HTTPException(status_code=404, detail="Evaluation run not found")
-    return run

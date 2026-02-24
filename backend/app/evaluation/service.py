@@ -3,7 +3,7 @@ import json
 import json
 import pandas as pd
 from pathlib import Path
-from typing import Literal, Dict, Any, List
+from typing import Literal, Dict, Any, List, Optional
 import random
 
 # Domain services
@@ -14,13 +14,17 @@ from domain.evaluation import EvaluationDomainService
 from domain.evaluation_storage.service import EvaluationStorageService
 from shared.settings.config import settings
 from shared.utils.logger import setup_logger
+from infra.db.models import EvaluationRunModel, ConversationLogModel, StepSummarizationModel, StepRetrievalModel, StepRerankingModel, EvaluationResultModel, BatchStepExecutionModel
+from infra.db.database import get_db
 
 logger = setup_logger(__name__)
-
 
 class EvaluationService:
     """
     Orchestrates the evaluation process by coordinating domain services.
+    Supported modes: 
+    - Full evaluation (Legacy)
+    - Step-by-step execution for optimization
     """
 
     def __init__(self):
@@ -33,6 +37,439 @@ class EvaluationService:
 
         # Config is now handled via settings
         self.project_root = Path(__file__).parent.parent.parent.parent
+
+    async def initialize_run(
+        self,
+        dataset: Literal["inspired", "redial"] = "redial",
+        sample_size: int = 50,
+        start_index: int = 0
+    ) -> Dict[str, Any]:
+        """
+        Initialize a new evaluation run.
+        Loads the dataset sample and creates ConversationLog entries in 'pending' status.
+        """
+        conversations, _ = self.load_dataset_sample(dataset, sample_size, start_index)
+        
+        db = next(get_db())
+        try:
+            # Create Run
+            run = EvaluationRunModel(
+                dataset=dataset,
+                sample_size=len(conversations),
+                start_index=start_index,
+                status="initialized"
+            )
+            db.add(run)
+            db.commit()
+            db.refresh(run)
+            
+            # Create Logs
+            logs = []
+            for idx, conv in enumerate(conversations, start=start_index):
+                # Preprocessing to extract basic info
+                if dataset == "inspired":
+                    conv_id = f"{idx} {conv.get('conv_id', idx)}"
+                    dialog = conv["processed_dialog"]
+                    target = conv["target"]
+                    import re
+                    movie_mentions = re.findall(r'[A-Z][a-zA-Z\s]+(?:\([0-9]{4}\))?', dialog)
+                    common_words = {'RECOMMENDER', 'SEEKER', 'Hi', 'There', 'What', 'types', 'movies', 'like', 'watch', 'Yes', 'No', 'Thanks', 'Thank', 'you'}
+                    liked_movies = [m.strip() for m in movie_mentions if m.strip() not in common_words and len(m.strip()) > 3][:5]
+                else:  # redial
+                    conv_id = str(idx)
+                    dialog = conv["dialog"]
+                    target = conv["target"]
+                    liked_movies = conv.get("liked_movies", [])
+
+                log = ConversationLogModel(
+                    run_id=run.id,
+                    conv_id=conv_id,
+                    index=idx,
+                    status="pending",
+                    dialog=dialog,
+                    target=target,
+                    liked_movies=liked_movies
+                )
+                logs.append(log)
+            
+            db.add_all(logs)
+            db.commit()
+            
+            return {
+                "run_id": run.id,
+                "message": f"Initialized run {run.id} with {len(logs)} conversations.",
+                "status": "initialized"
+            }
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to initialize run: {e}")
+            raise e
+        finally:
+            db.close()
+
+    async def _create_batch_execution(self, db, run_id: int, step_type: str, config: Dict[str, Any]) -> BatchStepExecutionModel:
+        # Get next version
+        last_batch = db.query(BatchStepExecutionModel).filter_by(run_id=run_id, step_type=step_type).order_by(BatchStepExecutionModel.version.desc()).first()
+        new_version = (last_batch.version + 1) if last_batch else 1
+        
+        batch = BatchStepExecutionModel(
+            run_id=run_id,
+            step_type=step_type,
+            version=new_version,
+            config=config,
+            status="running"
+        )
+        db.add(batch)
+        db.commit()
+        db.refresh(batch)
+        return batch
+
+    async def get_step_history(self, run_id: int) -> List[BatchStepExecutionModel]:
+        """Get execution history for a run."""
+        db = next(get_db())
+        try:
+            return db.query(BatchStepExecutionModel).filter_by(run_id=run_id).order_by(BatchStepExecutionModel.created_at.desc()).all()
+        finally:
+            db.close()
+
+    async def get_steps_by_type(self, step_type: str = None, skip: int = 0, limit: int = 100) -> List[BatchStepExecutionModel]:
+        """Get all batch step executions, optionally filtered by step_type."""
+        db = next(get_db())
+        try:
+            query = db.query(BatchStepExecutionModel)
+            if step_type:
+                query = query.filter_by(step_type=step_type)
+            return query.order_by(BatchStepExecutionModel.created_at.desc()).offset(skip).limit(limit).all()
+        finally:
+            db.close()
+
+    async def get_batch_detail(self, batch_id: int) -> dict:
+        """Get per-conversation detail data for a specific batch execution."""
+        db = next(get_db())
+        try:
+            batch = db.query(BatchStepExecutionModel).filter_by(id=batch_id).first()
+            if not batch:
+                return None
+
+            items = []
+            if batch.step_type == "summarization":
+                rows = (
+                    db.query(StepSummarizationModel, ConversationLogModel.conv_id)
+                    .join(ConversationLogModel, StepSummarizationModel.conversation_id == ConversationLogModel.id)
+                    .filter(StepSummarizationModel.batch_run_id == batch_id)
+                    .all()
+                )
+                for row, conv_id in rows:
+                    items.append({
+                        "conv_id": conv_id,
+                        "user_preferences": row.user_preferences,
+                    })
+
+            elif batch.step_type == "retrieval":
+                rows = (
+                    db.query(StepRetrievalModel, ConversationLogModel.conv_id)
+                    .join(ConversationLogModel, StepRetrievalModel.conversation_id == ConversationLogModel.id)
+                    .filter(StepRetrievalModel.batch_run_id == batch_id)
+                    .all()
+                )
+                for row, conv_id in rows:
+                    candidates = row.candidates or []
+                    items.append({
+                        "conv_id": conv_id,
+                        "candidates": candidates,
+                        "candidate_count": len(candidates) if isinstance(candidates, list) else 0,
+                        "semantic_count": row.semantic_count,
+                        "content_count": row.content_count,
+                        "collab_count": row.collab_count,
+                    })
+
+            elif batch.step_type == "reranking":
+                rows = (
+                    db.query(StepRerankingModel, ConversationLogModel.conv_id)
+                    .join(ConversationLogModel, StepRerankingModel.conversation_id == ConversationLogModel.id)
+                    .filter(StepRerankingModel.batch_run_id == batch_id)
+                    .all()
+                )
+                for row, conv_id in rows:
+                    reranked = row.reranked_candidates or []
+                    items.append({
+                        "conv_id": conv_id,
+                        "model_used": row.model_used,
+                        "reranked_candidates": reranked,
+                        "reranked_count": len(reranked) if isinstance(reranked, list) else 0,
+                        "recall": row.recall,
+                    })
+
+            return {
+                "id": batch.id,
+                "run_id": batch.run_id,
+                "step_type": batch.step_type,
+                "version": batch.version,
+                "config": batch.config,
+                "status": batch.status,
+                "created_at": batch.created_at,
+                "items": items,
+            }
+        finally:
+            db.close()
+
+    async def run_summarization_step(self, run_id: int) -> Dict[str, Any]:
+        """
+        Run summarization step for a specific run.
+        """
+        db = next(get_db())
+        try:
+            logs = db.query(ConversationLogModel).filter(
+                ConversationLogModel.run_id == run_id
+            ).all()
+
+            if not logs:
+                return {"message": "No logs found for this run.", "count": 0}
+
+            # Create Batch
+            batch = await self._create_batch_execution(db, run_id, "summarization", {})
+
+            processed_count = 0
+            for log in logs:
+                context = log.dialog
+                user_pref_obj = await self.generation_service.summarize_conversation(str(context))
+                user_preferences = user_pref_obj.user_preferences
+
+                # Create Step Entry linked to Batch
+                step = StepSummarizationModel(
+                    conversation_id=log.id,
+                    batch_run_id=batch.id,
+                    user_preferences=user_preferences
+                )
+                db.add(step)
+                
+                log.status = "summarized"
+                processed_count += 1
+            
+            # Update Run status (if needed, or just rely on steps)
+            batch.status = "completed"
+            
+            # Update main run status only if it's the first time? Or always?
+            # Let's keep main run status as "summarized" for simplicity, but batch status is more granular.
+            run = db.query(EvaluationRunModel).filter_by(id=run_id).first()
+            if run:
+                run.status = "summarized"
+            
+            db.commit()
+            return {"run_id": run_id, "batch_id": batch.id, "message": f"Summarized {processed_count} conversations (v{batch.version}).", "status": "summarized"}
+
+        except Exception as e:
+            db.rollback()
+            if 'batch' in locals():
+                batch.status = "failed"
+                db.commit()
+            logger.error(f"Summarization step failed: {e}")
+            raise e
+        finally:
+            db.close()
+
+    async def run_retrieval_step(self, run_id: int, n_sample: int = 100, summarization_batch_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Run retrieval step. Can optionally specify which summarization batch to use as input.
+        """
+        db = next(get_db())
+        try:
+            logs = db.query(ConversationLogModel).filter(ConversationLogModel.run_id == run_id).all()
+            if not logs:
+                return {"message": "No logs found.", "count": 0}
+
+            # Create Batch
+            batch = await self._create_batch_execution(db, run_id, "retrieval", {"n_sample": n_sample, "input_batch": summarization_batch_id})
+
+            processed_count = 0
+            for log in logs:
+                # 1. Get User Preferences
+                # If batch_id provided, fetch specific version. Else, fetch latest.
+                query = db.query(StepSummarizationModel).filter_by(conversation_id=log.id)
+                if summarization_batch_id:
+                    query = query.filter_by(batch_run_id=summarization_batch_id)
+                else:
+                    # Get latest by joining batch and ordering by version/date
+                    query = query.join(BatchStepExecutionModel).order_by(BatchStepExecutionModel.version.desc())
+                
+                step_summ = query.first()
+                
+                if not step_summ:
+                    continue # Skip if no summarization found for this conv
+
+                user_preferences = step_summ.user_preferences
+                liked_movies = log.liked_movies
+
+                # 2. Retrieve
+                retrieval_result = await self.retrieval_service.retrieve_movies(
+                    user_preferences=user_preferences,
+                    liked_movies=liked_movies,
+                    n=n_sample
+                )
+                
+                candidates = retrieval_result["combined"]
+                counts = {
+                    "semantic": len(retrieval_result.get("semantic", [])),
+                    "content": len(retrieval_result.get("content", [])),
+                    "collab": len(retrieval_result.get("collaborative", []))
+                }
+
+                # Upsert StepRetrieval linked to Batch
+                step = StepRetrievalModel(
+                    conversation_id=log.id,
+                    batch_run_id=batch.id,
+                    candidates=candidates, 
+                    semantic_count=counts["semantic"],
+                    content_count=counts["content"],
+                    collab_count=counts["collab"]
+                )
+                db.add(step)
+                
+            batch.status = "completed"
+            run = db.query(EvaluationRunModel).filter_by(id=run_id).first()
+            if run:
+                run.status = "retrieved"
+            
+            db.commit()
+            return {"run_id": run_id, "batch_id": batch.id, "message": f"Retrieved candidates for {processed_count} conversations (v{batch.version}).", "status": "retrieved"}
+
+        except Exception as e:
+            db.rollback()
+            if 'batch' in locals():
+                batch.status = "failed"
+                db.commit()
+            logger.error(f"Retrieval step failed: {e}")
+            raise e
+        finally:
+            db.close()
+
+    async def run_reranking_step(self, run_id: int, top_k: int = 10, model: Literal["llm", "cohere"] = "llm", retrieval_batch_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Run reranking step for a specific run.
+        Requires retrieval to be completed.
+        """
+        db = next(get_db())
+        try:
+            logs = db.query(ConversationLogModel).filter(
+                ConversationLogModel.run_id == run_id
+            ).all()
+
+            if not logs:
+                return {"message": "No logs found for this run.", "count": 0}
+
+            # Create Batch
+            batch = await self._create_batch_execution(db, run_id, "reranking", {"top_k": top_k, "model": model, "input_batch": retrieval_batch_id})
+
+            processed_count = 0
+            for log in logs:
+                # 1. Get Retrieval Candidates
+                query = db.query(StepRetrievalModel).filter_by(conversation_id=log.id)
+                if retrieval_batch_id:
+                    query = query.filter_by(batch_run_id=retrieval_batch_id)
+                else:
+                    query = query.join(BatchStepExecutionModel).order_by(BatchStepExecutionModel.version.desc())
+                
+                step_retrieval = query.first()
+
+                if not step_retrieval:
+                    continue
+
+                candidates = step_retrieval.candidates
+
+                # 2. Get User Preferences (from linked summarization or latest)
+                # Ideally, we should track which summarization was used for retrieval, but for now let's get latest or specific.
+                # Since we don't pass summarization_batch_id to reranking, let's assume we want the one used by retrieval?
+                # Actually, StepRetrieval doesn't link back to StepSummarization directly, only via Conversation.
+                # Let's just get the latest StepSummarization for this conversation, as that's safe default.
+                step_summ = db.query(StepSummarizationModel).filter_by(conversation_id=log.id)\
+                    .join(BatchStepExecutionModel).order_by(BatchStepExecutionModel.version.desc()).first()
+                
+                if not step_summ:
+                    continue
+
+                user_preferences = step_summ.user_preferences
+                context = log.dialog
+
+                # 3. Reranking
+                reranked = await self.reranking_service.rerank_movies(
+                    user_preferences=user_preferences,
+                    candidates=candidates,
+                    conversation=str(context),
+                    top_k=top_k,
+                    model=model
+                )
+
+                get_titles = lambda movies: [m['title'] for m in movies]
+                final_recs = get_titles(reranked)
+                ground_truth = log.target if isinstance(log.target, list) else [log.target]
+                
+                recall_val = self.evaluation_domain_service.calculate_recall(final_recs, ground_truth, top_k)
+
+                # Upsert StepReranking - Always create NEW entry for each batch run
+                # Linked to specific batch
+                step = StepRerankingModel(
+                    conversation_id=log.id,
+                    batch_run_id=batch.id,
+                    model_used=model,
+                    reranked_candidates=reranked,
+                    recall=recall_val
+                )
+                db.add(step)
+                
+                # Also compute and save immediate result for this conversation
+                # We update the "latest" result for the conversation so the UI shows the most recent state
+                result = db.query(EvaluationResultModel).filter_by(conversation_id=log.id).first()
+                if not result:
+                    result = EvaluationResultModel(
+                        run_id=run_id,
+                        conversation_id=log.id,
+                        conv_id=log.conv_id
+                    )
+
+                result.recall = recall_val
+                result.ground_truth = ground_truth
+                result.recommendations = final_recs
+                
+                # Use step_retrieval instead of log.retrieval (which is a list)
+                retrieved_candidates = step_retrieval.candidates
+                result.candidate_count = len(retrieved_candidates)
+                result.semantic_count = step_retrieval.semantic_count
+                result.content_count = step_retrieval.content_count
+                result.collab_count = step_retrieval.collab_count
+                
+                # Pre-rerank metrics
+                result.recall_retrieval = self.evaluation_domain_service.calculate_recall(get_titles(retrieved_candidates), ground_truth, 100)
+                
+                db.add(result)
+                processed_count += 1
+                log.status = "completed"
+            
+            batch.status = "completed"
+            run = db.query(EvaluationRunModel).filter_by(id=run_id).first()
+            if run:
+                run.status = "completed"
+                # Update run aggregates
+                # (Simplified logic, can be moved to a separate compute_metrics step if needed)
+                # But user wants to see results after reranking typically.
+                # Calculate averages
+                results = db.query(EvaluationResultModel).filter_by(run_id=run.id).all()
+                if results:
+                    run.avg_recall = sum(r.recall for r in results) / len(results)
+                    run.avg_recall_retrieval = sum(r.recall_retrieval for r in results if r.recall_retrieval is not None) / len(results)
+
+            db.commit()
+            return {
+                "run_id": run_id, 
+                "batch_id": batch.id,
+                "message": f"Reranked and evaluated {processed_count} conversations (v{batch.version}).",
+                "status": "completed"
+            }
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error in reranking step: {e}")
+            raise e
+        finally:
+            db.close()
 
     def load_dataset_sample(
         self,
