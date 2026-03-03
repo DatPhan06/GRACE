@@ -217,3 +217,19 @@ export const getBatchDetail = async (batch_id: number, step_type: string): Promi
     });
     return response.data;
 };
+
+export interface ConversationLogItem {
+    id: number;
+    conv_id: string;
+    index: number;
+    status: string;
+    target: string | string[];
+    liked_movies: string[];
+    dialog_preview: string;
+}
+
+export const getRunConversations = async (run_id: number): Promise<ConversationLogItem[]> => {
+    const response = await axios.get<ConversationLogItem[]>(`${API_URL}/tracing/runs/${run_id}/conversations`);
+    return response.data;
+};
+

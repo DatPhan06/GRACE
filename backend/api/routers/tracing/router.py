@@ -49,6 +49,37 @@ async def get_step_history(run_id: int):
     return await service.get_step_history(run_id)
 
 
+@router.get("/runs/{run_id}/conversations")
+async def get_run_conversations(run_id: int):
+    """
+    Get all conversation logs for a specific initialized run.
+    """
+    from infra.db.database import get_db
+    from infra.db.models import ConversationLogModel
+
+    db = next(get_db())
+    try:
+        logs = db.query(ConversationLogModel).filter(
+            ConversationLogModel.run_id == run_id
+        ).order_by(ConversationLogModel.index).all()
+        if not logs:
+            raise HTTPException(status_code=404, detail="No conversations found for this run")
+        return [
+            {
+                "id": log.id,
+                "conv_id": log.conv_id,
+                "index": log.index,
+                "status": log.status,
+                "target": log.target,
+                "liked_movies": log.liked_movies,
+                "dialog_preview": (log.dialog or "")[:200],
+            }
+            for log in logs
+        ]
+    finally:
+        db.close()
+
+
 @router.get("/batches/{batch_id}/details", response_model=BatchDetailResponse)
 async def get_batch_detail(batch_id: int, step_type: str = Query(..., description="Type of step (summarization, retrieval, reranking)")):
     """

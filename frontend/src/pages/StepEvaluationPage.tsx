@@ -1,6 +1,85 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initializeRun, runSummarizationStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse } from '@/lib/api';
+import { initializeRun, runSummarizationStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, getRunConversations, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse, ConversationLogItem } from '@/lib/api';
 import VersionDetailModal from '@/components/evaluation/VersionDetailModal';
+
+// ─── Shared UI components (defined OUTSIDE the page to keep stable references) ───
+
+const TabButton = ({ id, label, activeTab, setActiveTab }: { id: string; label: string; activeTab: string; setActiveTab: (id: string) => void }) => (
+    <button
+        onClick={() => setActiveTab(id)}
+        className={`px-4 py-2 font-medium text-sm rounded-t-lg transition-colors ${activeTab === id
+                ? 'bg-white text-blue-600 border-t border-x border-gray-200'
+                : 'bg-gray-50 text-gray-500 hover:text-gray-700'
+            }`}
+    >
+        {label}
+    </button>
+);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const VersionCard = ({ batch, color, onClick, children }: { batch: BatchStepExecutionResponse; color: { bg: string; border: string; text: string }; onClick: () => void; children?: any }) => (
+    <div
+        onClick={onClick}
+        className={`p-4 ${color.bg} border ${color.border} rounded-lg cursor-pointer hover:shadow-md transition-all`}
+    >
+        <div className="flex justify-between items-start mb-2">
+            <div className="flex items-center gap-3">
+                <span className={`text-base font-bold ${color.text}`}>
+                    {batch.name ? batch.name : `v${batch.version}`}
+                </span>
+                {batch.name && <span className="text-xs text-gray-400">v{batch.version}</span>}
+            </div>
+            <span className="text-xs text-gray-500">{new Date(batch.created_at).toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Run #{batch.run_id}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
+                {batch.status}
+            </span>
+        </div>
+        {children && <div className="mt-2">{children}</div>}
+    </div>
+);
+
+const ModalBackdrop = ({ title, onClose, children, onSubmit, submitLabel, submitColor, submitDisabled }: {
+    title: string; onClose: () => void; children: React.ReactNode;
+    onSubmit: () => void; submitLabel: string; submitColor: string; submitDisabled?: boolean;
+}) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white rounded-xl shadow-2xl w-[90vw] max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+                {children}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                <button onClick={(e) => { e.preventDefault(); onSubmit(); }} disabled={submitDisabled} className={`px-6 py-2 text-sm text-white rounded-lg ${submitColor} disabled:opacity-50 transition-colors`}>
+                    {submitLabel}
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
+const EmptyState = ({ icon, message }: { icon: string; message: string }) => (
+    <div className="text-center py-16">
+        <div className="text-5xl mb-4">{icon}</div>
+        <p className="text-gray-500">{message}</p>
+    </div>
+);
+
+const NewVersionButton = ({ onClick, color }: { onClick: () => void; color: string }) => (
+    <button
+        onClick={onClick}
+        className={`flex items-center gap-2 ${color} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+    >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+        New Version
+    </button>
+);
 
 export default function StepEvaluationPage() {
     const [loading, setLoading] = useState(false);
@@ -37,6 +116,12 @@ export default function StepEvaluationPage() {
 
     // Run Modal State (for Init only)
     const [showRunModal, setShowRunModal] = useState(false);
+
+    // Run Detail Modal State (conversation list)
+    const [showRunDetailModal, setShowRunDetailModal] = useState(false);
+    const [runConversations, setRunConversations] = useState<ConversationLogItem[]>([]);
+    const [runDetailLoading, setRunDetailLoading] = useState(false);
+    const [selectedRun, setSelectedRun] = useState<EvaluationRunResponse | null>(null);
 
     // --- Data Loading ---
     const loadRuns = useCallback(async () => {
@@ -77,6 +162,21 @@ export default function StepEvaluationPage() {
     };
 
     // --- Handlers ---
+    const handleViewRun = async (run: EvaluationRunResponse) => {
+        setSelectedRun(run);
+        setRunDetailLoading(true);
+        setShowRunDetailModal(true);
+        try {
+            const convs = await getRunConversations(run.id);
+            setRunConversations(convs);
+        } catch (e) {
+            console.error('Failed to load conversations:', e);
+            setRunConversations([]);
+        } finally {
+            setRunDetailLoading(false);
+        }
+    };
+
     const handleInit = async () => {
         setLoading(true);
         try {
@@ -177,84 +277,7 @@ export default function StepEvaluationPage() {
     };
 
     // --- UI Components ---
-    const TabButton = ({ id, label }: { id: typeof activeTab, label: string }) => (
-        <button
-            onClick={() => setActiveTab(id)}
-            className={`px-4 py-2 font-medium text-sm rounded-t-lg transition-colors ${activeTab === id
-                ? 'bg-white text-blue-600 border-t border-x border-gray-200'
-                : 'bg-gray-50 text-gray-500 hover:text-gray-700'
-                }`}
-        >
-            {label}
-        </button>
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const VersionCard = ({ batch, color, children }: { batch: BatchStepExecutionResponse, color: { bg: string, border: string, text: string }, children?: any }) => (
-        <div
-            onClick={() => handleViewDetail(batch)}
-            className={`p-4 ${color.bg} border ${color.border} rounded-lg cursor-pointer hover:shadow-md transition-all`}
-        >
-            <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-3">
-                    <span className={`text-base font-bold ${color.text}`}>
-                        {batch.name ? batch.name : `v${batch.version}`}
-                    </span>
-                    {batch.name && <span className="text-xs text-gray-400">v{batch.version}</span>}
-                </div>
-                <span className="text-xs text-gray-500">{new Date(batch.created_at).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between items-center mb-2">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Run #{batch.run_id}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
-                    {batch.status}
-                </span>
-            </div>
-            {children && <div className="mt-2">{children}</div>}
-        </div>
-    );
-
-    const ModalBackdrop = ({ title, onClose, children, onSubmit, submitLabel, submitColor, submitDisabled }: {
-        title: string; onClose: () => void; children: React.ReactNode;
-        onSubmit: () => void; submitLabel: string; submitColor: string; submitDisabled?: boolean;
-    }) => (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-[90vw] max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-                </div>
-                <div className="px-6 py-5 space-y-4">
-                    {children}
-                </div>
-                <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-                    <button onClick={(e) => { e.preventDefault(); onSubmit(); }} disabled={submitDisabled} className={`px-6 py-2 text-sm text-white rounded-lg ${submitColor} disabled:opacity-50 transition-colors`}>
-                        {submitLabel}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-
-    const EmptyState = ({ icon, message }: { icon: string, message: string }) => (
-        <div className="text-center py-16">
-            <div className="text-5xl mb-4">{icon}</div>
-            <p className="text-gray-500">{message}</p>
-        </div>
-    );
-
-    const NewVersionButton = ({ onClick, color }: { onClick: () => void, color: string }) => (
-        <button
-            onClick={onClick}
-            className={`flex items-center gap-2 ${color} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
-        >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            New Version
-        </button>
-    );
-
-    // Infer run_id from selected previous step batch
+    // (TabButton, VersionCard, ModalBackdrop, EmptyState, NewVersionButton are defined at module level)
     const getRunIdFromSummBatch = (batchId: number | undefined) => {
         if (!batchId) return undefined;
         const batch = summBatches.find(b => b.id === batchId);
@@ -272,10 +295,10 @@ export default function StepEvaluationPage() {
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-6">
-                <TabButton id="init" label="1. Initialize" />
-                <TabButton id="summ" label="2. Summarization" />
-                <TabButton id="retr" label="3. Retrieval" />
-                <TabButton id="rerank" label="4. Reranking" />
+                <TabButton id="init" label="1. Initialize" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
+                <TabButton id="summ" label="2. Summarization" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
+                <TabButton id="retr" label="3. Retrieval" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
+                <TabButton id="rerank" label="4. Reranking" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
             </div>
 
             {/* Tab Content */}
@@ -302,7 +325,8 @@ export default function StepEvaluationPage() {
                             {allRuns.map(run => (
                                 <div
                                     key={run.id}
-                                    className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md hover:border-blue-200 transition-all"
+                                    onClick={() => handleViewRun(run)}
+                                    className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex items-center gap-3">
@@ -314,7 +338,10 @@ export default function StepEvaluationPage() {
                                                 {run.status}
                                             </span>
                                         </div>
-                                        <span className="text-xs text-gray-500">{run.timestamp ? new Date(run.timestamp).toLocaleString() : ''}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-gray-500">{run.timestamp ? new Date(run.timestamp).toLocaleString() : ''}</span>
+                                            <span className="text-xs text-blue-400">👁 View</span>
+                                        </div>
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Dataset: <strong className="capitalize">{run.dataset}</strong></span>
@@ -342,7 +369,7 @@ export default function StepEvaluationPage() {
                         <div className="space-y-3">
                             {summBatches.length === 0 && <EmptyState icon="📝" message="No summarization versions yet. Click '+ New Version' to create one." />}
                             {summBatches.map(b => (
-                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-800' }} />
+                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-800' }} onClick={() => handleViewDetail(b)} />
                             ))}
                         </div>
                     </div>
@@ -361,7 +388,7 @@ export default function StepEvaluationPage() {
                         <div className="space-y-3">
                             {retrBatches.length === 0 && <EmptyState icon="🔍" message="No retrieval versions yet. Click '+ New Version' to create one." />}
                             {retrBatches.map(b => (
-                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-800' }}>
+                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
                                     <div className="flex gap-3 text-xs text-gray-600">
                                         <span>N={(b.config as Record<string, unknown>).n_sample as number}</span>
                                         {!!(b.config as Record<string, unknown>).input_batch && <span className="text-gray-400">(Input: Batch #{String((b.config as Record<string, unknown>).input_batch)})</span>}
@@ -385,7 +412,7 @@ export default function StepEvaluationPage() {
                         <div className="space-y-3">
                             {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No reranking versions yet. Click '+ New Version' to create one." />}
                             {rerankBatches.map(b => (
-                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }}>
+                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
                                     <div className="flex gap-3 text-xs text-gray-600">
                                         <span>TopK={(b.config as Record<string, unknown>).top_k as number}</span>
                                         <span>{String((b.config as Record<string, unknown>).model)}</span>
@@ -428,6 +455,76 @@ export default function StepEvaluationPage() {
                     }
                     loading={loading}
                 />
+            )}
+
+            {/* Run Detail Modal — Conversation List */}
+            {showRunDetailModal && selectedRun && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }}>
+                    <div className="bg-white rounded-xl shadow-2xl w-[92vw] max-w-3xl flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-800">
+                                    {selectedRun.name ? selectedRun.name : `Run #${selectedRun.id}`}
+                                    {selectedRun.name && <span className="ml-2 text-sm font-normal text-gray-400">Run #{selectedRun.id}</span>}
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-0.5">
+                                    {selectedRun.dataset} · {selectedRun.sample_size} conversations
+                                </p>
+                            </div>
+                            <button onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="overflow-y-auto flex-1 px-6 py-4">
+                            {runDetailLoading ? (
+                                <div className="flex items-center justify-center py-16 gap-3">
+                                    <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                    </svg>
+                                    <span className="text-gray-500">Loading conversations...</span>
+                                </div>
+                            ) : runConversations.length === 0 ? (
+                                <div className="text-center py-16 text-gray-400">No conversations found for this run.</div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {runConversations.map((conv, idx) => (
+                                        <div key={conv.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-mono text-gray-400">#{idx + 1}</span>
+                                                    <span className="text-sm font-medium text-gray-800 truncate max-w-[200px]">{conv.conv_id}</span>
+                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full capitalize ${conv.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                                        conv.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-gray-100 text-gray-600'
+                                                        }`}>{conv.status}</span>
+                                                </div>
+                                                <span className="text-xs text-gray-500 shrink-0">
+                                                    Target: <strong>{Array.isArray(conv.target) ? conv.target.join(', ') : conv.target}</strong>
+                                                </span>
+                                            </div>
+                                            {conv.liked_movies && conv.liked_movies.length > 0 && (
+                                                <p className="text-xs text-blue-600 mb-1">❤️ {conv.liked_movies.join(', ')}</p>
+                                            )}
+                                            {conv.dialog_preview && (
+                                                <p className="text-xs text-gray-500 line-clamp-2">{conv.dialog_preview}…</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-3 border-t border-gray-200 flex justify-end shrink-0">
+                            <button
+                                onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }}
+                                className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                            >Close</button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Init Run Modal */}

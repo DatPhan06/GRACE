@@ -49,7 +49,7 @@ class EvaluationService:
         Initialize a new evaluation run.
         Loads the dataset sample and creates ConversationLog entries in 'pending' status.
         """
-        conversations, _ = self.load_dataset_sample(dataset, sample_size, start_index)
+        conversations = self.load_dialogs_sample(dataset, sample_size)
         
         db = next(get_db())
         try:
@@ -527,42 +527,59 @@ class EvaluationService:
         finally:
             db.close()
 
+    def _load_all_dialogs(self, dataset: Literal["inspired", "redial"]) -> List[Dict]:
+        """Load only the dialog data from disk (no movie metadata)."""
+        if dataset == "inspired":
+            dialog_path = Path(settings.data.INSPIRED_DIALOG_DATA)
+        elif dataset == "redial":
+            dialog_path = Path(settings.data.REDIAL_DIALOG_DATA)
+        else:
+            raise ValueError(f"Unknown dataset: {dataset}")
+
+        with open(dialog_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def load_dialogs_sample(
+        self,
+        dataset: Literal["inspired", "redial"],
+        sample_size: int,
+    ) -> List[Dict]:
+        """
+        Load only dialog conversations (skips movie metadata).
+        Used by initialize_run to avoid the slow movie-file I/O.
+        """
+        all_conversations = self._load_all_dialogs(dataset)
+        if sample_size >= len(all_conversations):
+            logger.warning(
+                f"sample_size={sample_size} >= dataset size {len(all_conversations)}. Returning full dataset."
+            )
+            return all_conversations
+        return random.sample(all_conversations, sample_size)
+
     def load_dataset_sample(
         self,
         dataset: Literal["inspired", "redial"],
         sample_size: int,
-        start_index: int
+        start_index: int,
     ) -> tuple[List[Dict], pd.DataFrame]:
-        """Load dataset samples."""
+        """Load dialog samples together with the movie metadata DataFrame."""
+        all_conversations = self._load_all_dialogs(dataset)
+
         if dataset == "inspired":
-            dialog_path = Path(settings.data.INSPIRED_DIALOG_DATA)
             movie_path = Path(settings.data.INSPIRED_MOVIE_DATA)
-
-            with open(dialog_path, "r", encoding="utf-8") as file:
-                all_conversations = json.load(file)
-
-            with open(movie_path, "r", encoding="utf-8") as file:
-                movie = [json.loads(line) for line in file if line.strip()]
+            with open(movie_path, "r", encoding="utf-8") as f:
+                movie = [json.loads(line) for line in f if line.strip()]
             df_movie = pd.DataFrame(movie)
-
-        elif dataset == "redial":
-            dialog_path = Path(settings.data.REDIAL_DIALOG_DATA)
+        else:  # redial
             movie_path = Path(settings.data.REDIAL_MOVIE_DATA)
+            df_movie = pd.DataFrame(pd.read_csv(movie_path, encoding="utf-8"))
 
-            with open(dialog_path, "r", encoding="utf-8") as file:
-                all_conversations = json.load(file)
-
-            movie = pd.read_csv(movie_path, encoding="utf-8")
-            df_movie = pd.DataFrame(movie)
-        else:
-            raise ValueError(f"Unknown dataset: {dataset}")
-
-        # Sampling
-        # Random Sampling
-        if sample_size > len(all_conversations):
-            logger.warning(f"Sample size {sample_size} is larger than dataset size {len(all_conversations)}. Returning full dataset.")
+        if sample_size >= len(all_conversations):
+            logger.warning(
+                f"sample_size={sample_size} >= dataset size {len(all_conversations)}. Returning full dataset."
+            )
             return all_conversations, df_movie
-            
+
         return random.sample(all_conversations, sample_size), df_movie
 
     async def evaluate(

@@ -28,6 +28,7 @@ class EvaluationResultResponse(BaseModel):
 class EvaluationRunResponse(BaseModel):
     """Summary of an evaluation run."""
     id: int
+    name: str | None = None
     dataset: str
     sample_size: int | None = None
     n_sample: int | None = None
@@ -46,6 +47,7 @@ class EvaluationRunResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
 
 
 class EvaluationRunDetailResponse(EvaluationRunResponse):
