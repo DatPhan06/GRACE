@@ -68,6 +68,7 @@ export interface EvaluationRunResponse {
     top_k: number;
     model: string;
     avg_recall: number;
+    name?: string;
 
     avg_recall_retrieval?: number;
     avg_recall_semantic?: number;
@@ -139,28 +140,29 @@ export interface BatchStepExecutionResponse {
     run_id: number;
     step_type: string;
     version: number;
+    name?: string;
     config: Record<string, unknown>;
     status: string;
     created_at: string;
 }
 
-export const initializeRun = async (dataset: "inspired" | "redial", sample_size: number, start_index: number = 0): Promise<InitRunResponse> => {
-    const response = await axios.post<InitRunResponse>(`${API_URL}/evaluate/init`, { dataset, sample_size, start_index });
+export const initializeRun = async (dataset: "inspired" | "redial", sample_size: number, start_index: number = 0, name?: string): Promise<InitRunResponse> => {
+    const response = await axios.post<InitRunResponse>(`${API_URL}/evaluate/init`, { dataset, sample_size, start_index, name });
     return response.data;
 };
 
-export const runSummarizationStep = async (run_id: number): Promise<StepResponse> => {
-    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/summarize`, { run_id });
+export const runSummarizationStep = async (run_id: number, name?: string): Promise<StepResponse> => {
+    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/summarize`, { run_id, name });
     return response.data;
 };
 
-export const runRetrievalStep = async (run_id: number, n_sample: number, input_batch_id?: number): Promise<StepResponse> => {
-    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/retrieve`, { run_id, n_sample, input_batch_id });
+export const runRetrievalStep = async (run_id: number, n_sample: number, input_batch_id?: number, name?: string): Promise<StepResponse> => {
+    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/retrieve`, { run_id, n_sample, input_batch_id, name });
     return response.data;
 };
 
-export const runRerankingStep = async (run_id: number, top_k: number, model: "llm" | "cohere", input_batch_id?: number): Promise<StepResponse> => {
-    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/rerank`, { run_id, top_k, model, input_batch_id });
+export const runRerankingStep = async (run_id: number, top_k: number, model: "llm" | "cohere", input_batch_id?: number, name?: string): Promise<StepResponse> => {
+    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/rerank`, { run_id, top_k, model, input_batch_id, name });
     return response.data;
 };
 
@@ -209,7 +211,9 @@ export interface BatchDetailResponse {
     items: BatchDetailItem[];
 }
 
-export const getStepBatchDetail = async (batchId: number): Promise<BatchDetailResponse> => {
-    const response = await axios.get<BatchDetailResponse>(`${API_URL}/tracing/batches/${batchId}/details`);
+export const getBatchDetail = async (batch_id: number, step_type: string): Promise<BatchDetailResponse> => {
+    const response = await axios.get<BatchDetailResponse>(`${API_URL}/tracing/batches/${batch_id}/details`, {
+        params: { step_type }
+    });
     return response.data;
 };

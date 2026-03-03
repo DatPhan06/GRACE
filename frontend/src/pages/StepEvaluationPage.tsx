@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initializeRun, runSummarizationStep, runRetrievalStep, runRerankingStep, getStepsByType, getStepBatchDetail, getEvaluationRuns, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse } from '@/lib/api';
+import { initializeRun, runSummarizationStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse } from '@/lib/api';
 import VersionDetailModal from '@/components/evaluation/VersionDetailModal';
 
 export default function StepEvaluationPage() {
@@ -80,8 +80,9 @@ export default function StepEvaluationPage() {
     const handleInit = async () => {
         setLoading(true);
         try {
-            await initializeRun(dataset, sampleSize);
+            await initializeRun(dataset, sampleSize, 0, newVersionName);
             setShowRunModal(false);
+            setNewVersionName('');
             loadRuns();
         } catch (error) {
             console.error('Init failed:', error);
@@ -90,12 +91,14 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateSummarization = async () => {
-        if (!selectedRunId) return;
+    const handleCreateSummarization = async (runIdOverride?: number | any) => {
+        const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
+        if (!runId) return;
         setLoading(true);
         try {
-            await runSummarizationStep(selectedRunId);
+            await runSummarizationStep(runId, newVersionName);
             setShowNewVersionModal(null);
+            setNewVersionName('');
             loadSummBatches();
         } catch (error) {
             console.error('Summarization failed:', error);
@@ -104,13 +107,14 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateRetrieval = async (runIdOverride?: number) => {
-        const runId = runIdOverride || selectedRunId;
+    const handleCreateRetrieval = async (runIdOverride?: number | any) => {
+        const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
         if (!runId) return;
         setLoading(true);
         try {
-            await runRetrievalStep(runId, nSample, selectedSummBatch);
+            await runRetrievalStep(runId, nSample, selectedSummBatch, newVersionName);
             setShowNewVersionModal(null);
+            setNewVersionName('');
             loadRetrBatches();
         } catch (error) {
             console.error('Retrieval failed:', error);
@@ -119,13 +123,14 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateReranking = async (runIdOverride?: number) => {
-        const runId = runIdOverride || selectedRunId;
+    const handleCreateReranking = async (runIdOverride?: number | any) => {
+        const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
         if (!runId) return;
         setLoading(true);
         try {
-            await runRerankingStep(runId, topK, model, selectedRetrBatch);
+            await runRerankingStep(runId, topK, model, selectedRetrBatch, newVersionName);
             setShowNewVersionModal(null);
+            setNewVersionName('');
             loadRerankBatches();
         } catch (error) {
             console.error('Reranking failed:', error);
@@ -161,11 +166,11 @@ export default function StepEvaluationPage() {
     const handleViewDetail = async (batch: BatchStepExecutionResponse) => {
         setDetailLoading(true);
         try {
-            const detail = await getStepBatchDetail(batch.id);
+            const detail = await getBatchDetail(batch.id, batch.step_type);
             setBatchDetail(detail);
             setShowDetailModal(true);
-        } catch (e) {
-            console.error('Error loading batch detail:', e);
+        } catch (error) {
+            console.error('Failed to load detail:', error);
         } finally {
             setDetailLoading(false);
         }
@@ -190,15 +195,20 @@ export default function StepEvaluationPage() {
             onClick={() => handleViewDetail(batch)}
             className={`p-4 ${color.bg} border ${color.border} rounded-lg cursor-pointer hover:shadow-md transition-all`}
         >
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">
-                    <span className={`text-sm font-bold ${color.text}`}>v{batch.version}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Run #{batch.run_id}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
-                        {batch.status}
+                    <span className={`text-base font-bold ${color.text}`}>
+                        {batch.name ? batch.name : `v${batch.version}`}
                     </span>
+                    {batch.name && <span className="text-xs text-gray-400">v{batch.version}</span>}
                 </div>
                 <span className="text-xs text-gray-500">{new Date(batch.created_at).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center mb-2">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Run #{batch.run_id}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
+                    {batch.status}
+                </span>
             </div>
             {children && <div className="mt-2">{children}</div>}
         </div>
@@ -219,7 +229,7 @@ export default function StepEvaluationPage() {
                 </div>
                 <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
                     <button onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-                    <button onClick={onSubmit} disabled={submitDisabled} className={`px-6 py-2 text-sm text-white rounded-lg ${submitColor} disabled:opacity-50 transition-colors`}>
+                    <button onClick={(e) => { e.preventDefault(); onSubmit(); }} disabled={submitDisabled} className={`px-6 py-2 text-sm text-white rounded-lg ${submitColor} disabled:opacity-50 transition-colors`}>
                         {submitLabel}
                     </button>
                 </div>
@@ -294,16 +304,19 @@ export default function StepEvaluationPage() {
                                     key={run.id}
                                     className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md hover:border-blue-200 transition-all"
                                 >
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex justify-between items-start mb-2">
                                         <div className="flex items-center gap-3">
-                                            <span className="text-sm font-bold text-blue-800">Run #{run.id}</span>
-                                            <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${run.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                                {run.status || 'initialized'}
+                                            <span className="font-semibold text-blue-900">
+                                                {run.name ? run.name : `Run #${run.id}`}
+                                            </span>
+                                            {run.name && <span className="text-xs text-gray-400">Run #{run.id}</span>}
+                                            <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${run.status === 'completed' ? 'bg-green-100 text-green-700' : run.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                {run.status}
                                             </span>
                                         </div>
                                         <span className="text-xs text-gray-500">{run.timestamp ? new Date(run.timestamp).toLocaleString() : ''}</span>
                                     </div>
-                                    <div className="mt-2 flex gap-3 text-xs text-gray-600">
+                                    <div className="flex justify-between items-center">
                                         <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Dataset: <strong className="capitalize">{run.dataset}</strong></span>
                                         <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Samples: <strong>{run.sample_size}</strong></span>
                                         {run.avg_recall != null && run.avg_recall > 0 && (
@@ -427,25 +440,37 @@ export default function StepEvaluationPage() {
                     submitColor="bg-blue-600 hover:bg-blue-700"
                     submitDisabled={loading}
                 >
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Dataset</label>
-                        <select
-                            value={dataset}
-                            onChange={(e) => setDataset(e.target.value as "redial" | "inspired")}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                        >
-                            <option value="redial">Redial</option>
-                            <option value="inspired">Inspired</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Sample Size</label>
-                        <input
-                            type="number"
-                            value={sampleSize}
-                            onChange={(e) => setSampleSize(Number(e.target.value))}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                        />
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Version Name <span className="text-gray-400">(optional)</span></label>
+                            <input
+                                type="text"
+                                value={newVersionName}
+                                onChange={(e) => setNewVersionName(e.target.value)}
+                                placeholder="e.g. initial-run..."
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Dataset</label>
+                            <select
+                                value={dataset}
+                                onChange={(e) => setDataset(e.target.value as "redial" | "inspired")}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                            >
+                                <option value="redial">Redial</option>
+                                <option value="inspired">Inspired</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Sample Size</label>
+                            <input
+                                type="number"
+                                value={sampleSize}
+                                onChange={(e) => setSampleSize(Number(e.target.value))}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                            />
+                        </div>
                     </div>
                 </ModalBackdrop>
             )}
@@ -459,7 +484,7 @@ export default function StepEvaluationPage() {
                 <ModalBackdrop
                     title="📝 New Summarization Version"
                     onClose={() => setShowNewVersionModal(null)}
-                    onSubmit={handleCreateSummarization}
+                    onSubmit={() => handleCreateSummarization()}
                     submitLabel={loading ? 'Running...' : 'Run Summarization'}
                     submitColor="bg-indigo-600 hover:bg-indigo-700"
                     submitDisabled={loading || !selectedRunId}
