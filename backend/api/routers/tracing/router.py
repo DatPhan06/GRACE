@@ -50,12 +50,12 @@ async def get_step_history(run_id: int):
 
 
 @router.get("/batches/{batch_id}/details", response_model=BatchDetailResponse)
-async def get_batch_detail(batch_id: int):
+async def get_batch_detail(batch_id: int, step_type: str = Query(..., description="Type of step (summarization, retrieval, reranking)")):
     """
     Get per-conversation detail data for a specific batch execution.
     """
     service = EvaluationService()
-    result = await service.get_batch_detail(batch_id)
+    result = await service.get_batch_detail(batch_id, step_type)
     if not result:
         raise HTTPException(status_code=404, detail="Batch not found")
     return result

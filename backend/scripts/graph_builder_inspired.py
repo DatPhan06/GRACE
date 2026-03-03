@@ -3,9 +3,9 @@ from neo4j import GraphDatabase
 import os
 import re
 from dotenv import load_dotenv
-from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 import asyncio
-import yaml
+import os
 
 load_dotenv()
 
@@ -55,7 +55,9 @@ class GraphBuilder:
     A class to build a movie graph in a Neo4j database, including embeddings.
     """
     def __init__(self, uri, port, user, password, embedding_client, embedding_deployment):
-        self.driver = GraphDatabase.driver(f"{uri}:{port}", auth=(user, password))
+        # Allow uri to contain the port (e.g. bolt://neo4j:7687) if passed from Docker
+        full_uri = uri if ":" in uri.replace("bolt://", "") else f"{uri}:{port}"
+        self.driver = GraphDatabase.driver(full_uri, auth=(user, password))
         self.embedding_client = embedding_client
         self.embedding_deployment = embedding_deployment
         try:
@@ -154,15 +156,9 @@ def load_movies_from_file(filepath):
     return movies
 
 async def main():
-    print("[INFO] Đang đọc file config.yaml...")
-    CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.yaml")
-    with open(CONFIG_PATH, "r") as f:
-        config = yaml.safe_load(f)
-    print("[INFO] Đã đọc config.yaml thành công.")
-
-    print("[INFO] Đang lấy các tham số từ config cho INSPIRED dataset...")
-    # Use INSPIRED data path instead of Redial
-    movie_file_path = config["InspiredDataPath"]["processed"]["movie"]
+    print("[INFO] Đang sử dụng đường dẫn cứng dataset cho INSPIRED...")
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+    movie_file_path = os.path.join(PROJECT_ROOT, "dataset/INSPIRED/processed/movie_data/movie_database_no_missing.json")
     all_movies = load_movies_from_file(movie_file_path)
     
     if not all_movies:
@@ -171,27 +167,23 @@ async def main():
 
     # Use port 7687 for INSPIRED dataset (as configured in graph_retriever.py)
     NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost")
-    NEO4J_PORT = os.getenv("NEO4J_PORT_INSPIRED", "7688") 
+    NEO4J_PORT = os.getenv("NEO4J_PORT", "7687") 
     NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
     NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
-    embedding_api_key = os.getenv("EMBEDDING__KEY")
-    embedding_api_version = os.getenv("EMBEDDING__API_VERSION")
-    embedding_azure_endpoint = os.getenv("EMBEDDING__ENDPOINT")
-    embedding_deployment_name = os.getenv("EMBEDDING__DEPLOYMENT_NAME")
+    
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    
     CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", "10"))
 
     print(f"[INFO] Kết nối đến Neo4j cho INSPIRED dataset trên port {NEO4J_PORT}...")
 
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
-    azure_embedding_client = AsyncAzureOpenAI(
-        api_key=embedding_api_key,
-        api_version=embedding_api_version,
-        azure_endpoint=embedding_azure_endpoint,
-    )
+    openai_client = AsyncOpenAI(api_key=openai_api_key)
 
     builder = GraphBuilder(
         NEO4J_URI, NEO4J_PORT, NEO4J_USER, NEO4J_PASSWORD,
-        azure_embedding_client, embedding_deployment_name
+        openai_client, embedding_model
     )
     
     async def insert_with_semaphore(movie_data):

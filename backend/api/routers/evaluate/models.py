@@ -55,6 +55,7 @@ class EvaluateResponse(BaseModel):
 
 
 class InitRunRequest(BaseModel):
+    name: str | None = None
     dataset: Literal["inspired", "redial"] = Field(default="redial")
     sample_size: int = Field(default=50, ge=1, le=1000)
     start_index: int = Field(default=0, ge=0)
@@ -62,14 +63,17 @@ class InitRunRequest(BaseModel):
 
 class SummarizationStepRequest(BaseModel):
     run_id: int
+    name: str | None = None
 
 class RetrievalStepRequest(BaseModel):
     run_id: int
+    name: str | None = None
     n_sample: int = Field(default=100, ge=10, le=600)
     input_batch_id: int | None = None
 
 class RerankingStepRequest(BaseModel):
     run_id: int
+    name: str | None = None
     top_k: int = Field(default=10, ge=1, le=50)
     model: Literal["llm", "cohere"] = Field(default="cohere")
     input_batch_id: int | None = None

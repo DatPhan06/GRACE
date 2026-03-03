@@ -14,7 +14,7 @@ from domain.evaluation import EvaluationDomainService
 from domain.evaluation_storage.service import EvaluationStorageService
 from shared.settings.config import settings
 from shared.utils.logger import setup_logger
-from infra.db.models import EvaluationRunModel, ConversationLogModel, StepSummarizationModel, StepRetrievalModel, StepRerankingModel, EvaluationResultModel, BatchStepExecutionModel
+from infra.db.models import EvaluationRunModel, ConversationLogModel, StepSummarizationModel, StepRetrievalModel, StepRerankingModel, EvaluationResultModel, SummarizationRunModel, RetrievalRunModel, RerankingRunModel
 from infra.db.database import get_db
 
 logger = setup_logger(__name__)
@@ -42,7 +42,8 @@ class EvaluationService:
         self,
         dataset: Literal["inspired", "redial"] = "redial",
         sample_size: int = 50,
-        start_index: int = 0
+        start_index: int = 0,
+        name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Initialize a new evaluation run.
@@ -54,6 +55,7 @@ class EvaluationService:
         try:
             # Create Run
             run = EvaluationRunModel(
+                name=name,
                 dataset=dataset,
                 sample_size=len(conversations),
                 start_index=start_index,
@@ -107,56 +109,90 @@ class EvaluationService:
         finally:
             db.close()
 
-    async def _create_batch_execution(self, db, run_id: int, step_type: str, config: Dict[str, Any]) -> BatchStepExecutionModel:
-        # Get next version
-        last_batch = db.query(BatchStepExecutionModel).filter_by(run_id=run_id, step_type=step_type).order_by(BatchStepExecutionModel.version.desc()).first()
+    async def _create_step_run(self, db, model_cls, filters: dict, kwargs: dict):
+        last_batch = db.query(model_cls).filter_by(**filters).order_by(model_cls.version.desc()).first()
         new_version = (last_batch.version + 1) if last_batch else 1
         
-        batch = BatchStepExecutionModel(
-            run_id=run_id,
-            step_type=step_type,
+        batch = model_cls(
             version=new_version,
-            config=config,
-            status="running"
+            status="running",
+            **kwargs
         )
         db.add(batch)
         db.commit()
         db.refresh(batch)
         return batch
 
-    async def get_step_history(self, run_id: int) -> List[BatchStepExecutionModel]:
-        """Get execution history for a run."""
+    async def get_step_history(self, run_id: int) -> List[Dict[str, Any]]:
+        """Get execution history for a run. Retrieves from all 3 tables."""
         db = next(get_db())
         try:
-            return db.query(BatchStepExecutionModel).filter_by(run_id=run_id).order_by(BatchStepExecutionModel.created_at.desc()).all()
+            summs = db.query(SummarizationRunModel).filter_by(run_id=run_id).all()
+            summ_ids = [s.id for s in summs]
+            
+            retrs = db.query(RetrievalRunModel).filter(RetrievalRunModel.summarization_batch_id.in_(summ_ids)).all() if summ_ids else []
+            retr_ids = [r.id for r in retrs]
+            
+            reranks = db.query(RerankingRunModel).filter(RerankingRunModel.retrieval_batch_id.in_(retr_ids)).all() if retr_ids else []
+            
+            results = []
+            for s in summs:
+                results.append({"id": s.id, "run_id": s.run_id, "name": s.name, "step_type": "summarization", "version": s.version, "config": s.config, "status": s.status, "created_at": s.created_at})
+            for r in retrs:
+                # Resolve run_id
+                summ = next((x for x in summs if x.id == r.summarization_batch_id), None)
+                run_id = summ.run_id if summ else -1
+                results.append({"id": r.id, "run_id": run_id, "name": r.name, "step_type": "retrieval", "version": r.version, "config": r.config, "status": r.status, "created_at": r.created_at, "input_batch_id": r.summarization_batch_id})
+            for rr in reranks:
+                retr = next((x for x in retrs if x.id == rr.retrieval_batch_id), None)
+                summ = next((x for x in summs if x.id == retr.summarization_batch_id), None) if retr else None
+                run_id = summ.run_id if summ else -1
+                results.append({"id": rr.id, "run_id": run_id, "name": rr.name, "step_type": "reranking", "version": rr.version, "config": rr.config, "status": rr.status, "created_at": rr.created_at, "input_batch_id": rr.retrieval_batch_id})
+                
+            results.sort(key=lambda x: x["created_at"], reverse=True)
+            return results
         finally:
             db.close()
 
-    async def get_steps_by_type(self, step_type: str = None, skip: int = 0, limit: int = 100) -> List[BatchStepExecutionModel]:
+    async def get_steps_by_type(self, step_type: str = None, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
         """Get all batch step executions, optionally filtered by step_type."""
         db = next(get_db())
         try:
-            query = db.query(BatchStepExecutionModel)
-            if step_type:
-                query = query.filter_by(step_type=step_type)
-            return query.order_by(BatchStepExecutionModel.created_at.desc()).offset(skip).limit(limit).all()
+            results = []
+            if step_type == "summarization":
+                items = db.query(SummarizationRunModel).order_by(SummarizationRunModel.created_at.desc()).offset(skip).limit(limit).all()
+                for i in items:
+                    results.append({"id": i.id, "run_id": i.run_id, "name": i.name, "step_type": "summarization", "version": i.version, "config": i.config, "status": i.status, "created_at": i.created_at})
+            elif step_type == "retrieval":
+                items = db.query(RetrievalRunModel).order_by(RetrievalRunModel.created_at.desc()).offset(skip).limit(limit).all()
+                for i in items:
+                    summ = db.query(SummarizationRunModel).filter_by(id=i.summarization_batch_id).first()
+                    run_id = summ.run_id if summ else -1
+                    results.append({"id": i.id, "run_id": run_id, "name": i.name, "step_type": "retrieval", "version": i.version, "config": i.config, "status": i.status, "created_at": i.created_at, "input_batch_id": i.summarization_batch_id})
+            elif step_type == "reranking":
+                items = db.query(RerankingRunModel).order_by(RerankingRunModel.created_at.desc()).offset(skip).limit(limit).all()
+                for i in items:
+                    retr = db.query(RetrievalRunModel).filter_by(id=i.retrieval_batch_id).first()
+                    summ = db.query(SummarizationRunModel).filter_by(id=retr.summarization_batch_id).first() if retr else None
+                    run_id = summ.run_id if summ else -1
+                    results.append({"id": i.id, "run_id": run_id, "name": i.name, "step_type": "reranking", "version": i.version, "config": i.config, "status": i.status, "created_at": i.created_at, "input_batch_id": i.retrieval_batch_id})
+            return results
         finally:
             db.close()
 
-    async def get_batch_detail(self, batch_id: int) -> dict:
+    async def get_batch_detail(self, batch_id: int, step_type: str) -> dict:
         """Get per-conversation detail data for a specific batch execution."""
         db = next(get_db())
         try:
-            batch = db.query(BatchStepExecutionModel).filter_by(id=batch_id).first()
-            if not batch:
-                return None
-
             items = []
-            if batch.step_type == "summarization":
+            if step_type == "summarization":
+                batch = db.query(SummarizationRunModel).filter_by(id=batch_id).first()
+                if not batch: return None
+                run_id = batch.run_id
                 rows = (
                     db.query(StepSummarizationModel, ConversationLogModel.conv_id)
                     .join(ConversationLogModel, StepSummarizationModel.conversation_id == ConversationLogModel.id)
-                    .filter(StepSummarizationModel.batch_run_id == batch_id)
+                    .filter(StepSummarizationModel.summarization_batch_id == batch_id)
                     .all()
                 )
                 for row, conv_id in rows:
@@ -165,11 +201,15 @@ class EvaluationService:
                         "user_preferences": row.user_preferences,
                     })
 
-            elif batch.step_type == "retrieval":
+            elif step_type == "retrieval":
+                batch = db.query(RetrievalRunModel).filter_by(id=batch_id).first()
+                if not batch: return None
+                summ = db.query(SummarizationRunModel).filter_by(id=batch.summarization_batch_id).first()
+                run_id = summ.run_id if summ else -1
                 rows = (
                     db.query(StepRetrievalModel, ConversationLogModel.conv_id)
                     .join(ConversationLogModel, StepRetrievalModel.conversation_id == ConversationLogModel.id)
-                    .filter(StepRetrievalModel.batch_run_id == batch_id)
+                    .filter(StepRetrievalModel.retrieval_batch_id == batch_id)
                     .all()
                 )
                 for row, conv_id in rows:
@@ -183,11 +223,16 @@ class EvaluationService:
                         "collab_count": row.collab_count,
                     })
 
-            elif batch.step_type == "reranking":
+            elif step_type == "reranking":
+                batch = db.query(RerankingRunModel).filter_by(id=batch_id).first()
+                if not batch: return None
+                retr = db.query(RetrievalRunModel).filter_by(id=batch.retrieval_batch_id).first()
+                summ = db.query(SummarizationRunModel).filter_by(id=retr.summarization_batch_id).first() if retr else None
+                run_id = summ.run_id if summ else -1
                 rows = (
                     db.query(StepRerankingModel, ConversationLogModel.conv_id)
                     .join(ConversationLogModel, StepRerankingModel.conversation_id == ConversationLogModel.id)
-                    .filter(StepRerankingModel.batch_run_id == batch_id)
+                    .filter(StepRerankingModel.reranking_batch_id == batch_id)
                     .all()
                 )
                 for row, conv_id in rows:
@@ -199,11 +244,14 @@ class EvaluationService:
                         "reranked_count": len(reranked) if isinstance(reranked, list) else 0,
                         "recall": row.recall,
                     })
+            else:
+                return None
 
             return {
                 "id": batch.id,
-                "run_id": batch.run_id,
-                "step_type": batch.step_type,
+                "run_id": run_id,
+                "name": batch.name,
+                "step_type": step_type,
                 "version": batch.version,
                 "config": batch.config,
                 "status": batch.status,
@@ -213,7 +261,7 @@ class EvaluationService:
         finally:
             db.close()
 
-    async def run_summarization_step(self, run_id: int) -> Dict[str, Any]:
+    async def run_summarization_step(self, run_id: int, name: Optional[str] = None) -> Dict[str, Any]:
         """
         Run summarization step for a specific run.
         """
@@ -227,7 +275,12 @@ class EvaluationService:
                 return {"message": "No logs found for this run.", "count": 0}
 
             # Create Batch
-            batch = await self._create_batch_execution(db, run_id, "summarization", {})
+            batch = await self._create_step_run(
+                db, 
+                SummarizationRunModel, 
+                {"run_id": run_id}, 
+                {"run_id": run_id, "name": name, "config": {}}
+            )
 
             processed_count = 0
             for log in logs:
@@ -238,7 +291,7 @@ class EvaluationService:
                 # Create Step Entry linked to Batch
                 step = StepSummarizationModel(
                     conversation_id=log.id,
-                    batch_run_id=batch.id,
+                    summarization_batch_id=batch.id,
                     user_preferences=user_preferences
                 )
                 db.add(step)
@@ -256,7 +309,7 @@ class EvaluationService:
                 run.status = "summarized"
             
             db.commit()
-            return {"run_id": run_id, "batch_id": batch.id, "message": f"Summarized {processed_count} conversations (v{batch.version}).", "status": "summarized"}
+            return {"run_id": run_id, "summarization_batch_id": batch.id, "message": f"Summarized {processed_count} conversations (v{batch.version}).", "status": "summarized"}
 
         except Exception as e:
             db.rollback()
@@ -268,7 +321,7 @@ class EvaluationService:
         finally:
             db.close()
 
-    async def run_retrieval_step(self, run_id: int, n_sample: int = 100, summarization_batch_id: Optional[int] = None) -> Dict[str, Any]:
+    async def run_retrieval_step(self, run_id: int, n_sample: int = 100, summarization_batch_id: Optional[int] = None, name: Optional[str] = None) -> Dict[str, Any]:
         """
         Run retrieval step. Can optionally specify which summarization batch to use as input.
         """
@@ -278,20 +331,24 @@ class EvaluationService:
             if not logs:
                 return {"message": "No logs found.", "count": 0}
 
+            if not summarization_batch_id:
+                latest_summ = db.query(SummarizationRunModel).filter_by(run_id=run_id, status="completed").order_by(SummarizationRunModel.version.desc()).first()
+                if not latest_summ:
+                    return {"message": "No completed summarization step found to base retrieval on.", "count": 0}
+                summarization_batch_id = latest_summ.id
+
             # Create Batch
-            batch = await self._create_batch_execution(db, run_id, "retrieval", {"n_sample": n_sample, "input_batch": summarization_batch_id})
+            batch = await self._create_step_run(
+                db, 
+                RetrievalRunModel, 
+                {"summarization_batch_id": summarization_batch_id}, 
+                {"summarization_batch_id": summarization_batch_id, "name": name, "config": {"n_sample": n_sample}}
+            )
 
             processed_count = 0
             for log in logs:
                 # 1. Get User Preferences
-                # If batch_id provided, fetch specific version. Else, fetch latest.
-                query = db.query(StepSummarizationModel).filter_by(conversation_id=log.id)
-                if summarization_batch_id:
-                    query = query.filter_by(batch_run_id=summarization_batch_id)
-                else:
-                    # Get latest by joining batch and ordering by version/date
-                    query = query.join(BatchStepExecutionModel).order_by(BatchStepExecutionModel.version.desc())
-                
+                query = db.query(StepSummarizationModel).filter_by(conversation_id=log.id, summarization_batch_id=summarization_batch_id)
                 step_summ = query.first()
                 
                 if not step_summ:
@@ -317,7 +374,7 @@ class EvaluationService:
                 # Upsert StepRetrieval linked to Batch
                 step = StepRetrievalModel(
                     conversation_id=log.id,
-                    batch_run_id=batch.id,
+                    retrieval_batch_id=batch.id,
                     candidates=candidates, 
                     semantic_count=counts["semantic"],
                     content_count=counts["content"],
@@ -331,7 +388,7 @@ class EvaluationService:
                 run.status = "retrieved"
             
             db.commit()
-            return {"run_id": run_id, "batch_id": batch.id, "message": f"Retrieved candidates for {processed_count} conversations (v{batch.version}).", "status": "retrieved"}
+            return {"run_id": run_id, "retrieval_batch_id": batch.id, "message": f"Retrieved candidates for {processed_count} conversations (v{batch.version}).", "status": "retrieved"}
 
         except Exception as e:
             db.rollback()
@@ -343,7 +400,7 @@ class EvaluationService:
         finally:
             db.close()
 
-    async def run_reranking_step(self, run_id: int, top_k: int = 10, model: Literal["llm", "cohere"] = "llm", retrieval_batch_id: Optional[int] = None) -> Dict[str, Any]:
+    async def run_reranking_step(self, run_id: int, top_k: int = 10, model: Literal["llm", "cohere"] = "llm", retrieval_batch_id: Optional[int] = None, name: Optional[str] = None) -> Dict[str, Any]:
         """
         Run reranking step for a specific run.
         Requires retrieval to be completed.
@@ -357,18 +414,25 @@ class EvaluationService:
             if not logs:
                 return {"message": "No logs found for this run.", "count": 0}
 
+            if not retrieval_batch_id:
+                # Find latest retrieval via summarization
+                latest_retr = db.query(RetrievalRunModel).join(SummarizationRunModel).filter(SummarizationRunModel.run_id == run_id, RetrievalRunModel.status == "completed").order_by(RetrievalRunModel.version.desc()).first()
+                if not latest_retr:
+                    return {"message": "No completed retrieval step found.", "count": 0}
+                retrieval_batch_id = latest_retr.id
+
             # Create Batch
-            batch = await self._create_batch_execution(db, run_id, "reranking", {"top_k": top_k, "model": model, "input_batch": retrieval_batch_id})
+            batch = await self._create_step_run(
+                db, 
+                RerankingRunModel, 
+                {"retrieval_batch_id": retrieval_batch_id}, 
+                {"retrieval_batch_id": retrieval_batch_id, "name": name, "config": {"top_k": top_k, "model": model}}
+            )
 
             processed_count = 0
             for log in logs:
                 # 1. Get Retrieval Candidates
-                query = db.query(StepRetrievalModel).filter_by(conversation_id=log.id)
-                if retrieval_batch_id:
-                    query = query.filter_by(batch_run_id=retrieval_batch_id)
-                else:
-                    query = query.join(BatchStepExecutionModel).order_by(BatchStepExecutionModel.version.desc())
-                
+                query = db.query(StepRetrievalModel).filter_by(conversation_id=log.id, retrieval_batch_id=retrieval_batch_id)
                 step_retrieval = query.first()
 
                 if not step_retrieval:
@@ -376,13 +440,11 @@ class EvaluationService:
 
                 candidates = step_retrieval.candidates
 
-                # 2. Get User Preferences (from linked summarization or latest)
-                # Ideally, we should track which summarization was used for retrieval, but for now let's get latest or specific.
-                # Since we don't pass summarization_batch_id to reranking, let's assume we want the one used by retrieval?
-                # Actually, StepRetrieval doesn't link back to StepSummarization directly, only via Conversation.
-                # Let's just get the latest StepSummarization for this conversation, as that's safe default.
-                step_summ = db.query(StepSummarizationModel).filter_by(conversation_id=log.id)\
-                    .join(BatchStepExecutionModel).order_by(BatchStepExecutionModel.version.desc()).first()
+                # 2. Get User Preferences (from linked summarization)
+                retrieval_run = db.query(RetrievalRunModel).filter_by(id=retrieval_batch_id).first()
+                summ_batch_id = retrieval_run.summarization_batch_id
+                
+                step_summ = db.query(StepSummarizationModel).filter_by(conversation_id=log.id, summarization_batch_id=summ_batch_id).first()
                 
                 if not step_summ:
                     continue
@@ -406,10 +468,9 @@ class EvaluationService:
                 recall_val = self.evaluation_domain_service.calculate_recall(final_recs, ground_truth, top_k)
 
                 # Upsert StepReranking - Always create NEW entry for each batch run
-                # Linked to specific batch
                 step = StepRerankingModel(
                     conversation_id=log.id,
-                    batch_run_id=batch.id,
+                    reranking_batch_id=batch.id,
                     model_used=model,
                     reranked_candidates=reranked,
                     recall=recall_val
@@ -417,7 +478,6 @@ class EvaluationService:
                 db.add(step)
                 
                 # Also compute and save immediate result for this conversation
-                # We update the "latest" result for the conversation so the UI shows the most recent state
                 result = db.query(EvaluationResultModel).filter_by(conversation_id=log.id).first()
                 if not result:
                     result = EvaluationResultModel(
@@ -430,7 +490,6 @@ class EvaluationService:
                 result.ground_truth = ground_truth
                 result.recommendations = final_recs
                 
-                # Use step_retrieval instead of log.retrieval (which is a list)
                 retrieved_candidates = step_retrieval.candidates
                 result.candidate_count = len(retrieved_candidates)
                 result.semantic_count = step_retrieval.semantic_count
@@ -449,9 +508,6 @@ class EvaluationService:
             if run:
                 run.status = "completed"
                 # Update run aggregates
-                # (Simplified logic, can be moved to a separate compute_metrics step if needed)
-                # But user wants to see results after reranking typically.
-                # Calculate averages
                 results = db.query(EvaluationResultModel).filter_by(run_id=run.id).all()
                 if results:
                     run.avg_recall = sum(r.recall for r in results) / len(results)

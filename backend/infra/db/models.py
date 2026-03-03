@@ -17,6 +17,7 @@ class EvaluationRunModel(Base):
     __tablename__ = "evaluation_runs"
 
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=True) 
     dataset = Column(String)
     sample_size = Column(Integer)
     start_index = Column(Integer)
@@ -32,10 +33,9 @@ class EvaluationRunModel(Base):
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relationship
-    # Relationship
     results = relationship("EvaluationResultModel", back_populates="run", cascade="all, delete-orphan")
     conversations = relationship("ConversationLogModel", back_populates="run", cascade="all, delete-orphan")
-    batches = relationship("BatchStepExecutionModel", back_populates="run", cascade="all, delete-orphan")
+    summarization_runs = relationship("SummarizationRunModel", back_populates="run", cascade="all, delete-orphan")
 
 class ConversationLogModel(Base):
     __tablename__ = "conversation_logs"
@@ -58,31 +58,63 @@ class ConversationLogModel(Base):
     reranking = relationship("StepRerankingModel", back_populates="conversation", cascade="all, delete-orphan")
     result = relationship("EvaluationResultModel", back_populates="conversation", uselist=False, cascade="all, delete-orphan")
 
+# --- Step Run Models (Replacing BatchStepExecutionModel) ---
 
-class BatchStepExecutionModel(Base):
-    __tablename__ = "batch_step_executions"
+class SummarizationRunModel(Base):
+    __tablename__ = "summarization_runs"
 
     id = Column(Integer, primary_key=True, index=True)
-    run_id = Column(Integer, ForeignKey("evaluation_runs.id"))
-    step_type = Column(String) # summarization, retrieval, reranking
+    name = Column(String, nullable=True)
+    run_id = Column(Integer, ForeignKey("evaluation_runs.id")) # Step 1 (Initialize)
     version = Column(Integer)
     config = Column(JSON)
     status = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    run = relationship("EvaluationRunModel", back_populates="batches")
+    run = relationship("EvaluationRunModel", back_populates="summarization_runs")
+    retrieval_runs = relationship("RetrievalRunModel", back_populates="summarization_run", cascade="all, delete-orphan")
 
+
+class RetrievalRunModel(Base):
+    __tablename__ = "retrieval_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=True)
+    summarization_batch_id = Column(Integer, ForeignKey("summarization_runs.id")) # Step 2
+    version = Column(Integer)
+    config = Column(JSON)
+    status = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    summarization_run = relationship("SummarizationRunModel", back_populates="retrieval_runs")
+    reranking_runs = relationship("RerankingRunModel", back_populates="retrieval_run", cascade="all, delete-orphan")
+
+
+class RerankingRunModel(Base):
+    __tablename__ = "reranking_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=True)
+    retrieval_batch_id = Column(Integer, ForeignKey("retrieval_runs.id")) # Step 3
+    version = Column(Integer)
+    config = Column(JSON)
+    status = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    retrieval_run = relationship("RetrievalRunModel", back_populates="reranking_runs")
+
+# --- Detail Item Models ---
 
 class StepSummarizationModel(Base):
     __tablename__ = "step_summarization"
 
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(Integer, ForeignKey("conversation_logs.id"))
-    batch_run_id = Column(Integer, ForeignKey("batch_step_executions.id"))
+    summarization_batch_id = Column(Integer, ForeignKey("summarization_runs.id"))
     user_preferences = Column(String)
     
     conversation = relationship("ConversationLogModel", back_populates="summarization")
-    batch = relationship("BatchStepExecutionModel")
+    batch = relationship("SummarizationRunModel")
 
 
 class StepRetrievalModel(Base):
@@ -90,11 +122,8 @@ class StepRetrievalModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(Integer, ForeignKey("conversation_logs.id"))
-    batch_run_id = Column(Integer, ForeignKey("batch_step_executions.id"))
+    retrieval_batch_id = Column(Integer, ForeignKey("retrieval_runs.id"))
     
-    # Storing full candidate lists might be heavy, but useful for debugging. 
-    # For now, let's store simplified versions or just IDs if mapping is available, 
-    # but storing full JSON of candidates (title, year, plot) is safer for reproducibility.
     candidates = Column(JSON) 
     
     # Metadata
@@ -103,7 +132,7 @@ class StepRetrievalModel(Base):
     collab_count = Column(Integer)
 
     conversation = relationship("ConversationLogModel", back_populates="retrieval")
-    batch = relationship("BatchStepExecutionModel")
+    batch = relationship("RetrievalRunModel")
 
 
 class StepRerankingModel(Base):
@@ -111,14 +140,14 @@ class StepRerankingModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(Integer, ForeignKey("conversation_logs.id"))
-    batch_run_id = Column(Integer, ForeignKey("batch_step_executions.id"))
+    reranking_batch_id = Column(Integer, ForeignKey("reranking_runs.id"))
     
     model_used = Column(String)
     reranked_candidates = Column(JSON)
     recall = Column(Float, nullable=True)
     
     conversation = relationship("ConversationLogModel", back_populates="reranking")
-    batch = relationship("BatchStepExecutionModel")
+    batch = relationship("RerankingRunModel")
 
 
 class EvaluationResultModel(Base):

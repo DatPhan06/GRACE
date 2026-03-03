@@ -57,11 +57,13 @@ from typing import Dict, Optional
 class BatchStepExecutionResponse(BaseModel):
     id: int
     run_id: int
+    name: Optional[str] = None
     step_type: str
     version: int
     config: Dict[str, Any]
     status: str
     created_at: Any
+    input_batch_id: Optional[int] = None
 
     class Config:
         orm_mode = True

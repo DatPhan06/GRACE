@@ -80,7 +80,8 @@ async def initialize_run(request: InitRunRequest):
         return await service.initialize_run(
             dataset=request.dataset,
             sample_size=request.sample_size,
-            start_index=request.start_index
+            start_index=request.start_index,
+            name=request.name
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -91,7 +92,10 @@ async def run_summarization_step(request: SummarizationStepRequest):
     """Run summarization step for a specific run."""
     service = EvaluationService()
     try:
-        return await service.run_summarization_step(run_id=request.run_id)
+        return await service.run_summarization_step(
+            run_id=request.run_id,
+            name=request.name
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -104,7 +108,8 @@ async def run_retrieval_step(request: RetrievalStepRequest):
         return await service.run_retrieval_step(
             run_id=request.run_id,
             n_sample=request.n_sample,
-            summarization_batch_id=request.input_batch_id
+            summarization_batch_id=request.input_batch_id,
+            name=request.name
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -119,7 +124,8 @@ async def run_reranking_step(request: RerankingStepRequest):
             run_id=request.run_id,
             top_k=request.top_k,
             model=request.model,
-            retrieval_batch_id=request.input_batch_id
+            retrieval_batch_id=request.input_batch_id,
+            name=request.name
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

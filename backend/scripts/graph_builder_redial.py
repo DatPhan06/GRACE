@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # from openai import AsyncAzureOpenAI
 from openai import AsyncOpenAI
 import asyncio
-import yaml
+import os
 
 load_dotenv()
 
@@ -65,7 +65,9 @@ class GraphBuilder:
     A class to build a movie graph in a Neo4j database, including embeddings.
     """
     def __init__(self, uri, port, user, password, embedding_client, embedding_deployment):
-        self.driver = GraphDatabase.driver(f"{uri}:{port}", auth=(user, password))
+        # Allow uri to contain the port (e.g. bolt://neo4j:7687) if passed from Docker
+        full_uri = uri if ":" in uri.replace("bolt://", "") else f"{uri}:{port}"
+        self.driver = GraphDatabase.driver(full_uri, auth=(user, password))
         self.embedding_client = embedding_client
         self.embedding_deployment = embedding_deployment
         try:
@@ -164,16 +166,9 @@ def load_movies_from_file(filepath):
     return movies
 
 async def main():
-    print("[INFO] Đang đọc file config.yaml...")
+    print("[INFO] Đang sử dụng đường dẫn cứng dataset...")
     PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-    CONFIG_PATH = os.path.join(PROJECT_ROOT, "config.yaml")
-    with open(CONFIG_PATH, "r") as f:
-        config = yaml.safe_load(f)
-    print("[INFO] Đã đọc config.yaml thành công.")
-
-    print("[INFO] Đang lấy các tham số từ config...")
-    movie_file_path = config["RedialDataPath"]["processed"]["movie"]
-    movie_file_path = os.path.join(PROJECT_ROOT, movie_file_path)
+    movie_file_path = os.path.join(PROJECT_ROOT, "dataset/REDIAL/processed/movie_data/movie_fix_year.json")
     all_movies = load_movies_from_file(movie_file_path)
     
     if not all_movies:
