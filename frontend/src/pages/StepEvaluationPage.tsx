@@ -663,7 +663,7 @@ export default function StepEvaluationPage() {
                             <option value="">— Select a summarization version —</option>
                             {summBatches.map(b => (
                                 <option key={b.id} value={b.id}>
-                                    v{b.version} (Run #{b.run_id}) — {b.status} — {new Date(b.created_at).toLocaleString()}
+                                    {b.name ? b.name : `v${b.version}`} (Run #{b.run_id}) — {b.status} — {new Date(b.created_at).toLocaleString()}
                                 </option>
                             ))}
                         </select>
@@ -724,7 +724,7 @@ export default function StepEvaluationPage() {
                             <option value="">— Select a retrieval version —</option>
                             {retrBatches.map(b => (
                                 <option key={b.id} value={b.id}>
-                                    v{b.version} (Run #{b.run_id}) — N={(b.config as Record<string, unknown>).n_sample as number} — {b.status}
+                                    {b.name ? b.name : `v${b.version}`} (Run #{b.run_id}) — N={(b.config as Record<string, unknown>).n_sample as number} — {b.status}
                                 </option>
                             ))}
                         </select>
