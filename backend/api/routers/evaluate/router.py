@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from typing import List
 from app.evaluation import EvaluationService
 from .models import (
@@ -73,7 +73,7 @@ async def evaluate_endpoint(request: EvaluateRequest):
 
 
 @router.post("/init")
-async def initialize_run(request: InitRunRequest):
+async def initialize_run(request: InitRunRequest, background_tasks: BackgroundTasks):
     """Initialize a new evaluation run."""
     service = EvaluationService()
     try:
@@ -81,27 +81,29 @@ async def initialize_run(request: InitRunRequest):
             dataset=request.dataset,
             sample_size=request.sample_size,
             start_index=request.start_index,
-            name=request.name
+            name=request.name,
+            background_tasks=background_tasks
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/step/summarize")
-async def run_summarization_step(request: SummarizationStepRequest):
+async def run_summarization_step(request: SummarizationStepRequest, background_tasks: BackgroundTasks):
     """Run summarization step for a specific run."""
     service = EvaluationService()
     try:
         return await service.run_summarization_step(
             run_id=request.run_id,
-            name=request.name
+            name=request.name,
+            background_tasks=background_tasks
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/step/retrieve")
-async def run_retrieval_step(request: RetrievalStepRequest):
+async def run_retrieval_step(request: RetrievalStepRequest, background_tasks: BackgroundTasks):
     """Run retrieval step for a specific run."""
     service = EvaluationService()
     try:
@@ -109,14 +111,15 @@ async def run_retrieval_step(request: RetrievalStepRequest):
             run_id=request.run_id,
             n_sample=request.n_sample,
             summarization_batch_id=request.input_batch_id,
-            name=request.name
+            name=request.name,
+            background_tasks=background_tasks
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/step/rerank")
-async def run_reranking_step(request: RerankingStepRequest):
+async def run_reranking_step(request: RerankingStepRequest, background_tasks: BackgroundTasks):
     """Run reranking step for a specific run."""
     service = EvaluationService()
     try:
@@ -125,7 +128,8 @@ async def run_reranking_step(request: RerankingStepRequest):
             top_k=request.top_k,
             model=request.model,
             retrieval_batch_id=request.input_batch_id,
-            name=request.name
+            name=request.name,
+            background_tasks=background_tasks
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

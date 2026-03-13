@@ -148,6 +148,33 @@ export default function StepEvaluationPage() {
         if (activeTab === 'rerank') loadRerankBatches();
     }, [activeTab, loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
 
+    // --- Polling Effect ---
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        const checkRunning = () => {
+            if (activeTab === 'init') return allRuns.some(r => r.status === 'initialized' || r.status === 'running');
+            if (activeTab === 'summ') return summBatches.some(b => b.status === 'running');
+            if (activeTab === 'retr') return retrBatches.some(b => b.status === 'running');
+            if (activeTab === 'rerank') return rerankBatches.some(b => b.status === 'running');
+            return false;
+        };
+
+        if (checkRunning()) {
+            interval = setInterval(() => {
+                if (activeTab === 'init') loadRuns();
+                if (activeTab === 'summ') loadSummBatches();
+                if (activeTab === 'retr') loadRetrBatches();
+                if (activeTab === 'rerank') loadRerankBatches();
+            }, 3000);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [activeTab, allRuns, summBatches, retrBatches, rerankBatches, loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
+
+
     // --- Open New Version Modal (preload prev step data) ---
     const openNewVersionModal = async (step: "summ" | "retr" | "rerank") => {
         setNewVersionName('');
