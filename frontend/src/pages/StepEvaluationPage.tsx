@@ -8,8 +8,8 @@ const TabButton = ({ id, label, activeTab, setActiveTab }: { id: string; label: 
     <button
         onClick={() => setActiveTab(id)}
         className={`px-4 py-2 font-medium text-sm rounded-t-lg transition-colors ${activeTab === id
-                ? 'bg-white text-blue-600 border-t border-x border-gray-200'
-                : 'bg-gray-50 text-gray-500 hover:text-gray-700'
+            ? 'bg-white text-blue-600 border-t border-x border-gray-200'
+            : 'bg-gray-50 text-gray-500 hover:text-gray-700'
             }`}
     >
         {label}
@@ -606,7 +606,7 @@ export default function StepEvaluationPage() {
                             <option value="">— Select a run —</option>
                             {allRuns.map(r => (
                                 <option key={r.id} value={r.id}>
-                                    Run #{r.id} — {r.dataset} ({r.sample_size} samples) [{r.status}]
+                                    {r.name ? r.name : `Run #${r.id}`} — {r.dataset} ({r.sample_size} samples) [{r.status}]
                                 </option>
                             ))}
                         </select>

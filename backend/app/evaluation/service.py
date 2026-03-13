@@ -263,8 +263,10 @@ class EvaluationService:
 
     async def run_summarization_step(self, run_id: int, name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Run summarization step for a specific run.
+        Run summarization step for a specific run (parallel execution).
         """
+        import asyncio
+
         db = next(get_db())
         try:
             logs = db.query(ConversationLogModel).filter(
@@ -276,40 +278,54 @@ class EvaluationService:
 
             # Create Batch
             batch = await self._create_step_run(
-                db, 
-                SummarizationRunModel, 
-                {"run_id": run_id}, 
+                db,
+                SummarizationRunModel,
+                {"run_id": run_id},
                 {"run_id": run_id, "name": name, "config": {}}
             )
 
-            processed_count = 0
-            for log in logs:
-                context = log.dialog
-                user_pref_obj = await self.generation_service.summarize_conversation(str(context))
-                user_preferences = user_pref_obj.user_preferences
+            # ── Parallel summarization ────────────────────────────────
+            CONCURRENCY = 10
+            semaphore = asyncio.Semaphore(CONCURRENCY)
 
-                # Create Step Entry linked to Batch
+            async def _summarize_one(log: ConversationLogModel):
+                async with semaphore:
+                    user_pref_obj = await self.generation_service.summarize_conversation(
+                        str(log.dialog)
+                    )
+                    return log, user_pref_obj.user_preferences
+
+            tasks = [_summarize_one(log) for log in logs]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # ─────────────────────────────────────────────────────────
+
+            processed_count = 0
+            for outcome in results:
+                if isinstance(outcome, Exception):
+                    logger.error(f"Summarization task failed: {outcome}")
+                    continue
+                log, user_preferences = outcome
                 step = StepSummarizationModel(
                     conversation_id=log.id,
                     summarization_batch_id=batch.id,
                     user_preferences=user_preferences
                 )
                 db.add(step)
-                
                 log.status = "summarized"
                 processed_count += 1
-            
-            # Update Run status (if needed, or just rely on steps)
+
             batch.status = "completed"
-            
-            # Update main run status only if it's the first time? Or always?
-            # Let's keep main run status as "summarized" for simplicity, but batch status is more granular.
             run = db.query(EvaluationRunModel).filter_by(id=run_id).first()
             if run:
                 run.status = "summarized"
-            
+
             db.commit()
-            return {"run_id": run_id, "summarization_batch_id": batch.id, "message": f"Summarized {processed_count} conversations (v{batch.version}).", "status": "summarized"}
+            return {
+                "run_id": run_id,
+                "summarization_batch_id": batch.id,
+                "message": f"Summarized {processed_count} conversations (v{batch.version}).",
+                "status": "summarized"
+            }
 
         except Exception as e:
             db.rollback()
@@ -320,6 +336,7 @@ class EvaluationService:
             raise e
         finally:
             db.close()
+
 
     async def run_retrieval_step(self, run_id: int, n_sample: int = 100, summarization_batch_id: Optional[int] = None, name: Optional[str] = None) -> Dict[str, Any]:
         """
