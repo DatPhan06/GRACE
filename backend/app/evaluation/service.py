@@ -20,6 +20,7 @@ from infra.db.database import get_db
 
 logger = setup_logger(__name__)
 
+
 class EvaluationService:
     """
     Orchestrates the evaluation process by coordinating domain services.
@@ -52,7 +53,7 @@ class EvaluationService:
         Loads the dataset sample and creates ConversationLog entries in 'pending' status.
         """
         conversations = self.load_dialogs_sample(dataset, sample_size)
-        
+
         db = next(get_db())
         try:
             # Create Run
@@ -85,9 +86,12 @@ class EvaluationService:
                         dialog = conv["processed_dialog"]
                         target = conv["target"]
                         import re
-                        movie_mentions = re.findall(r'[A-Z][a-zA-Z\s]+(?:\([0-9]{4}\))?', dialog)
-                        common_words = {'RECOMMENDER', 'SEEKER', 'Hi', 'There', 'What', 'types', 'movies', 'like', 'watch', 'Yes', 'No', 'Thanks', 'Thank', 'you'}
-                        liked_movies = [m.strip() for m in movie_mentions if m.strip() not in common_words and len(m.strip()) > 3][:5]
+                        movie_mentions = re.findall(
+                            r'[A-Z][a-zA-Z\s]+(?:\([0-9]{4}\))?', dialog)
+                        common_words = {'RECOMMENDER', 'SEEKER', 'Hi', 'There', 'What', 'types',
+                                        'movies', 'like', 'watch', 'Yes', 'No', 'Thanks', 'Thank', 'you'}
+                        liked_movies = [m.strip() for m in movie_mentions if m.strip(
+                        ) not in common_words and len(m.strip()) > 3][:5]
                     else:  # redial
                         conv_id = str(idx)
                         dialog = conv["dialog"]
@@ -104,16 +108,18 @@ class EvaluationService:
                         liked_movies=liked_movies
                     )
                     logs.append(log)
-                
+
                 local_db.add_all(logs)
-                
-                run_obj = local_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+
+                run_obj = local_db.query(
+                    EvaluationRunModel).filter_by(id=run_id).first()
                 if run_obj:
                     run_obj.status = "initialized"
                 local_db.commit()
             except Exception as e:
                 local_db.rollback()
-                run_obj = local_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+                run_obj = local_db.query(
+                    EvaluationRunModel).filter_by(id=run_id).first()
                 if run_obj:
                     run_obj.status = "failed"
                     local_db.commit()
@@ -128,7 +134,7 @@ class EvaluationService:
                 "message": f"Initializing run {run_id} with {len(conversations)} conversations in background.",
                 "status": "running"
             }
-            
+
         await _do_init()
         return {
             "run_id": run_id,
@@ -137,9 +143,10 @@ class EvaluationService:
         }
 
     async def _create_step_run(self, db, model_cls, filters: dict, kwargs: dict):
-        last_batch = db.query(model_cls).filter_by(**filters).order_by(model_cls.version.desc()).first()
+        last_batch = db.query(model_cls).filter_by(
+            **filters).order_by(model_cls.version.desc()).first()
         new_version = (last_batch.version + 1) if last_batch else 1
-        
+
         batch = model_cls(
             version=new_version,
             status="running",
@@ -154,28 +161,37 @@ class EvaluationService:
         """Get execution history for a run. Retrieves from all 3 tables."""
         db = next(get_db())
         try:
-            summs = db.query(SummarizationRunModel).filter_by(run_id=run_id).all()
+            summs = db.query(SummarizationRunModel).filter_by(
+                run_id=run_id).all()
             summ_ids = [s.id for s in summs]
-            
-            retrs = db.query(RetrievalRunModel).filter(RetrievalRunModel.summarization_batch_id.in_(summ_ids)).all() if summ_ids else []
+
+            retrs = db.query(RetrievalRunModel).filter(
+                RetrievalRunModel.summarization_batch_id.in_(summ_ids)).all() if summ_ids else []
             retr_ids = [r.id for r in retrs]
-            
-            reranks = db.query(RerankingRunModel).filter(RerankingRunModel.retrieval_batch_id.in_(retr_ids)).all() if retr_ids else []
-            
+
+            reranks = db.query(RerankingRunModel).filter(
+                RerankingRunModel.retrieval_batch_id.in_(retr_ids)).all() if retr_ids else []
+
             results = []
             for s in summs:
-                results.append({"id": s.id, "run_id": s.run_id, "name": s.name, "step_type": "summarization", "version": s.version, "config": s.config, "status": s.status, "created_at": s.created_at})
+                results.append({"id": s.id, "run_id": s.run_id, "name": s.name, "step_type": "summarization",
+                               "version": s.version, "config": s.config, "status": s.status, "created_at": s.created_at})
             for r in retrs:
                 # Resolve run_id
-                summ = next((x for x in summs if x.id == r.summarization_batch_id), None)
+                summ = next((x for x in summs if x.id ==
+                            r.summarization_batch_id), None)
                 run_id = summ.run_id if summ else -1
-                results.append({"id": r.id, "run_id": run_id, "name": r.name, "step_type": "retrieval", "version": r.version, "config": r.config, "status": r.status, "created_at": r.created_at, "input_batch_id": r.summarization_batch_id})
+                results.append({"id": r.id, "run_id": run_id, "name": r.name, "step_type": "retrieval", "version": r.version,
+                               "config": r.config, "status": r.status, "created_at": r.created_at, "input_batch_id": r.summarization_batch_id})
             for rr in reranks:
-                retr = next((x for x in retrs if x.id == rr.retrieval_batch_id), None)
-                summ = next((x for x in summs if x.id == retr.summarization_batch_id), None) if retr else None
+                retr = next((x for x in retrs if x.id ==
+                            rr.retrieval_batch_id), None)
+                summ = next((x for x in summs if x.id ==
+                            retr.summarization_batch_id), None) if retr else None
                 run_id = summ.run_id if summ else -1
-                results.append({"id": rr.id, "run_id": run_id, "name": rr.name, "step_type": "reranking", "version": rr.version, "config": rr.config, "status": rr.status, "created_at": rr.created_at, "input_batch_id": rr.retrieval_batch_id})
-                
+                results.append({"id": rr.id, "run_id": run_id, "name": rr.name, "step_type": "reranking", "version": rr.version,
+                               "config": rr.config, "status": rr.status, "created_at": rr.created_at, "input_batch_id": rr.retrieval_batch_id})
+
             results.sort(key=lambda x: x["created_at"], reverse=True)
             return results
         finally:
@@ -187,22 +203,31 @@ class EvaluationService:
         try:
             results = []
             if step_type == "summarization":
-                items = db.query(SummarizationRunModel).order_by(SummarizationRunModel.created_at.desc()).offset(skip).limit(limit).all()
+                items = db.query(SummarizationRunModel).order_by(
+                    SummarizationRunModel.created_at.desc()).offset(skip).limit(limit).all()
                 for i in items:
-                    results.append({"id": i.id, "run_id": i.run_id, "name": i.name, "step_type": "summarization", "version": i.version, "config": i.config, "status": i.status, "created_at": i.created_at})
+                    results.append({"id": i.id, "run_id": i.run_id, "name": i.name, "step_type": "summarization",
+                                   "version": i.version, "config": i.config, "status": i.status, "created_at": i.created_at})
             elif step_type == "retrieval":
-                items = db.query(RetrievalRunModel).order_by(RetrievalRunModel.created_at.desc()).offset(skip).limit(limit).all()
+                items = db.query(RetrievalRunModel).order_by(
+                    RetrievalRunModel.created_at.desc()).offset(skip).limit(limit).all()
                 for i in items:
-                    summ = db.query(SummarizationRunModel).filter_by(id=i.summarization_batch_id).first()
+                    summ = db.query(SummarizationRunModel).filter_by(
+                        id=i.summarization_batch_id).first()
                     run_id = summ.run_id if summ else -1
-                    results.append({"id": i.id, "run_id": run_id, "name": i.name, "step_type": "retrieval", "version": i.version, "config": i.config, "status": i.status, "created_at": i.created_at, "input_batch_id": i.summarization_batch_id})
+                    results.append({"id": i.id, "run_id": run_id, "name": i.name, "step_type": "retrieval", "version": i.version,
+                                   "config": i.config, "status": i.status, "created_at": i.created_at, "input_batch_id": i.summarization_batch_id})
             elif step_type == "reranking":
-                items = db.query(RerankingRunModel).order_by(RerankingRunModel.created_at.desc()).offset(skip).limit(limit).all()
+                items = db.query(RerankingRunModel).order_by(
+                    RerankingRunModel.created_at.desc()).offset(skip).limit(limit).all()
                 for i in items:
-                    retr = db.query(RetrievalRunModel).filter_by(id=i.retrieval_batch_id).first()
-                    summ = db.query(SummarizationRunModel).filter_by(id=retr.summarization_batch_id).first() if retr else None
+                    retr = db.query(RetrievalRunModel).filter_by(
+                        id=i.retrieval_batch_id).first()
+                    summ = db.query(SummarizationRunModel).filter_by(
+                        id=retr.summarization_batch_id).first() if retr else None
                     run_id = summ.run_id if summ else -1
-                    results.append({"id": i.id, "run_id": run_id, "name": i.name, "step_type": "reranking", "version": i.version, "config": i.config, "status": i.status, "created_at": i.created_at, "input_batch_id": i.retrieval_batch_id})
+                    results.append({"id": i.id, "run_id": run_id, "name": i.name, "step_type": "reranking", "version": i.version,
+                                   "config": i.config, "status": i.status, "created_at": i.created_at, "input_batch_id": i.retrieval_batch_id})
             return results
         finally:
             db.close()
@@ -213,11 +238,14 @@ class EvaluationService:
         try:
             items = []
             if step_type == "summarization":
-                batch = db.query(SummarizationRunModel).filter_by(id=batch_id).first()
-                if not batch: return None
+                batch = db.query(SummarizationRunModel).filter_by(
+                    id=batch_id).first()
+                if not batch:
+                    return None
                 run_id = batch.run_id
                 rows = (
-                    db.query(StepSummarizationModel, ConversationLogModel.conv_id)
+                    db.query(StepSummarizationModel,
+                             ConversationLogModel.conv_id)
                     .join(ConversationLogModel, StepSummarizationModel.conversation_id == ConversationLogModel.id)
                     .filter(StepSummarizationModel.summarization_batch_id == batch_id)
                     .all()
@@ -229,9 +257,12 @@ class EvaluationService:
                     })
 
             elif step_type == "retrieval":
-                batch = db.query(RetrievalRunModel).filter_by(id=batch_id).first()
-                if not batch: return None
-                summ = db.query(SummarizationRunModel).filter_by(id=batch.summarization_batch_id).first()
+                batch = db.query(RetrievalRunModel).filter_by(
+                    id=batch_id).first()
+                if not batch:
+                    return None
+                summ = db.query(SummarizationRunModel).filter_by(
+                    id=batch.summarization_batch_id).first()
                 run_id = summ.run_id if summ else -1
                 rows = (
                     db.query(StepRetrievalModel, ConversationLogModel.conv_id)
@@ -251,10 +282,14 @@ class EvaluationService:
                     })
 
             elif step_type == "reranking":
-                batch = db.query(RerankingRunModel).filter_by(id=batch_id).first()
-                if not batch: return None
-                retr = db.query(RetrievalRunModel).filter_by(id=batch.retrieval_batch_id).first()
-                summ = db.query(SummarizationRunModel).filter_by(id=retr.summarization_batch_id).first() if retr else None
+                batch = db.query(RerankingRunModel).filter_by(
+                    id=batch_id).first()
+                if not batch:
+                    return None
+                retr = db.query(RetrievalRunModel).filter_by(
+                    id=batch.retrieval_batch_id).first()
+                summ = db.query(SummarizationRunModel).filter_by(
+                    id=retr.summarization_batch_id).first() if retr else None
                 run_id = summ.run_id if summ else -1
                 rows = (
                     db.query(StepRerankingModel, ConversationLogModel.conv_id)
@@ -323,9 +358,11 @@ class EvaluationService:
         async def _do_summ():
             local_db = next(get_db())
             try:
-                b = local_db.query(SummarizationRunModel).filter_by(id=batch_id).first()
-                if not b: return
-                
+                b = local_db.query(SummarizationRunModel).filter_by(
+                    id=batch_id).first()
+                if not b:
+                    return
+
                 local_logs = local_db.query(ConversationLogModel).filter(
                     ConversationLogModel.run_id == run_id
                 ).all()
@@ -338,7 +375,7 @@ class EvaluationService:
                         user_pref_obj = await self.generation_service.summarize_conversation(
                             str(log.dialog)
                         )
-                        return log.id, user_pref_obj.user_preferences, user_pref_obj.dynamic_weights.model_dump()
+                        return log.id, user_pref_obj.user_preferences, user_pref_obj.dynamic_weights.model_dump(), user_pref_obj.profiler_reasoning
 
                 tasks = [_summarize_one(log) for log in local_logs]
                 results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -348,28 +385,35 @@ class EvaluationService:
                     if isinstance(outcome, Exception):
                         logger.error(f"Summarization task failed: {outcome}")
                         continue
-                    log_id, user_preferences, dynamic_weights = outcome
+                    log_id, user_preferences, dynamic_weights, profiler_reasoning = outcome
+                    # 🔍 DEBUG: Log what LLM generated and what we are saving
+                    logger.info(
+                        f"[Profiler] conv_id={log_id} | LLM weights={dynamic_weights} | reasoning={str(profiler_reasoning)[:150]}")
                     step = StepSummarizationModel(
                         conversation_id=log_id,
                         summarization_batch_id=batch_id,
+                        profiler_reasoning=profiler_reasoning,
                         user_preferences=user_preferences,
                         dynamic_weights=dynamic_weights
                     )
                     local_db.add(step)
-                    log = local_db.query(ConversationLogModel).filter_by(id=log_id).first()
+                    log = local_db.query(ConversationLogModel).filter_by(
+                        id=log_id).first()
                     if log:
                         log.status = "summarized"
                     processed_count += 1
 
                 b.status = "completed"
-                run = local_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+                run = local_db.query(EvaluationRunModel).filter_by(
+                    id=run_id).first()
                 if run:
                     run.status = "summarized"
 
                 local_db.commit()
             except Exception as e:
                 local_db.rollback()
-                b = local_db.query(SummarizationRunModel).filter_by(id=batch_id).first()
+                b = local_db.query(SummarizationRunModel).filter_by(
+                    id=batch_id).first()
                 if b:
                     b.status = "failed"
                     local_db.commit()
@@ -385,7 +429,7 @@ class EvaluationService:
                 "message": f"Summarization queued (v{batch_version}).",
                 "status": "running"
             }
-            
+
         await _do_summ()
         return {
             "run_id": run_id,
@@ -394,20 +438,21 @@ class EvaluationService:
             "status": "summarized"
         }
 
-
     async def run_retrieval_step(self, run_id: int, n_sample: int = 100, summarization_batch_id: Optional[int] = None, name: Optional[str] = None, background_tasks: Optional[BackgroundTasks] = None) -> Dict[str, Any]:
         """
         Run retrieval step. Can optionally specify which summarization batch to use as input.
         """
         db = next(get_db())
         try:
-            logs = db.query(ConversationLogModel).filter(ConversationLogModel.run_id == run_id).all()
+            logs = db.query(ConversationLogModel).filter(
+                ConversationLogModel.run_id == run_id).all()
             if not logs:
                 db.close()
                 return {"message": "No logs found.", "count": 0}
 
             if not summarization_batch_id:
-                latest_summ = db.query(SummarizationRunModel).filter_by(run_id=run_id, status="completed").order_by(SummarizationRunModel.version.desc()).first()
+                latest_summ = db.query(SummarizationRunModel).filter_by(
+                    run_id=run_id, status="completed").order_by(SummarizationRunModel.version.desc()).first()
                 if not latest_summ:
                     db.close()
                     return {"message": "No completed summarization step found to base retrieval on.", "count": 0}
@@ -415,10 +460,11 @@ class EvaluationService:
 
             # Create Batch
             batch = await self._create_step_run(
-                db, 
-                RetrievalRunModel, 
-                {"summarization_batch_id": summarization_batch_id}, 
-                {"summarization_batch_id": summarization_batch_id, "name": name, "config": {"n_sample": n_sample}}
+                db,
+                RetrievalRunModel,
+                {"summarization_batch_id": summarization_batch_id},
+                {"summarization_batch_id": summarization_batch_id,
+                    "name": name, "config": {"n_sample": n_sample}}
             )
             batch_id = batch.id
             batch_version = batch.version
@@ -432,9 +478,11 @@ class EvaluationService:
         async def _do_retr():
             local_db = next(get_db())
             try:
-                b = local_db.query(RetrievalRunModel).filter_by(id=batch_id).first()
-                if not b: return
-                
+                b = local_db.query(RetrievalRunModel).filter_by(
+                    id=batch_id).first()
+                if not b:
+                    return
+
                 local_logs = local_db.query(ConversationLogModel).filter(
                     ConversationLogModel.run_id == run_id
                 ).all()
@@ -442,11 +490,12 @@ class EvaluationService:
                 processed_count = 0
                 for log in local_logs:
                     # 1. Get User Preferences
-                    query = local_db.query(StepSummarizationModel).filter_by(conversation_id=log.id, summarization_batch_id=summarization_batch_id)
+                    query = local_db.query(StepSummarizationModel).filter_by(
+                        conversation_id=log.id, summarization_batch_id=summarization_batch_id)
                     step_summ = query.first()
-                    
+
                     if not step_summ:
-                        continue # Skip if no summarization found for this conv
+                        continue  # Skip if no summarization found for this conv
 
                     user_preferences = step_summ.user_preferences
                     dynamic_weights = step_summ.dynamic_weights
@@ -459,7 +508,7 @@ class EvaluationService:
                         n=n_sample,
                         dynamic_weights=dynamic_weights
                     )
-                    
+
                     candidates = retrieval_result["combined"]
                     counts = {
                         "semantic": len(retrieval_result.get("semantic", [])),
@@ -471,7 +520,7 @@ class EvaluationService:
                     step = StepRetrievalModel(
                         conversation_id=log.id,
                         retrieval_batch_id=batch_id,
-                        candidates=candidates, 
+                        candidates=candidates,
                         semantic_count=counts["semantic"],
                         content_count=counts["content"],
                         collab_count=counts["collab"]
@@ -479,16 +528,18 @@ class EvaluationService:
                     local_db.add(step)
                     log.status = "retrieved"
                     processed_count += 1
-                    
+
                 b.status = "completed"
-                run = local_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+                run = local_db.query(EvaluationRunModel).filter_by(
+                    id=run_id).first()
                 if run:
                     run.status = "retrieved"
-                
+
                 local_db.commit()
             except Exception as e:
                 local_db.rollback()
-                b = local_db.query(RetrievalRunModel).filter_by(id=batch_id).first()
+                b = local_db.query(RetrievalRunModel).filter_by(
+                    id=batch_id).first()
                 if b:
                     b.status = "failed"
                     local_db.commit()
@@ -519,7 +570,8 @@ class EvaluationService:
                 return {"message": "No logs found for this run.", "count": 0}
 
             if not retrieval_batch_id:
-                latest_retr = db.query(RetrievalRunModel).join(SummarizationRunModel).filter(SummarizationRunModel.run_id == run_id, RetrievalRunModel.status == "completed").order_by(RetrievalRunModel.version.desc()).first()
+                latest_retr = db.query(RetrievalRunModel).join(SummarizationRunModel).filter(
+                    SummarizationRunModel.run_id == run_id, RetrievalRunModel.status == "completed").order_by(RetrievalRunModel.version.desc()).first()
                 if not latest_retr:
                     db.close()
                     return {"message": "No completed retrieval step found.", "count": 0}
@@ -527,10 +579,11 @@ class EvaluationService:
 
             # Create Batch
             batch = await self._create_step_run(
-                db, 
-                RerankingRunModel, 
-                {"retrieval_batch_id": retrieval_batch_id}, 
-                {"retrieval_batch_id": retrieval_batch_id, "name": name, "config": {"top_k": top_k, "model": model}}
+                db,
+                RerankingRunModel,
+                {"retrieval_batch_id": retrieval_batch_id},
+                {"retrieval_batch_id": retrieval_batch_id, "name": name,
+                    "config": {"top_k": top_k, "model": model}}
             )
             batch_id = batch.id
             batch_version = batch.version
@@ -544,9 +597,11 @@ class EvaluationService:
         async def _do_rerank():
             local_db = next(get_db())
             try:
-                b = local_db.query(RerankingRunModel).filter_by(id=batch_id).first()
-                if not b: return
-                
+                b = local_db.query(RerankingRunModel).filter_by(
+                    id=batch_id).first()
+                if not b:
+                    return
+
                 local_logs = local_db.query(ConversationLogModel).filter(
                     ConversationLogModel.run_id == run_id
                 ).all()
@@ -554,7 +609,8 @@ class EvaluationService:
                 processed_count = 0
                 for log in local_logs:
                     # 1. Get Retrieval Candidates
-                    query = local_db.query(StepRetrievalModel).filter_by(conversation_id=log.id, retrieval_batch_id=retrieval_batch_id)
+                    query = local_db.query(StepRetrievalModel).filter_by(
+                        conversation_id=log.id, retrieval_batch_id=retrieval_batch_id)
                     step_retrieval = query.first()
 
                     if not step_retrieval:
@@ -563,11 +619,13 @@ class EvaluationService:
                     candidates = step_retrieval.candidates
 
                     # 2. Get User Preferences
-                    retrieval_run = local_db.query(RetrievalRunModel).filter_by(id=retrieval_batch_id).first()
+                    retrieval_run = local_db.query(RetrievalRunModel).filter_by(
+                        id=retrieval_batch_id).first()
                     summ_batch_id = retrieval_run.summarization_batch_id
-                    
-                    step_summ = local_db.query(StepSummarizationModel).filter_by(conversation_id=log.id, summarization_batch_id=summ_batch_id).first()
-                    
+
+                    step_summ = local_db.query(StepSummarizationModel).filter_by(
+                        conversation_id=log.id, summarization_batch_id=summ_batch_id).first()
+
                     if not step_summ:
                         continue
 
@@ -583,11 +641,13 @@ class EvaluationService:
                         model=model
                     )
 
-                    get_titles = lambda movies: [m['title'] for m in movies]
+                    def get_titles(movies): return [m['title'] for m in movies]
                     final_recs = get_titles(reranked)
-                    ground_truth = log.target if isinstance(log.target, list) else [log.target]
-                    
-                    recall_val = self.evaluation_domain_service.calculate_recall(final_recs, ground_truth, top_k)
+                    ground_truth = log.target if isinstance(
+                        log.target, list) else [log.target]
+
+                    recall_val = self.evaluation_domain_service.calculate_recall(
+                        final_recs, ground_truth, top_k)
 
                     # Upsert StepReranking
                     step = StepRerankingModel(
@@ -598,9 +658,10 @@ class EvaluationService:
                         recall=recall_val
                     )
                     local_db.add(step)
-                    
+
                     # Also compute and save immediate result for this conversation
-                    result = local_db.query(EvaluationResultModel).filter_by(conversation_id=log.id).first()
+                    result = local_db.query(EvaluationResultModel).filter_by(
+                        conversation_id=log.id).first()
                     if not result:
                         result = EvaluationResultModel(
                             run_id=run_id,
@@ -611,32 +672,38 @@ class EvaluationService:
                     result.recall = recall_val
                     result.ground_truth = ground_truth
                     result.recommendations = final_recs
-                    
+
                     retrieved_candidates = step_retrieval.candidates
                     result.candidate_count = len(retrieved_candidates)
                     result.semantic_count = step_retrieval.semantic_count
                     result.content_count = step_retrieval.content_count
                     result.collab_count = step_retrieval.collab_count
-                    
-                    result.recall_retrieval = self.evaluation_domain_service.calculate_recall(get_titles(retrieved_candidates), ground_truth, 100)
-                    
+
+                    result.recall_retrieval = self.evaluation_domain_service.calculate_recall(
+                        get_titles(retrieved_candidates), ground_truth, 100)
+
                     local_db.add(result)
                     processed_count += 1
                     log.status = "completed"
-                
+
                 b.status = "completed"
-                run = local_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+                run = local_db.query(EvaluationRunModel).filter_by(
+                    id=run_id).first()
                 if run:
                     run.status = "completed"
-                    results = local_db.query(EvaluationResultModel).filter_by(run_id=run.id).all()
+                    results = local_db.query(
+                        EvaluationResultModel).filter_by(run_id=run.id).all()
                     if results:
-                        run.avg_recall = sum(r.recall for r in results) / len(results)
-                        run.avg_recall_retrieval = sum(r.recall_retrieval for r in results if r.recall_retrieval is not None) / len(results)
+                        run.avg_recall = sum(
+                            r.recall for r in results) / len(results)
+                        run.avg_recall_retrieval = sum(
+                            r.recall_retrieval for r in results if r.recall_retrieval is not None) / len(results)
 
                 local_db.commit()
             except Exception as e:
                 local_db.rollback()
-                b = local_db.query(RerankingRunModel).filter_by(id=batch_id).first()
+                b = local_db.query(RerankingRunModel).filter_by(
+                    id=batch_id).first()
                 if b:
                     b.status = "failed"
                     local_db.commit()
@@ -751,9 +818,9 @@ class EvaluationService:
                 context = conv["dialog"]
                 target = conv["target"]
                 liked_movies = conv.get("liked_movies", [])
-            
-            logger.info(f"Processing conversation {conv_id} | Found {len(liked_movies)} liked movies: {liked_movies}")
 
+            logger.info(
+                f"Processing conversation {conv_id} | Found {len(liked_movies)} liked movies: {liked_movies}")
 
             # 1. Summarization (Domain: Generation)
             # Note: We rely on the generic summarization domain service
@@ -767,7 +834,7 @@ class EvaluationService:
                 liked_movies=liked_movies,
                 n=n_sample
             )
-            
+
             candidates = retrieval_results['combined']
             semantic_cands = retrieval_results['semantic']
             content_cands = retrieval_results['content']
@@ -784,10 +851,10 @@ class EvaluationService:
 
             # 4. Evaluation (Domain: Evaluation)
             ground_truth = [target] if isinstance(target, str) else target
-            
+
             # Helper to extract titles
-            get_titles = lambda movies: [m['title'] for m in movies]
-            
+            def get_titles(movies): return [m['title'] for m in movies]
+
             # Post-Rerank Recall
             final_recs = get_titles(reranked)
             recall_final = self.evaluation_domain_service.calculate_recall(
@@ -802,19 +869,19 @@ class EvaluationService:
                 ground_truth=ground_truth,
                 top_k=n_sample
             )
-            
+
             recall_semantic = self.evaluation_domain_service.calculate_recall(
                 recommendations=get_titles(semantic_cands),
                 ground_truth=ground_truth,
                 top_k=n_sample
             )
-            
+
             recall_content = self.evaluation_domain_service.calculate_recall(
                 recommendations=get_titles(content_cands),
                 ground_truth=ground_truth,
                 top_k=n_sample
             )
-            
+
             recall_collab = self.evaluation_domain_service.calculate_recall(
                 recommendations=get_titles(collab_cands),
                 ground_truth=ground_truth,
@@ -825,8 +892,8 @@ class EvaluationService:
                 "conv_id": conv_id,
                 "ground_truth": ground_truth,
                 # Metrics
-                "recall_final": recall_final, 
-                "recall_retrieval": recall_combined_retrieval, 
+                "recall_final": recall_final,
+                "recall_retrieval": recall_combined_retrieval,
                 "recall_semantic": recall_semantic,
                 "recall_content": recall_content,
                 "recall_collab": recall_collab,
@@ -858,7 +925,7 @@ class EvaluationService:
         Run the full evaluation pipeline on a dataset sample.
         """
         import asyncio
-        
+
         conversations, df_movie = self.load_dataset_sample(
             dataset, sample_size, start_index)
 
@@ -873,23 +940,23 @@ class EvaluationService:
                 )
 
         tasks = [
-            sem_task(conv, index) 
+            sem_task(conv, index)
             for index, conv in enumerate(conversations, start=start_index)
         ]
-        
+
         # Run all tasks
         results = await asyncio.gather(*tasks)
 
         # Collect Recalls excluding errors
         recalls = [
-            res["recall_final"] 
-            for res in results 
+            res["recall_final"]
+            for res in results
             if "recall_final" in res and "error" not in res
         ]
 
         # Calculate averages
         avg_recall = sum(recalls) / len(recalls) if recalls else 0.0
-        
+
         # Calculate averages for detailed metrics
         def safe_avg(key):
             valid_entries = [r[key] for r in results if key in r]
@@ -917,11 +984,11 @@ class EvaluationService:
             "results": results,
             "message": f"Evaluated {len(conversations)} samples. Avg Recall@{top_k}: {avg_recall:.4f}"
         }
-        
+
         # Save to database
         try:
             self.evaluation_storage_service.save_run(result_data)
         except Exception as e:
             print(f"Failed to save evaluation results to DB: {e}")
-            
+
         return result_data

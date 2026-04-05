@@ -7,20 +7,27 @@ from domain.generation.prompts import (
 )
 from pydantic import BaseModel, Field
 import json
-import json
 from shared.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
+
 
 class RetrievalWeights(BaseModel):
     w_sem: float = Field(default=0.4, ge=0, le=1)
     w_con: float = Field(default=0.3, ge=0, le=1)
     w_col: float = Field(default=0.3, ge=0, le=1)
 
+
 class UserPreference(BaseModel):
-    user_preferences: str = Field(description="Summarized seeker's preferences")
-    liked_movies: list[str] = Field(default=[], description="List of movies the user liked")
-    dynamic_weights: RetrievalWeights = Field(default_factory=RetrievalWeights, description="Predicted weights for WRRF")
+    profiler_reasoning: str = Field(
+        default="", description="Chain of thought reasoning from the Profiler Agent")
+    user_preferences: str = Field(
+        description="Summarized seeker's preferences")
+    liked_movies: list[str] = Field(
+        default=[], description="List of movies the user liked")
+    dynamic_weights: RetrievalWeights = Field(
+        default_factory=RetrievalWeights, description="Predicted weights for WRRF")
+
 
 class GenerationService:
     def __init__(self):
@@ -30,25 +37,32 @@ class GenerationService:
         """
         Summarize the conversation to extract user preferences and liked movies.
         """
-        logger.info(f"Summarizing conversation with length: {len(conversation)}")
-        prompt = SUMMARIZE_CONVERSATION_USER_PROMPT.format(conversation=conversation)
-        
+        logger.info(
+            f"Summarizing conversation with length: {len(conversation)}")
+        prompt = SUMMARIZE_CONVERSATION_USER_PROMPT.format(
+            conversation=conversation)
+
         try:
             response = await self.llm_client.agenerate(
                 prompt=prompt,
                 system_instruction=SUMMARIZE_CONVERSATION_SYSTEM_PROMPT
             )
             # Basic cleanup if markdown checks block it
-            cleaned_response = response.replace("```json", "").replace("```", "").strip()
+            cleaned_response = response.replace(
+                "```json", "").replace("```", "").strip()
             # Find the JSON object
             start = cleaned_response.find("{")
             end = cleaned_response.rfind("}") + 1
             if start != -1 and end != -1:
                 json_str = cleaned_response[start:end]
+                logger.info(f"[Profiler RAW] Parsed JSON before loading: {json_str[:300]}")
                 data = json.loads(json_str)
-                return UserPreference(**data)
+                result = UserPreference(**data)
+                logger.info(f"[Profiler PARSED] weights={result.dynamic_weights.model_dump()}")
+                return result
             else:
-                logger.error(f"Could not find JSON in response: {cleaned_response}")
+                logger.error(
+                    f"Could not find JSON in response: {cleaned_response}")
                 return UserPreference(user_preferences=response, liked_movies=[], dynamic_weights=RetrievalWeights())
         except Exception as e:
             logger.error(f"Error during summarization: {e}")
@@ -58,8 +72,10 @@ class GenerationService:
         """
         Generate a final response to the user based on recommendations.
         """
-        movies_str = ", ".join([f"{m['title']} ({m.get('year', 'N/A')})" for m in recommendations])
-        prompt = RECOMMENDATION_RESPONSE_USER_PROMPT.format(user_preferences=user_preferences, movies_str=movies_str)
+        movies_str = ", ".join(
+            [f"{m['title']} ({m.get('year', 'N/A')})" for m in recommendations])
+        prompt = RECOMMENDATION_RESPONSE_USER_PROMPT.format(
+            user_preferences=user_preferences, movies_str=movies_str)
         return await self.llm_client.agenerate(
             prompt=prompt,
             system_instruction=RECOMMENDATION_RESPONSE_SYSTEM_PROMPT

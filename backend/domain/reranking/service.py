@@ -27,6 +27,14 @@ class RerankingService:
         if not candidates:
             return []
 
+        # 1. Critic Agent Reflection Filter
+        from domain.reranking.components.critic_agent import CriticAgent
+        critic = CriticAgent()
+        clean_candidates = await critic.filter_candidates(user_preferences, candidates)
+        if not clean_candidates:
+            logger.warning("[Reranker] Critic filtered ALL candidates. Reverting to original set.")
+            clean_candidates = candidates
+
         reranker = self._factory.create(model)
 
         # Cohere reranker requires an availability check before use
@@ -38,7 +46,7 @@ class RerankingService:
 
         return await reranker.rerank(
             query=user_preferences,
-            candidates=candidates,
+            candidates=clean_candidates,
             top_k=top_k,
             conversation=conversation,
         )

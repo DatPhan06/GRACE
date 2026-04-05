@@ -12,14 +12,16 @@ These weights must sum to exactly 1.0 (w_sem + w_con + w_col = 1.0).
 Your response must follow the instruction below:
 The output should be a formatted JSON object with the following schema:
 {
+    "profiler_reasoning": "Explain your logic here. Analyzed the dialogue to discover explicit constraints (genres, actors, years) versus abstract themes. Based on this, I will assign the weights as follows...",
     "user_preferences": "Detailed summary of preferences...",
     "liked_movies": ["Movie 1", "Movie 2"],
     "dynamic_weights": {
-        "w_sem": 0.4,
-        "w_con": 0.3,
-        "w_col": 0.3
+        "w_sem": 0.8,
+        "w_con": 0.1,
+        "w_col": 0.1
     }
 }
+IMPORTANT: The values of w_sem, w_con, and w_col in the schema above are just placeholders. You MUST calculate and output your own decimal values (between 0.0 and 1.0) based on your `profiler_reasoning` assessing the user's intent. Their sum MUST be exactly 1.0.
 
 Here are some examples of summarization:
 - Example 1: The seeker is looking for a good action comedy and is tired of holiday movies. He/she doesn't like superhero movies but do enjoy British comedies like Red Dwarf. He/she is interested in watching Hot Fuzz, especially since it stars Simon Pegg from Shaun of the Dead. He/she also enjoyed Zombieland and Zombieland 2, with Woody Harrelson being a favorite.

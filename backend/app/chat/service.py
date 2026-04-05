@@ -10,13 +10,16 @@ class ChatService:
         self.reranking_service = RerankingService()
 
     async def chat(self, conversation_history: str) -> Dict[str, Any]:
-        # 1. Summarize conversation/intent
+        # 1. Summarize conversation/intent (Profiler Agent)
         preferences_data = await self.generation_service.summarize_conversation(conversation_history)
         user_preferences = preferences_data.user_preferences
         liked_movies = preferences_data.liked_movies
+        dynamic_weights = preferences_data.dynamic_weights.model_dump()  # {"w_sem": ..., "w_con": ..., "w_col": ...}
         
-        # 2. Retrieve candidates
-        retrieval_results = await self.retrieval_service.retrieve_movies(user_preferences, liked_movies, n=20)
+        # 2. Retrieve candidates (Orchestrator agent uses Profiler weights)
+        retrieval_results = await self.retrieval_service.retrieve_movies(
+            user_preferences, liked_movies, n=20, dynamic_weights=dynamic_weights
+        )
         candidates = retrieval_results.get("combined", [])
         
         # 3. Rerank candidates

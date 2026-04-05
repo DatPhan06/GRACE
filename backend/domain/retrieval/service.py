@@ -3,7 +3,7 @@ from shared.utils.logger import setup_logger
 from domain.retrieval.components.genre_extractor import GenreExtractor
 from domain.retrieval.components.semantic import SemanticRetriever
 from domain.retrieval.components.content import ContentRetriever
-from domain.retrieval.components.collaborative import CollaborativeRetriever
+from domain.retrieval.components.graph_agent import GraphReasoningAgent
 
 logger = setup_logger(__name__)
 
@@ -11,14 +11,14 @@ logger = setup_logger(__name__)
 class RetrievalService:
     """
     Service for retrieving movies from Neo4j graph database using semantic search,
-    content-based filtering, and collaborative filtering.
+    content-based filtering, and multi-agent graph reasoning.
     """
 
     def __init__(self):
         self.genre_extractor = GenreExtractor()
         self.semantic_retriever = SemanticRetriever()
         self.content_retriever = ContentRetriever()
-        self.collab_retriever = CollaborativeRetriever()
+        self.collab_retriever = GraphReasoningAgent()
 
     async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = None, n: int = 100, dynamic_weights: Dict[str, float] = None) -> Dict[str, List[Dict[str, Any]]]:
         """
@@ -30,22 +30,37 @@ class RetrievalService:
         if dynamic_weights is None:
             dynamic_weights = {"w_sem": 0.4, "w_con": 0.3, "w_col": 0.3}
 
+        # Weighted Reciprocal Rank Fusion (WRRF) Setup early
+        w_sem = dynamic_weights.get("w_sem", 0.4)
+        w_con = dynamic_weights.get("w_con", 0.3)
+        w_col = dynamic_weights.get("w_col", 0.3)
+        
         # Define internal flows. Retrieve full 'n' for each branch to overlap.
         async def _semantic_flow():
+            if w_sem < 0.05:
+                logger.info("[Orchestrator] Bypassing Semantic Agent (weight too low)")
+                return []
             embedding = await self.semantic_retriever.get_query_embedding(user_preferences)
             if embedding:
                 return await self.semantic_retriever.retrieve(embedding, n)
             return []
 
         async def _content_flow():
+            if w_con < 0.05:
+                logger.info("[Orchestrator] Bypassing Content Agent (weight too low)")
+                return []
             found_genres = await self.genre_extractor.extract_genres(user_preferences)
             if found_genres:
                 return await self.content_retriever.retrieve(found_genres, n)
             return []
 
         async def _collab_flow():
+            if w_col < 0.05:
+                logger.info("[Orchestrator] Bypassing Graph Agent (weight too low)")
+                return []
             if liked_movies:
-                return await self.collab_retriever.retrieve(liked_movies, n)
+                # Assuming this calls GraphReasoningAgent
+                return await self.collab_retriever.retrieve(user_preferences, liked_movies, n)
             return []
 
         # Execute in parallel

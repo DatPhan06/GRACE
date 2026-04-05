@@ -111,6 +111,7 @@ class StepSummarizationModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(Integer, ForeignKey("conversation_logs.id"))
     summarization_batch_id = Column(Integer, ForeignKey("summarization_runs.id"))
+    profiler_reasoning = Column(String, nullable=True)
     user_preferences = Column(String)
     dynamic_weights = Column(JSON, nullable=True)
     
