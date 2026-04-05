@@ -15,6 +15,7 @@ export interface MovieRecommendation {
 export interface ChatResponse {
     response: string;
     recommendations: MovieRecommendation[];
+    agent_trace?: string[];
     debug_info?: Record<string, unknown>;
 }
 
@@ -29,6 +30,86 @@ export const sendMessage = async (conversation: string): Promise<ChatResponse> =
         throw error;
     }
 };
+
+// ─── Streaming types ────────────────────────────────────────────────────────
+export type AgentNode = 'profiler' | 'retrieval' | 'reranking' | 'generation';
+export type NodeStatus = 'running' | 'done';
+
+export interface NodeEvent {
+    event: 'node';
+    node: AgentNode;
+    status: NodeStatus;
+    message: string;
+}
+
+export interface ResultEvent {
+    event: 'result';
+    response: string;
+    recommendations: MovieRecommendation[];
+    agent_trace: string[];
+    debug_info: Record<string, unknown>;
+}
+
+export interface ErrorEvent {
+    event: 'error';
+    detail: string;
+}
+
+export type StreamEvent = NodeEvent | ResultEvent | ErrorEvent;
+
+/**
+ * Stream chat messages from the backend NDJSON endpoint.
+ * Calls `onEvent` for each event: node status updates and the final result.
+ */
+export async function streamChatMessages(
+    conversation: string,
+    onEvent: (event: StreamEvent) => void
+): Promise<void> {
+    const response = await fetch(`${API_URL}/chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversation }),
+    });
+
+    if (!response.ok || !response.body) {
+        throw new Error(`Stream request failed: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        // Keep the last (potentially incomplete) line in the buffer
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+                const event = JSON.parse(trimmed) as StreamEvent;
+                onEvent(event);
+            } catch {
+                console.warn('Could not parse stream line:', trimmed);
+            }
+        }
+    }
+
+    // Flush any remaining buffer
+    if (buffer.trim()) {
+        try {
+            const event = JSON.parse(buffer.trim()) as StreamEvent;
+            onEvent(event);
+        } catch {
+            console.warn('Could not parse final stream buffer:', buffer);
+        }
+    }
+}
 
 // Evaluation Interfaces
 
