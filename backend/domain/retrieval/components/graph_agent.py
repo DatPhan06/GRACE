@@ -22,8 +22,13 @@ class GraphReasoningAgent:
         self.neo4j_client = get_neo4j_client()
         self.max_iterations = 3
 
-    async def retrieve(self, user_preferences: str, liked_movies: List[str], n: int = 100) -> List[Dict[str, Any]]:
+    async def retrieve(self, user_preferences: str, liked_movies: List[str], n: int = 100) -> Dict[str, Any]:
+        """
+        Returns:
+            Dict containing 'movies' (List) and 'thoughts' (List of strings)
+        """
         history = ""
+        thoughts_trace = []
         system_prompt = GRAPH_REASONING_SYSTEM_PROMPT.format(schema=NEO4J_SCHEMA)
         
         for iteration in range(self.max_iterations):
@@ -59,6 +64,7 @@ class GraphReasoningAgent:
                     break
                     
                 logger.info(f"[Graph Agent] Thought: {thought}")
+                thoughts_trace.append(thought)
                 logger.info(f"[Graph Agent] Executing Cypher: {cypher}")
 
                 # 2. Observation (Execute Cypher)
@@ -72,7 +78,7 @@ class GraphReasoningAgent:
                     async for record in result:
                         m_data = {
                             'movieId': record.get('movieId'),
-                            'title': record.get('title'),
+                            'title': str(record.get('title')),
                             'plot': record.get('plot'),
                             'year': record.get('year')
                         }
@@ -83,7 +89,7 @@ class GraphReasoningAgent:
 
                 if len(movies) > 0:
                     logger.info(f"[Graph Agent] Success! Retrieved {len(movies)} movies.")
-                    return movies[:n]
+                    return {"movies": movies[:n], "thoughts": thoughts_trace}
                 else:
                     logger.info(f"[Graph Agent] Observation: Cypher returned 0 results. Will reflect and retry.")
                     history += f"Attempt {iteration + 1}:\nThought: {thought}\nCypher: {cypher}\nResult: 0 records found. The constraint was too strict.\n\n"
@@ -93,4 +99,4 @@ class GraphReasoningAgent:
                 history += f"Attempt {iteration + 1} Error: {str(e)}\n\n"
 
         logger.warning(f"[Graph Agent] Failed to retrieve movies after {self.max_iterations} iterations.")
-        return []
+        return {"movies": [], "thoughts": thoughts_trace}

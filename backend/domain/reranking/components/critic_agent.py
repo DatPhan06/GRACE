@@ -34,9 +34,9 @@ class CriticAgent:
     def __init__(self):
         self.llm_client = get_llm_client()
 
-    async def filter_candidates(self, user_preferences: str, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def filter_candidates(self, user_preferences: str, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
         if not candidates:
-            return []
+            return {"movies": [], "reasoning": "No candidates to filter."}
             
         logger.info(f"[Critic Agent] Filtering {len(candidates)} candidates...")
         
@@ -63,17 +63,13 @@ class CriticAgent:
             end = cleaned_response.rfind("}") + 1
             if start == -1 or end <= 0:
                 logger.error(f"[Critic Agent] Invalid LLM output format. Passing through all candidates.")
-                return candidates
+                return {"movies": candidates, "reasoning": "Could not parse Critic Agent response."}
 
             data = json.loads(cleaned_response[start:end])
             approved_ids = data.get("approved_movie_ids", [])
-            reasoning = data.get("critic_reasoning", "No reasoning provided.")
+            reasoning = data.get("critic_reasoning", "No specific reasoning provided.")
             
             logger.info(f"[Critic Agent] Thought: {reasoning}")
-            
-            # Filter the batch. If a movie was not in the review batch (beyond top 50), let it pass as a fail-safe or drop it?
-            # It's better to only pass approved IDs from the reviewed batch + anything not reviewed.
-            # But usually we only rerank top 50 anyway. So we'll just filter everything against approved_ids for the reviewed portion.
             
             reviewed_ids = {str(m.get('movieId')) for m in review_batch}
             approved_ids_set = {str(i) for i in approved_ids}
@@ -89,8 +85,8 @@ class CriticAgent:
                     filtered_candidates.append(m)
                     
             logger.info(f"[Critic Agent] Filtered out {len(candidates) - len(filtered_candidates)} bad candidates.")
-            return filtered_candidates
+            return {"movies": filtered_candidates, "reasoning": reasoning}
 
         except Exception as e:
             logger.error(f"[Critic Agent] Error during reflection loop: {e}")
-            return candidates
+            return {"movies": candidates, "reasoning": f"Critic Agent error: {str(e)}"}

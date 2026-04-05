@@ -20,7 +20,7 @@ class RetrievalService:
         self.content_retriever = ContentRetriever()
         self.collab_retriever = GraphReasoningAgent()
 
-    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = None, n: int = 100, dynamic_weights: Dict[str, float] = None) -> Dict[str, List[Dict[str, Any]]]:
+    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = None, n: int = 100, dynamic_weights: Dict[str, float] = None) -> Dict[str, Any]:
         """
         Retrieve movies using hybrid approach (Semantic + Content + Collab) in parallel and fuse with WRRF.
         """
@@ -30,6 +30,8 @@ class RetrievalService:
         if dynamic_weights is None:
             dynamic_weights = {"w_sem": 0.4, "w_con": 0.3, "w_col": 0.3}
 
+        agent_trace = []
+        
         # Weighted Reciprocal Rank Fusion (WRRF) Setup early
         w_sem = dynamic_weights.get("w_sem", 0.4)
         w_con = dynamic_weights.get("w_con", 0.3)
@@ -38,8 +40,9 @@ class RetrievalService:
         # Define internal flows. Retrieve full 'n' for each branch to overlap.
         async def _semantic_flow():
             if w_sem < 0.05:
-                logger.info("[Orchestrator] Bypassing Semantic Agent (weight too low)")
+                agent_trace.append(f"Orchestrator: Bypassing Semantic Agent (weight {w_sem} below threshold)")
                 return []
+            agent_trace.append(f"Orchestrator: Activating Semantic Agent (weight {w_sem})")
             embedding = await self.semantic_retriever.get_query_embedding(user_preferences)
             if embedding:
                 return await self.semantic_retriever.retrieve(embedding, n)
@@ -47,8 +50,9 @@ class RetrievalService:
 
         async def _content_flow():
             if w_con < 0.05:
-                logger.info("[Orchestrator] Bypassing Content Agent (weight too low)")
+                agent_trace.append(f"Orchestrator: Bypassing Content Agent (weight {w_con} below threshold)")
                 return []
+            agent_trace.append(f"Orchestrator: Activating Content Agent (weight {w_con})")
             found_genres = await self.genre_extractor.extract_genres(user_preferences)
             if found_genres:
                 return await self.content_retriever.retrieve(found_genres, n)
@@ -56,12 +60,12 @@ class RetrievalService:
 
         async def _collab_flow():
             if w_col < 0.05:
-                logger.info("[Orchestrator] Bypassing Graph Agent (weight too low)")
-                return []
+                agent_trace.append(f"Orchestrator: Bypassing Graph Agent (weight {w_col} below threshold)")
+                return {"movies": [], "thoughts": []}
             if liked_movies:
-                # Assuming this calls GraphReasoningAgent
+                agent_trace.append(f"Orchestrator: Activating Graph Agent (weight {w_col})")
                 return await self.collab_retriever.retrieve(user_preferences, liked_movies, n)
-            return []
+            return {"movies": [], "thoughts": []}
 
         # Execute in parallel
         results = await asyncio.gather(
@@ -70,17 +74,18 @@ class RetrievalService:
             _collab_flow()
         )
 
-        semantic_movies, content_movies, collab_movies = results
+        semantic_movies, content_movies, collab_data = results
+        collab_movies = collab_data.get("movies", [])
+        graph_thoughts = collab_data.get("thoughts", [])
         
+        for t in graph_thoughts:
+            agent_trace.append(f"Graph Agent: {t}")
+
         # Weighted Reciprocal Rank Fusion (WRRF)
         # Score_m = w_sem * (1 / (k + rank_sem_m)) + w_con * (1 / (k + rank_con_m)) + w_col * (1 / (k + rank_col_m))
         k = 60
         movie_scores = {}
         unique_movies = {}
-
-        w_sem = dynamic_weights.get("w_sem", 0.4)
-        w_con = dynamic_weights.get("w_con", 0.3)
-        w_col = dynamic_weights.get("w_col", 0.3)
 
         def add_to_fusion(movie_list, weight):
             for rank, m in enumerate(movie_list):
@@ -103,5 +108,6 @@ class RetrievalService:
             "combined": final_list[:n],
             "semantic": semantic_movies,
             "content": content_movies,
-            "collaborative": collab_movies
+            "collaborative": collab_movies,
+            "agent_trace": agent_trace
         }

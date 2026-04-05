@@ -633,13 +633,14 @@ class EvaluationService:
                     context = log.dialog
 
                     # 3. Reranking
-                    reranked = await self.reranking_service.rerank_movies(
+                    reranking_results = await self.reranking_service.rerank_movies(
                         user_preferences=user_preferences,
                         candidates=candidates,
                         conversation=str(context),
                         top_k=top_k,
                         model=model
                     )
+                    reranked = reranking_results.get("movies", [])
 
                     def get_titles(movies): return [m['title'] for m in movies]
                     final_recs = get_titles(reranked)
@@ -841,13 +842,14 @@ class EvaluationService:
             collab_cands = retrieval_results['collaborative']
 
             # 3. Reranking (Domain: Reranking)
-            reranked = await self.reranking_service.rerank_movies(
+            reranking_results = await self.reranking_service.rerank_movies(
                 user_preferences=user_preferences,
                 candidates=candidates,
                 conversation=context,
                 top_k=top_k,
                 model=model
             )
+            reranked = reranking_results.get("movies", [])
 
             # 4. Evaluation (Domain: Evaluation)
             ground_truth = [target] if isinstance(target, str) else target

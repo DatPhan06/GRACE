@@ -16,23 +16,29 @@ class RerankingService:
         conversation: str = "",
         top_k: int = 5,
         model: RerankerType = "cohere",
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Rerank a list of candidate movies based on user preferences.
-
-        The concrete reranker is resolved at runtime via RerankerFactory.
-        Falls back to LLM reranker if the requested reranker is unavailable.
         """
         logger.info(f"Reranking {len(candidates)} candidates using model: {model}")
         if not candidates:
-            return []
+            return {"movies": [], "agent_trace": []}
 
+        agent_trace = []
+        
         # 1. Critic Agent Reflection Filter
         from domain.reranking.components.critic_agent import CriticAgent
         critic = CriticAgent()
-        clean_candidates = await critic.filter_candidates(user_preferences, candidates)
+        critic_result = await critic.filter_candidates(user_preferences, candidates)
+        clean_candidates = critic_result.get("movies", [])
+        critic_reasoning = critic_result.get("reasoning", "")
+        
+        if critic_reasoning:
+            agent_trace.append(f"Critic Agent: {critic_reasoning}")
+
         if not clean_candidates:
             logger.warning("[Reranker] Critic filtered ALL candidates. Reverting to original set.")
+            agent_trace.append("Orchestrator: Critic Agent rejected all candidates. Reverting to original set for safety.")
             clean_candidates = candidates
 
         reranker = self._factory.create(model)
@@ -42,11 +48,19 @@ class RerankingService:
             logger.warning(
                 f"Reranker '{model}' is not available, falling back to 'llm'."
             )
+            agent_trace.append(f"Orchestrator: Reranker '{model}' unavailable. Falling back to 'llm'.")
             reranker = self._factory.create("llm")
 
-        return await reranker.rerank(
+        agent_trace.append(f"Ranker: Finalizing top-{top_k} list using {model}...")
+        
+        final_movies = await reranker.rerank(
             query=user_preferences,
             candidates=clean_candidates,
             top_k=top_k,
             conversation=conversation,
         )
+        
+        return {
+            "movies": final_movies,
+            "agent_trace": agent_trace
+        }
