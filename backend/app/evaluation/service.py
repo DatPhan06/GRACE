@@ -338,7 +338,7 @@ class EvaluationService:
                         user_pref_obj = await self.generation_service.summarize_conversation(
                             str(log.dialog)
                         )
-                        return log.id, user_pref_obj.user_preferences
+                        return log.id, user_pref_obj.user_preferences, user_pref_obj.dynamic_weights.model_dump()
 
                 tasks = [_summarize_one(log) for log in local_logs]
                 results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -348,11 +348,12 @@ class EvaluationService:
                     if isinstance(outcome, Exception):
                         logger.error(f"Summarization task failed: {outcome}")
                         continue
-                    log_id, user_preferences = outcome
+                    log_id, user_preferences, dynamic_weights = outcome
                     step = StepSummarizationModel(
                         conversation_id=log_id,
                         summarization_batch_id=batch_id,
-                        user_preferences=user_preferences
+                        user_preferences=user_preferences,
+                        dynamic_weights=dynamic_weights
                     )
                     local_db.add(step)
                     log = local_db.query(ConversationLogModel).filter_by(id=log_id).first()
@@ -448,13 +449,15 @@ class EvaluationService:
                         continue # Skip if no summarization found for this conv
 
                     user_preferences = step_summ.user_preferences
+                    dynamic_weights = step_summ.dynamic_weights
                     liked_movies = log.liked_movies
 
                     # 2. Retrieve
                     retrieval_result = await self.retrieval_service.retrieve_movies(
                         user_preferences=user_preferences,
                         liked_movies=liked_movies,
-                        n=n_sample
+                        n=n_sample,
+                        dynamic_weights=dynamic_weights
                     )
                     
                     candidates = retrieval_result["combined"]

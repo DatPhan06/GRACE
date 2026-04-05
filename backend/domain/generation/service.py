@@ -12,9 +12,15 @@ from shared.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
+class RetrievalWeights(BaseModel):
+    w_sem: float = Field(default=0.4, ge=0, le=1)
+    w_con: float = Field(default=0.3, ge=0, le=1)
+    w_col: float = Field(default=0.3, ge=0, le=1)
+
 class UserPreference(BaseModel):
     user_preferences: str = Field(description="Summarized seeker's preferences")
     liked_movies: list[str] = Field(default=[], description="List of movies the user liked")
+    dynamic_weights: RetrievalWeights = Field(default_factory=RetrievalWeights, description="Predicted weights for WRRF")
 
 class GenerationService:
     def __init__(self):
@@ -42,11 +48,11 @@ class GenerationService:
                 data = json.loads(json_str)
                 return UserPreference(**data)
             else:
-                logging.error("Could not find JSON in response")
-                return UserPreference(user_preferences=response, liked_movies=[])
+                logger.error(f"Could not find JSON in response: {cleaned_response}")
+                return UserPreference(user_preferences=response, liked_movies=[], dynamic_weights=RetrievalWeights())
         except Exception as e:
             logger.error(f"Error during summarization: {e}")
-            return UserPreference(user_preferences="", liked_movies=[])
+            return UserPreference(user_preferences="", liked_movies=[], dynamic_weights=RetrievalWeights())
 
     async def generate_response(self, user_preferences: str, recommendations: list) -> str:
         """

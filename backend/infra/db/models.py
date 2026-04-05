@@ -112,6 +112,7 @@ class StepSummarizationModel(Base):
     conversation_id = Column(Integer, ForeignKey("conversation_logs.id"))
     summarization_batch_id = Column(Integer, ForeignKey("summarization_runs.id"))
     user_preferences = Column(String)
+    dynamic_weights = Column(JSON, nullable=True)
     
     conversation = relationship("ConversationLogModel", back_populates="summarization")
     batch = relationship("SummarizationRunModel")

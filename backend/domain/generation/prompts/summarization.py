@@ -3,11 +3,22 @@ This conversation is a discussion between a seeker and a recommender about the s
 Read this conversation, find all the information about the seeker's preferences in movie, actor, genres, countries and 
 content (Do not contain assistant preferences), and summarize them.
 
+Furthermore, you must predict a dynamic weight distribution (w_sem, w_con, w_col) for three retrieval strategies:
+- w_sem (Semantic/Thematic Intent): Weight for plot, abstract concepts, or themes (e.g., "movies about time travel").
+- w_con (Content/Categorical Intent): Weight for strict explicit constraints like genres or release years (e.g., "90s action movies").
+- w_col (Collaborative/Entity-Centric Intent): Weight for specific entities like actors, directors, or creators (e.g., "films by Nolan").
+These weights must sum to exactly 1.0 (w_sem + w_con + w_col = 1.0).
+
 Your response must follow the instruction below:
 The output should be a formatted JSON object with the following schema:
 {
     "user_preferences": "Detailed summary of preferences...",
-    "liked_movies": ["Movie 1", "Movie 2"] 
+    "liked_movies": ["Movie 1", "Movie 2"],
+    "dynamic_weights": {
+        "w_sem": 0.4,
+        "w_con": 0.3,
+        "w_col": 0.3
+    }
 }
 
 Here are some examples of summarization:
