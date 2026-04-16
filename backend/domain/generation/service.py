@@ -3,7 +3,9 @@ from domain.generation.prompts import (
     SUMMARIZE_CONVERSATION_SYSTEM_PROMPT,
     SUMMARIZE_CONVERSATION_USER_PROMPT,
     RECOMMENDATION_RESPONSE_SYSTEM_PROMPT,
-    RECOMMENDATION_RESPONSE_USER_PROMPT
+    RECOMMENDATION_RESPONSE_USER_PROMPT,
+    RELAX_CONSTRAINTS_SYSTEM_PROMPT,
+    RELAX_CONSTRAINTS_USER_PROMPT
 )
 from pydantic import BaseModel, Field
 import json
@@ -23,6 +25,10 @@ class UserPreference(BaseModel):
         default="", description="Chain of thought reasoning from the Profiler Agent")
     user_preferences: str = Field(
         description="Summarized seeker's preferences")
+    hard_constraints: list[str] = Field(
+        default=[], description="Explicit hard constraints like 'after 2010', 'horror genre', etc.")
+    semantic_queries: list[str] = Field(
+        default=[], description="List of sub-queries for semantic search")
     liked_movies: list[str] = Field(
         default=[], description="List of movies the user liked")
     dynamic_weights: RetrievalWeights = Field(
@@ -80,3 +86,30 @@ class GenerationService:
             prompt=prompt,
             system_instruction=RECOMMENDATION_RESPONSE_SYSTEM_PROMPT
         )
+
+    async def relax_constraints(self, preferences: UserPreference, critic_reasoning: str) -> UserPreference:
+        """
+        Relax strict constraints if no candidates were found.
+        """
+        logger.info(f"Relaxing constraints based on critic feedback: {critic_reasoning}")
+        prompt = RELAX_CONSTRAINTS_USER_PROMPT.format(
+            user_preferences=preferences.user_preferences,
+            hard_constraints=", ".join(preferences.hard_constraints),
+            critic_reasoning=critic_reasoning
+        )
+        
+        try:
+            response = await self.llm_client.agenerate(
+                prompt=prompt,
+                system_instruction=RELAX_CONSTRAINTS_SYSTEM_PROMPT
+            )
+            cleaned_response = response.replace("```json", "").replace("```", "").strip()
+            start = cleaned_response.find("{")
+            end = cleaned_response.rfind("}") + 1
+            if start != -1 and end != -1:
+                data = json.loads(cleaned_response[start:end])
+                return UserPreference(**data)
+            return preferences
+        except Exception as e:
+            logger.error(f"Error during relaxation: {e}")
+            return preferences
