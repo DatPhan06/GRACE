@@ -22,7 +22,7 @@ class GraphReasoningAgent:
         self.neo4j_client = get_neo4j_client()
         self.max_iterations = 3
 
-    async def retrieve(self, user_preferences: str, liked_movies: List[str], n: int = 100) -> Dict[str, Any]:
+    async def retrieve(self, user_preferences: str, liked_movies: List[str], n: int = 100, hard_constraints: List[str] = None) -> Dict[str, Any]:
         """
         Returns:
             Dict containing 'movies' (List) and 'thoughts' (List of strings)
@@ -36,6 +36,7 @@ class GraphReasoningAgent:
             
             prompt = GRAPH_REASONING_USER_PROMPT.format(
                 user_preferences=user_preferences,
+                hard_constraints=", ".join(hard_constraints) if hard_constraints else "None",
                 liked_movies=", ".join(liked_movies) if liked_movies else "None",
                 history=history if history else "No previous attempts."
             )
