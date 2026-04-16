@@ -37,59 +37,86 @@ class ChatService:
         })
 
         preferences_data = await self.generation_service.summarize_conversation(conversation_history)
-        user_preferences = preferences_data.user_preferences
-        liked_movies = preferences_data.liked_movies
-        dynamic_weights = preferences_data.dynamic_weights.model_dump()
-        profiler_reasoning = preferences_data.profiler_reasoning
-
-        if profiler_reasoning:
-            agent_trace.append(f"Profiler Agent: {profiler_reasoning}")
-
+        
         yield self._event("node", {
             "node": "profiler",
             "status": "done",
-            "message": f"Profiler Agent: Done — extracted {len(liked_movies)} liked movies."
+            "message": f"Profiler Agent: Done — extracted {len(preferences_data.liked_movies)} liked movies."
         })
 
-        # ── 2. Retrieval / Orchestrator ────────────────────────────────────
-        yield self._event("node", {
-            "node": "retrieval",
-            "status": "running",
-            "message": "Orchestrator: Launching Semantic, Content & Graph Agents..."
-        })
+        max_attempts = 2
+        attempt = 0
+        candidates = []
+        final_movies = []
+        
+        while attempt < max_attempts:
+            attempt += 1
+            user_preferences = preferences_data.user_preferences
+            liked_movies = preferences_data.liked_movies
+            hard_constraints = preferences_data.hard_constraints
+            semantic_queries = preferences_data.semantic_queries
+            dynamic_weights = preferences_data.dynamic_weights.model_dump()
+            
+            if preferences_data.profiler_reasoning:
+                agent_trace.append(f"Profiler (Attempt {attempt}): {preferences_data.profiler_reasoning}")
 
-        retrieval_results = await self.retrieval_service.retrieve_movies(
-            user_preferences, liked_movies, n=20, dynamic_weights=dynamic_weights
-        )
-        candidates = retrieval_results.get("combined", [])
-        retrieval_trace = retrieval_results.get("agent_trace", [])
-        agent_trace.extend(retrieval_trace)
+            # ── 2. Retrieval / Orchestrator ────────────────────────────────────
+            yield self._event("node", {
+                "node": "retrieval",
+                "status": "running",
+                "message": f"Orchestrator (Attempt {attempt}): Launching Semantic, Content & Graph Agents..."
+            })
 
-        yield self._event("node", {
-            "node": "retrieval",
-            "status": "done",
-            "message": f"Orchestrator: Done — fused {len(candidates)} candidates via WRRF."
-        })
+            retrieval_results = await self.retrieval_service.retrieve_movies(
+                user_preferences, 
+                liked_movies, 
+                n=20, 
+                dynamic_weights=dynamic_weights,
+                semantic_queries=semantic_queries,
+                hard_constraints=hard_constraints
+            )
+            candidates = retrieval_results.get("combined", [])
+            retrieval_trace = retrieval_results.get("agent_trace", [])
+            agent_trace.extend(retrieval_trace)
 
-        # ── 3. Critic + Reranking ──────────────────────────────────────────
-        yield self._event("node", {
-            "node": "reranking",
-            "status": "running",
-            "message": "Critic Agent: Filtering & validating candidates..."
-        })
+            yield self._event("node", {
+                "node": "retrieval",
+                "status": "done",
+                "message": f"Orchestrator: Done — fused {len(candidates)} candidates via WRRF."
+            })
 
-        reranking_results = await self.reranking_service.rerank_movies(
-            user_preferences, candidates, top_k=5
-        )
-        final_movies = reranking_results.get("movies", [])
-        reranking_trace = reranking_results.get("agent_trace", [])
-        agent_trace.extend(reranking_trace)
+            # ── 3. Critic + Reranking ──────────────────────────────────────────
+            yield self._event("node", {
+                "node": "reranking",
+                "status": "running",
+                "message": f"Critic Agent (Attempt {attempt}): Filtering & validating candidates..."
+            })
 
-        yield self._event("node", {
-            "node": "reranking",
-            "status": "done",
-            "message": f"Ranker: Done — selected top {len(final_movies)} recommendations."
-        })
+            reranking_results = await self.reranking_service.rerank_movies(
+                user_preferences, candidates, top_k=5
+            )
+            final_movies = reranking_results.get("movies", [])
+            reranking_trace = reranking_results.get("agent_trace", [])
+            requires_relaxation = reranking_results.get("requires_relaxation", False)
+            critic_reasoning = reranking_results.get("reasoning", "")
+            
+            agent_trace.extend(reranking_trace)
+
+            if requires_relaxation and attempt < max_attempts:
+                yield self._event("node", {
+                    "node": "reranking",
+                    "status": "running",
+                    "message": "Orchestrator: Constraints too tight. Triggering relaxation loop..."
+                })
+                preferences_data = await self.generation_service.relax_constraints(preferences_data, critic_reasoning)
+                continue # Retry with relaxed preferences
+            else:
+                yield self._event("node", {
+                    "node": "reranking",
+                    "status": "done",
+                    "message": f"Ranker: Done — selected top {len(final_movies)} recommendations."
+                })
+                break # Success or max attempts reached
 
         # ── 4. Generation ──────────────────────────────────────────────────
         yield self._event("node", {
@@ -98,7 +125,7 @@ class ChatService:
             "message": "GRACE: Composing your personalized response..."
         })
 
-        response_text = await self.generation_service.generate_response(user_preferences, final_movies)
+        response_text = await self.generation_service.generate_response(preferences_data.user_preferences, final_movies)
 
         yield self._event("node", {
             "node": "generation",
@@ -112,9 +139,10 @@ class ChatService:
             "recommendations": final_movies,
             "agent_trace": agent_trace,
             "debug_info": {
-                "preferences": user_preferences,
-                "liked_movies": liked_movies,
+                "preferences": preferences_data.user_preferences,
+                "liked_movies": preferences_data.liked_movies,
                 "candidate_count": len(candidates),
+                "attempts": attempt
             }
         })
 
@@ -123,38 +151,59 @@ class ChatService:
         agent_trace = []
 
         preferences_data = await self.generation_service.summarize_conversation(conversation_history)
-        user_preferences = preferences_data.user_preferences
-        liked_movies = preferences_data.liked_movies
-        dynamic_weights = preferences_data.dynamic_weights.model_dump()
-        profiler_reasoning = preferences_data.profiler_reasoning
+        
+        max_attempts = 2
+        attempt = 0
+        candidates = []
+        final_movies = []
+        
+        while attempt < max_attempts:
+            attempt += 1
+            user_preferences = preferences_data.user_preferences
+            liked_movies = preferences_data.liked_movies
+            hard_constraints = preferences_data.hard_constraints
+            semantic_queries = preferences_data.semantic_queries
+            dynamic_weights = preferences_data.dynamic_weights.model_dump()
 
-        if profiler_reasoning:
-            agent_trace.append(f"Profiler Agent: {profiler_reasoning}")
+            retrieval_results = await self.retrieval_service.retrieve_movies(
+                user_preferences, 
+                liked_movies, 
+                n=20, 
+                dynamic_weights=dynamic_weights,
+                semantic_queries=semantic_queries,
+                hard_constraints=hard_constraints
+            )
+            candidates = retrieval_results.get("combined", [])
+            retrieval_trace = retrieval_results.get("agent_trace", [])
+            agent_trace.extend(retrieval_trace)
 
-        retrieval_results = await self.retrieval_service.retrieve_movies(
-            user_preferences, liked_movies, n=20, dynamic_weights=dynamic_weights
-        )
-        candidates = retrieval_results.get("combined", [])
-        retrieval_trace = retrieval_results.get("agent_trace", [])
-        agent_trace.extend(retrieval_trace)
+            reranking_results = await self.reranking_service.rerank_movies(
+                user_preferences, candidates, top_k=5
+            )
+            final_movies = reranking_results.get("movies", [])
+            reranking_trace = reranking_results.get("agent_trace", [])
+            requires_relaxation = reranking_results.get("requires_relaxation", False)
+            critic_reasoning = reranking_results.get("reasoning", "")
+            
+            agent_trace.extend(reranking_trace)
 
-        reranking_results = await self.reranking_service.rerank_movies(
-            user_preferences, candidates, top_k=5
-        )
-        final_movies = reranking_results.get("movies", [])
-        reranking_trace = reranking_results.get("agent_trace", [])
-        agent_trace.extend(reranking_trace)
+            if requires_relaxation and attempt < max_attempts:
+                preferences_data = await self.generation_service.relax_constraints(preferences_data, critic_reasoning)
+                continue
+            else:
+                break
 
-        response_text = await self.generation_service.generate_response(user_preferences, final_movies)
+        response_text = await self.generation_service.generate_response(preferences_data.user_preferences, final_movies)
 
         return {
             "response": response_text,
             "recommendations": final_movies,
             "agent_trace": agent_trace,
             "debug_info": {
-                "preferences": user_preferences,
-                "liked_movies": liked_movies,
+                "preferences": preferences_data.user_preferences,
+                "liked_movies": preferences_data.liked_movies,
                 "candidate_count": len(candidates),
-                "agent_trace": agent_trace
+                "agent_trace": agent_trace,
+                "attempts": attempt
             }
         }

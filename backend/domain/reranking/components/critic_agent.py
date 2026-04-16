@@ -16,7 +16,8 @@ Only filter out bad matches.
 Your response MUST be a valid JSON object containing the list of approved `movieId`s like this:
 {
     "approved_movie_ids": ["id1", "id2", "id3"],
-    "critic_reasoning": "I removed Movie X because it was a horror but the user asked for children's comedy."
+    "requires_relaxation": true/false,
+    "critic_reasoning": "I removed Movie X because it was a horror but the user asked for children's comedy. Very few movies left, consider relaxing genre constraints."
 }
 DO NOT output markdown (`\```json`) or extra text outside the JSON block.
 """
@@ -85,7 +86,11 @@ class CriticAgent:
                     filtered_candidates.append(m)
                     
             logger.info(f"[Critic Agent] Filtered out {len(candidates) - len(filtered_candidates)} bad candidates.")
-            return {"movies": filtered_candidates, "reasoning": reasoning}
+            return {
+                "movies": filtered_candidates, 
+                "reasoning": reasoning, 
+                "requires_relaxation": data.get("requires_relaxation", False) or len(filtered_candidates) < 3
+            }
 
         except Exception as e:
             logger.error(f"[Critic Agent] Error during reflection loop: {e}")
