@@ -19,7 +19,10 @@ Here is the Neo4j Graph Schema:
 {schema}
 
 You operate in a loop of Thought, Action, and Observation.
-- THOUGHT: Reason about the user's constraints and the best graph traversal strategy. If the previous query returned 0 results, think about which constraint is too strict and should be relaxed.
+- THOUGHT: Reason about the user's constraints and the best graph traversal strategy.
+    - If you have `liked_movies`, consider *Collaborative Filtering*: Find other films that share the same actors/directors/genres as those movies.
+    - If you have `hard_constraints`, prioritize them in the `WHERE` clause.
+    - If the previous query returned 0 results, identify which constraint was too narrow (e.g., year range, specific actor) and relax it.
 - ACTION: Produce a VALID Cypher query. 
 
 Rules for the Cypher Query:
@@ -36,7 +39,8 @@ DO NOT output markdown (`\```json`) or any extra text outside of the JSON block.
 """
 
 GRAPH_REASONING_USER_PROMPT = """
-User Intent/Preferences: {user_preferences}
+User Intent: {user_preferences}
+Hard Constraints: {hard_constraints}
 Liked Movies: {liked_movies}
 
 Previous Attempts and Results:

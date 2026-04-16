@@ -62,5 +62,7 @@ class RerankingService:
         
         return {
             "movies": final_movies,
-            "agent_trace": agent_trace
+            "agent_trace": agent_trace,
+            "requires_relaxation": critic_result.get("requires_relaxation", False),
+            "reasoning": critic_reasoning
         }
