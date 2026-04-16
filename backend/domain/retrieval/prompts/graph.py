@@ -1,14 +1,20 @@
 NEO4J_SCHEMA = """
 Nodes:
-  ['Film'] -> Contains properties: movieId (Integer), title (String), plot (String), year (Integer)
-  ['Director']
-  ['Actor']
-  ['Genre'] -> Contains property: name (String)
+  ['Film'] -> properties: movieId, title, plot, year, runtime, imdbRating, poster
+  ['Director'] -> properties: name
+  ['Actor'] -> properties: name
+  ['Genre'] -> properties: name
+  ['Country'] -> properties: name
+  ['Language'] -> properties: name
+  ['ReleaseYear'] -> properties: value
 
 Relationships:
-  (:Person|Director)-[:DIRECTED]->(:Film)
-  (:Person|Actor)-[:ACTED_IN]->(:Film)
-  (:Film)-[:HAS_GENRE]->(:Genre)
+  (:Actor)-[:ACTED_IN]->(:Film)
+  (:Director)-[:DIRECTED]->(:Film)
+  (:Film)-[:IN_GENRE]->(:Genre)
+  (:Film)-[:FROM_COUNTRY]->(:Country)
+  (:Film)-[:IN_LANGUAGE]->(:Language)
+  (:Film)-[:RELEASED_IN]->(:ReleaseYear)
 """
 
 GRAPH_REASONING_SYSTEM_PROMPT = """

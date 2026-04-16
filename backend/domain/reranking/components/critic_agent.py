@@ -5,7 +5,7 @@ from infra.llm import get_llm_client
 
 logger = setup_logger(__name__)
 
-CRITIC_SYSTEM_PROMPT = """
+CRITIC_SYSTEM_PROMPT = r"""
 You are the Reranking Critic Agent in a conversational recommender system. Your job is to perform a fast, harsh filter on candidate movies before they are sent to the final scoring model.
 You will be provided with the user's intent/preferences and a list of candidate movies retrieved from various sources (vector, text, graph).
 Analyze the candidates and aggressively filter out any movies that clearly hallucinatory, flagrantly violate a hard constraint (like asking for a comedy and getting a horror movie), or are simply irrelevant to the core intent.
