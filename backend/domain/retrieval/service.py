@@ -20,7 +20,7 @@ class RetrievalService:
         self.content_retriever = ContentRetriever()
         self.collab_retriever = GraphReasoningAgent()
 
-    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = None, n: int = 100, dynamic_weights: Dict[str, float] = None) -> Dict[str, Any]:
+    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = None, n: int = 100, dynamic_weights: Dict[str, float] = None, semantic_queries: List[str] = None, hard_constraints: List[str] = None) -> Dict[str, Any]:
         """
         Retrieve movies using hybrid approach (Semantic + Content + Collab) in parallel and fuse with WRRF.
         """
@@ -29,6 +29,10 @@ class RetrievalService:
             liked_movies = []
         if dynamic_weights is None:
             dynamic_weights = {"w_sem": 0.4, "w_con": 0.3, "w_col": 0.3}
+        if semantic_queries is None:
+            semantic_queries = [user_preferences]
+        if hard_constraints is None:
+            hard_constraints = []
 
         agent_trace = []
         
@@ -42,10 +46,14 @@ class RetrievalService:
             if w_sem < 0.05:
                 agent_trace.append(f"Orchestrator: Bypassing Semantic Agent (weight {w_sem} below threshold)")
                 return []
-            agent_trace.append(f"Orchestrator: Activating Semantic Agent (weight {w_sem})")
-            embedding = await self.semantic_retriever.get_query_embedding(user_preferences)
-            if embedding:
-                return await self.semantic_retriever.retrieve(embedding, n)
+            agent_trace.append(f"Orchestrator: Activating Semantic Agent (weight {w_sem}) with {len(semantic_queries)} sub-queries")
+            # Get embeddings for all semantic queries
+            emb_tasks = [self.semantic_retriever.get_query_embedding(q) for q in semantic_queries]
+            embeddings = await asyncio.gather(*emb_tasks)
+            valid_embeddings = [e for e in embeddings if e is not None]
+            
+            if valid_embeddings:
+                return await self.semantic_retriever.retrieve(valid_embeddings, n)
             return []
 
         async def _content_flow():
@@ -62,9 +70,9 @@ class RetrievalService:
             if w_col < 0.05:
                 agent_trace.append(f"Orchestrator: Bypassing Graph Agent (weight {w_col} below threshold)")
                 return {"movies": [], "thoughts": []}
-            if liked_movies:
+            if liked_movies or hard_constraints:
                 agent_trace.append(f"Orchestrator: Activating Graph Agent (weight {w_col})")
-                return await self.collab_retriever.retrieve(user_preferences, liked_movies, n)
+                return await self.collab_retriever.retrieve(user_preferences, liked_movies, n, hard_constraints=hard_constraints)
             return {"movies": [], "thoughts": []}
 
         # Execute in parallel
