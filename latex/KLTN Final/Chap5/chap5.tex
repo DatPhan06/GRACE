@@ -1,0 +1,180 @@
+\chapter{Thiết lập và Kết quả Thực nghiệm}\label{chap:experiments}
+
+Chương này trình bày chi tiết về quy trình thiết lập môi trường, các thước đo đánh giá và kết quả thực nghiệm của hệ thống ARGOS trên hai bộ dữ liệu ReDial và INSPIRED. Bên cạnh các phân tích định lượng nhằm so sánh hiệu năng với mô hình tiền đề GRACE và các hệ thống hiện đại (SOTA), chương này cung cấp các nghiên cứu tình huống (Case Studies) nhằm minh họa tính linh hoạt và khả năng xử lý suy luận của kiến trúc đa tác tử trong các kịch bản hội thoại thực tế.
+
+\section{Thiết lập thí nghiệm}
+
+\subsection{Tập dữ liệu ReDial và INSPIRED}
+Hệ thống được đánh giá trên hai bộ dữ liệu chuẩn mực trong lĩnh vực Hệ thống gợi ý hội thoại (CRS):
+\begin{itemize}
+    \item \textbf{ReDial (Recommendation Dialogues) \cite{li2018towards}:} Chứa khoảng 10.000 đoạn hội thoại quy mô lớn, được sử dụng để đánh giá độ chính xác cốt lõi của khả năng truy xuất và sự phù hợp của các gợi ý.
+    \item \textbf{INSPIRED \cite{hayati-etal-2020-inspired}:} Một tập dữ liệu chuyên biệt gồm 1.001 đoạn hội thoại, được thiết kế để kiểm tra khả năng duy trì mạch đối thoại tự nhiên, có chiến lược và mang tính xã hội cao của hệ thống.
+\end{itemize}
+
+\subsection{Cấu hình hệ thống và Phương pháp đánh giá}
+
+Đồ thị tri thức được xây dựng trên Neo4j 5.15.0, sử dụng các phép toán \texttt{MERGE} lũy đẳng để đảm bảo không trùng lặp nút.
+
+\textbf{Lựa chọn mô hình.}
+\begin{itemize}
+    \item \textbf{Gemini 2.0 Flash} (\texttt{temperature = 0.0}): Được dùng cho toàn bộ các tác vụ suy luận: Profiler Agent, Graph Agent, Critic Agent, Relaxation Agent và sinh phản hồi cuối. Nhiệt độ $0.0$ tối đa hóa tính xác định (determinism), giảm rủi ro hallucination trong môi trường yêu cầu đầu ra có cấu trúc JSON.
+    \item \textbf{Cohere Rerank 4 Pro} (qua AWS Bedrock, model ID: \texttt{cohere.rerank-v3-5:0}): Cross-Encoder chuyên dụng cho Stage 1 của Decoupled Reranking, cho phép đánh giá tương đồng ngữ nghĩa sâu mà không cần tăng ngữ cảnh LLM.
+    \item \textbf{\texttt{text-embedding-3-large}} ($d = 3072$): Mô hình nhúng vector của OpenAI, dùng cho Semantic Retrieval và xây dựng chỉ mục vector ChromaDB.
+\end{itemize}
+
+\textbf{Siêu tham số hệ thống.}
+Bảng \ref{tab:hyperparams} tổng hợp các siêu tham số chính được cố định trong suốt quá trình thực nghiệm.
+
+\begin{table}[H]
+    \caption{Siêu tham số hệ thống ARGOS}
+    \label{tab:hyperparams}
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Thành phần} & \textbf{Tham số} & \textbf{Giá trị} \\
+        \midrule
+        WRRF & Hằng số làm mượt $k$ & 60 \\
+        WRRF & Trọng số mặc định $(w_{\text{sem}}, w_{\text{con}}, w_{\text{col}})$ & $(0.40,\ 0.30,\ 0.30)$ \\
+        Orchestrator & Số ứng viên mỗi luồng $n$ & 20 \\
+        Reranker Stage 1 & Kích thước batch $B$ & 100 \\
+        Reranker Stage 1 & Shortlist mỗi batch $h$ & 20 \\
+        Reranker Stage 2 & Kết quả cuối $K_2$ & 5 \\
+        Graph Agent & Số lượt ReAct tối đa & 3 \\
+        Critic Agent & Số ứng viên tối đa mỗi lần đánh giá & 50 \\
+        Relaxation Agent & Số lần thử tối đa & 2 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{Chiến lược lấy mẫu và kiểm định thống kê.}
+Mô hình tiền đề GRACE được đánh giá trên toàn bộ (100\%) tập kiểm thử để thiết lập mốc tham chiếu chính xác khi so sánh với các mô hình SOTA đã công bố. Do giới hạn về tần suất gọi API và chi phí suy luận của hệ thống đa tác tử, ARGOS được đánh giá trên tập mẫu ngẫu nhiên đồng nhất gồm \textbf{20\%} dữ liệu kiểm thử (tương đương $\sim 925$ hội thoại trên ReDial). Kích thước mẫu này đảm bảo biên độ sai số dưới $\pm 3.0\%$ ở độ tin cậy 95\%. Kết quả được chia thành 5 tập con (5-fold cross-validation offline) để thực hiện kiểm định t-test, xác nhận các cải thiện đạt mức ý nghĩa thống kê ($p < 0.05$).
+
+\textbf{Mã nguồn mở.}
+Toàn bộ mã nguồn, kịch bản thực nghiệm và dữ liệu được công bố tại \url{https://github.com/DatPhan06/GRACE} để cộng đồng có thể kiểm chứng và tái lập kết quả.
+
+\section{Kết quả đánh giá hệ thống}
+
+\subsection{Khẳng định năng lực của kiến trúc tiền đề (GRACE vs. SOTA)}
+
+Bảng \ref{tab:baseline_comparison} tóm tắt hiệu năng của kiến trúc tiền đề GRACE so với các hệ thống hiện đại (SOTA). Dữ liệu thực nghiệm cho thấy GRACE mang lại sự cải thiện toàn diện trên nhiều khía cạnh:
+
+\textbf{So sánh với các Baseline CRS truyền thống:}
+GRACE thể hiện sự vượt trội rõ rệt so với các mô hình dựa trên RNN hoặc mạng nơ-ron đồ thị sơ khai (như KGSF, CR-Walker, và KERL). Trong khi các hệ thống cũ bị giới hạn bởi khả năng hiểu ngôn ngữ tự nhiên kém và cách tích hợp đồ thị nông (shallow integration), luồng truy xuất lai (hybrid retrieval) của GRACE có khả năng nắm bắt các kết nối đa bước (multi-hop) phức tạp, dẫn đến độ phủ (Recall) cao hơn hẳn ở mọi ngưỡng cắt.
+
+\textbf{So sánh với các Baseline dựa trên LLM (Prompting):}
+Kiến trúc đề xuất cho thấy hiệu suất cao hơn so với cả mô hình Zero-shot/Few-shot và các hệ thống tăng cường tri thức tiêu chuẩn. Các mô hình Zero-shot như LLM-ReDial ghi nhận mức Recall thấp do rủi ro phát sinh ảo giác (hallucination). Các phương pháp như UniCRS hay MESE cải thiện được tính thực tế nhưng bị giới hạn ở các truy vấn đồ thị đơn bước. Việc xây dựng cơ chế đối soát kết quả với Neo4j đã giúp GRACE loại bỏ hiệu quả thông tin sai lệch. Cụ thể, Recall@10 trên ReDial đạt 0.302, cao hơn đáng kể so với mức 0.256 của mô hình MESE.
+
+\textbf{So sánh với các Hệ thống tinh chỉnh (Fine-Tuned Frameworks):}
+Khi đối chiếu với các hệ thống được tối ưu hóa qua quá trình huấn luyện như DCRS, GRACE duy trì mức hiệu suất ổn định dù sử dụng phương pháp \textit{không cần huấn luyện} (training-free). DCRS ghi nhận mức cao hơn tại Recall@1, chủ yếu do sự tương đồng mật thiết (overfit) với phân phối dữ liệu của tập huấn luyện. Tuy nhiên, GRACE thể hiện khả năng tổng quát hóa tốt hơn khi đánh giá ở các ngưỡng sâu trên ReDial (Recall@50 đạt 0.527 so với 0.439 của DCRS) và duy trì mức hiệu năng ổn định trên tập INSPIRED.
+
+\begin{table}[H]
+    \caption{Hiệu năng của Mô hình tiền đề (GRACE) so với các hệ thống SOTA trên toàn bộ tập dữ liệu (100\%). Các kết quả tốt nhất được in đậm, và tốt thứ hai được gạch chân.}
+    \label{tab:baseline_comparison}
+    \centering
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{llcccccccc}
+            \toprule
+             &                                                   & \multicolumn{4}{c}{\textbf{ReDial (100\% Data)}} & \multicolumn{4}{c}{\textbf{INSPIRED (100\% Data)}}                                                                                           \\
+            \cmidrule(lr){3-6} \cmidrule(lr){7-10}
+             & \multirow{2}{*}{\textbf{Mô hình}}                 & \multicolumn{4}{c}{\textbf{Recall@K}}            & \multicolumn{4}{c}{\textbf{Recall@K}}                                                                                                        \\
+            \cmidrule(lr){3-6} \cmidrule(lr){7-10}
+             &                                                   & \textbf{K=1}                                     & \textbf{K=5}                                       & \textbf{K=10}  & \textbf{K=50}
+             & \textbf{K=1}                                      & \textbf{K=5}                                     & \textbf{K=10}                                      & \textbf{K=50}                                                                           \\
+            \midrule
+            \multirow{5}{*}{\rotatebox[origin=c]{90}{CRS}}
+             & ReDial \cite{li2018towards}                       & 0.023                                            & -                                                  & 0.129          & 0.287          & 0.003             & -                 & 0.117 & 0.285 \\
+             & KBRD \cite{chen-etal-2019-towards}                & 0.033                                            & -                                                  & 0.175          & 0.343          & 0.058             & -                 & 0.146 & 0.207 \\
+             & KGSF \cite{zhou2020improvingcrs}                  & 0.035                                            & -                                                  & 0.177          & 0.362          & 0.058             & -                 & 0.165 & 0.256 \\
+             & CR-Walker \cite{ma2021crwalker}                   & 0.037                                            & -                                                  & 0.176          & 0.371          & -                 & -                 & -     & -     \\
+             & KERL \cite{Qiu_2025}                              & 0.056                                            & -                                                  & 0.217          & 0.426          & \underline{0.106} & -                 & \underline{0.281} & \underline{0.439} \\
+
+            \midrule
+            \multirow{9}{*}{\rotatebox[origin=c]{90}{LLM}}
+             & LLM-ReDial (Zero-shot) \cite{liang-etal-2024-llm} & -                                                & 0.010                                              & 0.010          & 0.015          & -                 & -                 & -     & -     \\
+             & LLM-ReDial (Few-shot) \cite{liang-etal-2024-llm}  & -                                                & 0.010                                              & 0.015          & 0.020          & -                 & -                 & -     & -     \\
+             & LLM-ZCR \cite{he2023largelanguagemodels}          & 0.032                                            & \underline{0.102}                                  & -              & -              & 0.062             & \underline{0.128} & -     & -     \\
+             & UniCRS \cite{Wang_2022}                           & 0.051                                            & -                                                  & 0.224          & 0.428          & 0.094             & -                 & 0.250 & 0.410 \\
+             & MESE \cite{yang-etal-2022-improving}              & 0.056                                            & -                                                  & \underline{0.256}          & \underline{0.455}          & 0.048             & -                 & 0.135 & 0.301 \\
+
+             & PECRS \cite{ravaut-etal-2024-parameter}           & 0.058                                            & -                                                  & 0.225          & 0.416          & 0.057             & -                 & 0.179 & 0.337 \\
+             & G-CRS \cite{qiu2025graphragllm}                   & -                                                & -                                                  & 0.244          & 0.426          & -                 & -                 & 0.254 & 0.420 \\
+             & DCRS \cite{dao2024broadening}                     & \textbf{0.076}                                   & -                                                  & 0.253          & 0.439          & 0.093             & -                 & 0.226 & 0.414 \\
+             & COLA \cite{Lin_Wang_Li_2023}                      & 0.048                                            & -                                                  & 0.221          & 0.426          & -                 & -                 & -     & -     \\
+            \midrule
+            \multirow{1}{*}{\rotatebox[origin=c]{90}{Ours}}
+             & \textbf{GRACE (Baseline)}                         & \underline{0.062}                                & \textbf{0.151}                                     & \textbf{0.302} & \textbf{0.527}
+             & \textbf{0.116}                                    & \textbf{0.183}                                   & \textbf{0.307}                                     & \textbf{0.446}                                                                          \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+\subsection{Đánh giá so sánh nội bộ: GRACE (Static) và ARGOS (Đa tác tử)}
+\label{subsec:argos_ablation}
+
+Đánh giá so sánh nội bộ được thực hiện trên tập mẫu 20\% nhằm phân tích định lượng giá trị của việc chuyển đổi sang kiến trúc đa tác tử. Bảng \ref{tab:argos_internal} chỉ ra rằng hệ thống ARGOS đã khắc phục các giới hạn của kiến trúc tĩnh truyền thống và gia tăng đáng kể các chỉ số đánh giá.
+
+\textbf{Đánh giá Định lượng (Quantitative Improvement):}
+Trên tập ReDial, ARGOS ghi nhận sự cải thiện ở mọi ngưỡng đo lường: chỉ số Recall@10 tăng từ 0.300 lên 0.385 và Recall@50 tăng từ 0.525 lên 0.625. Xu hướng tương tự cũng được thể hiện trên tập INSPIRED, với Recall@1 tăng từ 0.115 lên 0.145. Cụ thể, tại ngưỡng Top-1 trên tập ReDial, hệ thống ARGOS đạt 0.105, cao hơn so với mô hình tinh chỉnh tham số DCRS (0.076 trên 100\% dữ liệu); lưu ý rằng hai kết quả này được đánh giá trên kích thước tập kiểm thử khác nhau nên chỉ mang tính tham khảo định hướng. Các kiểm định thống kê cho thấy sự khác biệt này đạt mức ý nghĩa cao ($p < 0.01$), minh chứng cho tính hợp lý của phương pháp luận Đa tác tử.
+
+\textbf{Phân tích Cấu trúc và Sự Đánh đổi (Architectural Trade-offs \& Gains):}
+Sự cải thiện hiệu năng xuất phát từ việc thay thế quy trình tích hợp tĩnh (Static Integration) bằng \textbf{Cơ chế phân bổ trọng số động nhận thức ngữ cảnh} kết hợp với \textbf{Vòng lặp ReAct}. Trái ngược với công thức WRRF với trọng số cố định trong kiến trúc tiền đề, mô hình ARGOS sử dụng Profiler Agent để dự báo và tối ưu hóa phân phối trọng số cho các luồng truy xuất ở từng lượt thoại, từ đó làm gia tăng tỷ lệ trúng đích của các ứng viên nạp vào vùng nhớ đệm (Pool).
+
+\textbf{Vai trò của Đánh giá và Thỏa hiệp (Critic \& Relaxation):}
+Cơ chế "kiểm định" (Critic) và "thỏa hiệp" (Relaxation) cung cấp giải pháp cho các truy vấn chứa yêu cầu mâu thuẫn. Khi không có ứng viên nào đáp ứng toàn bộ bộ tiêu chí, hệ thống sẽ tự động nới lỏng các ràng buộc thứ cấp theo mức ưu tiên để duy trì tính liên tục thay vì phản hồi lỗi. 
+
+Bên cạnh đó, quy trình Xếp hạng hai giai đoạn (Decoupled Reranking) tích hợp với mô hình Cross-Encoder đã giảm tải khối lượng tính toán trực tiếp cho mô hình ngôn ngữ lớn sinh văn bản. Kiến trúc đa tác tử đảm bảo đạt được tính chính xác cao đồng thời giữ vững độ trễ (latency) ở mức cho phép cho một hệ thống tương tác thực tế.
+
+\begin{table}[H]
+    \caption{Đánh giá nội bộ: So sánh hiệu năng giữa GRACE (Dòng chảy tĩnh) và ARGOS (Hệ thống Đa tác tử) trên tập mẫu 20\% có tính ý nghĩa thống kê ($p < 0.05$).}
+    \label{tab:argos_internal}
+    \centering
+    \begin{tabular}{lcccccccc}
+        \toprule
+        \multirow{2}{*}{\textbf{Kiến trúc}} & \multicolumn{4}{c}{\textbf{ReDial (20\% Sample)}} & \multicolumn{4}{c}{\textbf{INSPIRED (20\% Sample)}}                                                                   \\
+        \cmidrule(lr){2-5} \cmidrule(lr){6-9}
+                                            & \textbf{K=1}                                      & \textbf{K=5}                                        & \textbf{K=10}  & \textbf{K=50}
+                                            & \textbf{K=1}                                      & \textbf{K=5}                                        & \textbf{K=10}  & \textbf{K=50}                                  \\
+        \midrule
+        GRACE (Baseline)                    & 0.063                                             & 0.149                                               & 0.300          & 0.525          & 0.115 & 0.181 & 0.305 & 0.444 \\
+        \textbf{ARGOS (Đa tác tử)}          & \textbf{0.105}                                    & \textbf{0.225}                                      & \textbf{0.385} & \textbf{0.625}
+                                            & \textbf{0.145}                                    & \textbf{0.235}                                      & \textbf{0.365} & \textbf{0.515}                                 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Nghiên cứu tình huống (Case Studies)}
+
+Bên cạnh các đánh giá định lượng, các nghiên cứu tình huống sau đây sẽ làm rõ cơ chế tương tác giữa các tác tử trong hệ thống ARGOS nhằm giải quyết các trường hợp mà mô hình tĩnh (GRACE) gặp hạn chế.
+
+\subsection{Đa truy vấn: Khám phá các mối liên hệ ẩn (Hidden Relational Gems)}
+\textbf{Truy vấn người dùng:} \textit{"Tôi muốn xem phim gì đó giống John Wick nhưng bối cảnh phải ở Châu Á và có màu sắc kiếm hiệp hoài cổ."}
+\begin{itemize}
+    \item \textbf{Hệ thống tĩnh:} Thực hiện một truy vấn duy nhất với cụm từ khóa "John Wick Asia martial arts". Hệ quả là không gian vector bị dịch chuyển về hướng các bộ phim hành động hiện đại của Châu Á (ví dụ: \textit{The Raid}), bỏ qua yếu tố "kiếm hiệp hoài cổ".
+    \item \textbf{Hệ thống ARGOS (Tác tử Hồ sơ):} Tác tử tự động phân rã ý định thành 3 truy vấn con độc lập: (1) \textit{"Fast-paced gun-fu like John Wick"}, (2) \textit{"Wuxia aesthetic martial arts movie"}, và (3) \textit{"Asian setting action choreography"}. Quá trình tìm kiếm song song cho phép hệ thống xác định điểm giao thoa và đề xuất các tác phẩm phù hợp như \textit{Shadow (2018)} của Trương Nghệ Mưu hoặc \textit{Blade of the Immortal}. Cơ chế này đóng vai trò quan trọng trong việc gia tăng chỉ số Recall.
+\end{itemize}
+
+\subsection{Tác tử Đồ thị (Graph Agent): Nội suy thông tin từ dữ liệu khuyết thiếu}
+\textbf{Truy vấn người dùng:} \textit{"Tìm phim của hãng A24 sản xuất nhé."}
+\begin{itemize}
+    \item \textbf{Hệ thống tĩnh:} Trình tạo mã Cypher sinh lệnh \texttt{MATCH (f:Film \{studio: "A24"\})}. Tuy nhiên, schema cơ sở dữ liệu không lưu trữ thuộc tính \texttt{studio}. Lệnh truy vấn trả về rỗng và hệ thống không thể xử lý tiếp.
+    \item \textbf{Hệ thống ARGOS (Tác tử Đồ thị):} Tác tử thực thi mô hình ReAct. Lượt 1: Truy vấn \texttt{studio} không thành công. Lượt 2 (Tư duy logic): Tác tử nhận diện sự thiếu hụt của trường dữ liệu và lập kế hoạch thay thế, dựa trên Schema-Aware Intelligence, nó xác định KG có quan hệ \texttt{(:Director)-[:DIRECTED]->(:Movie)}, và sử dụng tri thức ngữ cảnh (từ LLM) rằng A24 gắn liền với các đạo diễn như Ari Aster hoặc Robert Eggers để xây dựng điều kiện lọc mới. Lượt 3 (Hành động): Tác tử sinh lệnh Cypher tìm phim theo danh sách đạo diễn và trả về \textit{Hereditary}, \textit{The Lighthouse}. Ví dụ này minh họa sự kết hợp giữa cấu trúc KG và suy luận LLM để bù đắp dữ liệu khuyết thiếu.
+\end{itemize}
+
+\subsection{Tác tử Kiểm định (Critic Agent): Cơ chế triệt tiêu ảo giác}
+\textbf{Truy vấn người dùng:} \textit{"Phim hoạt hình nhẹ nhàng cho trẻ em, có robot giống Wall-E nhé."}
+\begin{itemize}
+    \item \textbf{Hệ thống tĩnh:} Từ khóa "robot" có thể khiến cơ chế truy xuất ngữ nghĩa vô tình đưa \textit{The Terminator} vào danh sách ứng viên. Do thiếu sự kiểm soát độc lập, mô hình xếp hạng có thể ưu tiên ứng viên này do điểm tương đồng vector cao.
+    \item \textbf{Hệ thống ARGOS (Tác tử Kiểm định):} Tác tử nhận diện mâu thuẫn logic: \textit{"Yêu cầu nhấn mạnh đối tượng 'trẻ em', trong khi The Terminator được dán nhãn R. Vi phạm Ràng buộc cứng (Hard Constraint) về đối tượng khán giả"}. Tác tử ngay lập tức thanh lọc kết quả này, chỉ giữ lại các lựa chọn an toàn như \textit{Big Hero 6} hoặc \textit{Next Gen}, đảm bảo tính chuẩn xác (Precision) của hệ thống.
+\end{itemize}
+
+\subsection{Tác tử Thỏa hiệp (Relaxation Agent): Điều chỉnh ý định truy vấn}
+\textbf{Truy vấn người dùng:} \textit{"Tìm phim kinh dị thuần túy của đạo diễn Christopher Nolan."}
+\begin{itemize}
+    \item \textbf{Hệ thống tĩnh:} Do Christopher Nolan chưa từng đạo diễn phim kinh dị (Horror) thuần túy, hệ thống trả về kết quả rỗng hoặc đề xuất một phim hành động ngẫu nhiên mà không kèm theo giải thích hợp lý.
+    \item \textbf{Hệ thống ARGOS (Tác tử Thỏa hiệp):} Tác tử Kiểm định báo cáo kết quả rỗng. Tác tử Thỏa hiệp kích hoạt cơ chế nới lỏng: \textit{"Đặc trưng 'Christopher Nolan' là sở thích cốt lõi (Core intent) không thể thay thế. Có thể nới lỏng giới hạn 'Horror' sang 'Thriller' (giật gân), vốn là thế mạnh của vị đạo diễn này"}. Hệ thống tái cấu trúc truy vấn và đề xuất các bộ phim như \textit{Memento} hay \textit{The Prestige}, kèm theo lời diễn giải: \textit{"Mặc dù Nolan không đạo diễn phim kinh dị, nhưng đây là những tác phẩm giật gân có yếu tố u tối tiêu biểu của ông..."}. Cơ chế này đảm bảo duy trì mạch hội thoại liên tục và cung cấp trải nghiệm tối ưu cho người dùng.
+\end{itemize}
+
+\section*{Kết luận chương}
+
+Chương 5 trình bày các kết quả phân tích định lượng và định tính về hiệu suất của hệ thống ARGOS. Bằng việc thực nghiệm trên hai bộ dữ liệu ReDial và INSPIRED, hệ thống thể hiện sự cải thiện rõ rệt so với cả mô hình tiền đề GRACE và các mô hình yêu cầu tinh chỉnh tham số phức tạp (training-based models). Các nghiên cứu tình huống thực tiễn đã minh họa cụ thể luồng xử lý và khả năng tự động phân giải, suy luận đồ thị, và quản lý ràng buộc thông minh. Các kết quả thực chứng này đóng vai trò cơ sở để tiến tới tổng kết khóa luận và đề xuất những định hướng nghiên cứu sâu hơn trong chương kế tiếp.

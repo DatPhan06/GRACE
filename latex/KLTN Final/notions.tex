@@ -1,0 +1,102 @@
+\newcommand{\neuronText}{nơ-ron\xspace}
+\newcommand{\vecto}{véc-tơ\xspace}
+\newcommand{\deeplearning}{học sâu\xspace} 
+\newcommand{\bias}{\textit{bias}\xspace}
+\newcommand{\variance}{\textit{variance}}
+\newcommand{\tool}{AdvGeneration\xspace}
+
+\newcommand{\model}{M\xspace}
+\newcommand{\weights}{\textbf{W}}
+\newcommand{\parameters}{\bm{\theta}}
+\newcommand{\lr}{\eta}
+\newcommand{\weightElement}{w_{i,j,k}}
+\newcommand{\weightBetweenTwoLayer}[2]{\textbf{w}_{#1,#2}}
+\newcommand{\numOfLayer}{l}
+\newcommand{\activations}[0]{\bm{\theta}}
+
+
+
+
+\newcommand{\tieuchi}{$||L||_2$\xspace}
+\newcommand{\proposedMethod}{\textit{AE4DNN}\xspace}
+\newcommand{\crossEntropy}{\textit{cross-entropy}\xspace}
+\newcommand{\reRank}{\textit{re-rank}\xspace}
+
+
+\newcommand{\neuron}[2]{n_{#1}^{#2}}
+\newcommand{\dataset}{\textbf{X}}
+\newcommand{\numFeatures}{d\xspace}
+\newcommand{\numClasses}{k\xspace}
+\newcommand{\numSamples}{s\xspace}
+\newcommand{\subsetX}{\textbf{S}}
+
+
+\newcommand{\outputOfDeepModel}[1]{$F(#1)$}
+
+% input vector
+\newcommand{\inputVector}{\textbf{x}\xspace}
+\newcommand{\originLabel}{y^{true}_\inputVector\xspace}
+\newcommand{\inputVectorWithIndex}[1]{\inputVector_{#1}}
+\newcommand{\classOfInputVector}{c_{\inputVector}}
+\newcommand{\predictedProbOfInputVector}{\textbf{y}}
+\newcommand{\trueProbOfInputVector}{\textbf{y}^{true}}
+\newcommand{\trueProbOfInputVectorForAll}{\textbf{Y}^{true}}
+% \newcommand{\orignLabelSet}{\textbf{Y}^{true}}
+% adversary
+\newcommand{\adversaryVector}{\textbf{x}'}
+\newcommand{\adversaryVectorForAll}{\textbf{X}'}
+\newcommand{\adversaryVectorWithIndex}[1]{\textbf{x}'_{#1}}
+\newcommand{\classOfAdversaryVector}{c'}
+\newcommand{\predictedProbOfAdversaryVector}{\textbf{y}'}
+\newcommand{\configPair}{($\beta, \phi$)\xspace}
+\newcommand{\adversarialSet}{\textbf{X}'}
+
+% target
+\newcommand{\targetLabel}{y^*}
+\newcommand{\targetProb}{\textbf{y}^*}
+
+% objective function
+\newcommand{\originalObjective}{f(\inputVector, \weights, \activations)}
+\newcommand{\originalObjectiveForAll}{f(\dataset, \weights, \trueProbOfInputVectorForAll)}
+\newcommand{\originalObjectiveForAllVHai}{J(\dataset, \weights, \trueProbOfInputVectorForAll)}
+% gradient of objective function
+\newcommand{\gradientOriginalObjective}{\nabla_{\inputVector} f(\inputVector, \weights, \activations)}
+\newcommand{\gradientOriginalObjectiveByW}{\nabla_{\weights} f(\inputVector, \weights, \activations)}
+\newcommand{\gradientOriginalObjectiveByWeightElement}{\frac{\partial{\originalObjective}}{\partial{\weightElement}}}
+\newcommand{\gradientTargetObjective}{\nabla_{\inputVector} f(\inputVector, \weights, \activations)}
+
+\newcommand{\gradientOriginalObjectiveForAll}{\nabla_{\inputVector} \originalObjectiveForAll}
+
+
+
+% fgsm relate
+\newcommand{\gradientUntargetedFGSM}{\nabla_{\inputVector} J(\inputVector,  \trueProbOfInputVector_{\inputVector})}
+
+\newcommand{\gradienttargetedFGSM}{\nabla_{\inputVector} J(\inputVector,  \targetLabel)}
+
+% carlini relate
+
+\newcommand{\carnili}{Carlini-Wagner \tieuchi\xspace}
+\newcommand{\Carnili}{Carlini-Wagner \tieuchi\xspace}
+% L_BFGS
+\newcommand{\LBFGS}{Box-constrained L-BFGS\xspace}
+\newcommand{\lbfgsLoss}{J(\adversaryVector, \targetLabel)}
+\newcommand{\lbfgs}{Box-constrained L-BFGS\xspace}
+% Iterative Least-Likely Class
+
+\newcommand{\leastlikely}{\textit{Iterative Least-Likely Class}\xspace}
+\newcommand{\leastlikelyshort}{l.l. class\xspace}
+\newcommand{\gradientLLClass}{\nabla_{\inputVector} J(\adversaryVector_{N-1}, \targetLabel)}
+
+
+% L
+
+\newcommand{\LKhong}{$||L||_0$\xspace}
+\newcommand{\LVoCung}{$||L||_{\infty}$\xspace}
+\newcommand{\LP}{$||L||_p$\xspace}
+
+
+
+% exp
+
+\newcommand{\mSecure}{\model_{secure}\xspace}

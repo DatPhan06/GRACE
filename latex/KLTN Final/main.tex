@@ -1,0 +1,215 @@
+\documentclass[12pt,a4paper,oneside]{book} % twoside for draf
+
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage{tgtermes}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+
+\usepackage{titlesec}
+\usepackage{titletoc}
+\usepackage{listings}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage[left=3cm,right=2cm,top=2.5cm,bottom=3cm]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{varwidth}
+\usepackage{float}
+\usepackage{color}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[linesnumbered,lined,ruled,resetcount,algochapter,procnumbered]{algorithm2e}
+\usepackage{svg}
+\usepackage{tabularx}
+\usepackage{nomencl}
+\usepackage{scrfontsizes}
+\usepackage{longtable}
+\usepackage{multicol}
+% \usepackage[toc,page]{appendix}
+\usepackage{tocbibind}
+\usepackage{adjustbox}
+\usepackage[numbers]{natbib}
+\usepackage{makecell}
+\usepackage{longtable}
+\usepackage{multirow}
+% \usepackage{algpseudocode}
+\usepackage{settings/uetthesis}
+\usepackage[toc]{appendix}
+\usepackage{bm}
+\usepackage{dirtytalk}
+\usepackage{slashbox}
+\usepackage{subcaption}
+\usepackage{glossaries}
+\setcitestyle{square}
+
+\counterwithin{figure}{chapter}
+\usepackage{xpatch}
+\usepackage{setspace}
+
+\makeatletter
+% \input{numeric.bbx}
+\makeatother
+
+\setlength{\parskip}{6pt}
+
+\usetikzlibrary{calc}
+
+\setlength{\parindent}{10mm}
+\renewcommand{\baselinestretch}{1.31}
+\graphicspath{{images/}}
+\renewcommand{\listalgorithmcfname}{Danh sách thuật toán}
+\renewcommand{\algorithmcfname}{Thuật toán}
+\renewcommand{\nomname}{Danh sách ký hiệu, viết tắt}
+\renewcommand\appendixtocname{Phụ lục}
+
+\newenvironment{procalgorithm}[1][htb]
+  {\renewcommand{\algorithmcfname}{Thủ tục}% Update algorithm name
+   \begin{algorithm}[#1]
+  }{\end{algorithm}}
+
+\newtheorem{definition}{Định nghĩa}
+\SetKwRepeat{Do}{do}{while}%
+
+\titlecontents{chapter}%
+[0pt]%
+{\vspace{1ex}}%
+{\bfseries Chương \thecontentslabel\quad}%
+{\bfseries}%
+{\bfseries\hfill\contentspage}
+
+
+\let\chapappname\chaptername
+
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+
+
+
+\renewcommand{\lstlistingname}{Source}
+\renewcommand\thechapter{\arabic{chapter}}
+\renewcommand\thesection{\thechapter.\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+% \renewcommand\thesubsubsection{\thesection.\thesubsection.\arabic{subsubsection}}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\renewcommand{\thealgocf}{\thechapter.\arabic{algocf}}
+\renewcommand{\thedefinition}{\thechapter.\arabic{definition}}
+
+\begin{document}
+
+
+
+%======================================================
+\titleclass{\subsubsubsection}{straight}[\subsection]
+
+\newcounter{subsubsubsection}[subsubsection]
+\renewcommand\thesubsubsubsection{\thesubsubsection.\arabic{subsubsubsection}}
+\renewcommand\theparagraph{\thesubsubsubsection.\arabic{paragraph}} % optional; useful if paragraphs are to be numbered
+
+\titleformat{\subsubsubsection}
+{\normalfont\normalsize\bfseries}{\thesubsubsubsection}{1em}{}
+\titlespacing*{\subsubsubsection}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+\makeatletter
+\renewcommand\paragraph{\@startsection{paragraph}{5}{\z@}%
+	{3.25ex \@plus1ex \@minus.2ex}%
+	{-1em}%
+	{\normalfont\normalsize\bfseries}}
+\renewcommand\subparagraph{\@startsection{subparagraph}{6}{\parindent}%
+	{3.25ex \@plus1ex \@minus .2ex}%
+	{-1em}%
+	{\normalfont\normalsize\bfseries}}
+\def\toclevel@subsubsubsection{4}
+\def\toclevel@paragraph{5}
+\def\toclevel@paragraph{6}
+\def\l@subsubsubsection{\@dottedtocline{4}{7em}{4em}}
+\def\l@paragraph{\@dottedtocline{5}{10em}{5em}}
+\def\l@subparagraph{\@dottedtocline{6}{14em}{6em}}
+
+\setcounter{secnumdepth}{5}
+
+\makeatother
+%===============================================================
+
+
+
+\pagestyle{plain}
+\frontmatter
+
+% ----------------------TRANG BÌA----------------------
+\input{coverpage1}
+\input{coverpage2}
+\input{coverpage3}
+
+% ----------------------LỜI CẢM ƠN----------------------
+\input{thanks}
+
+% ----------------------CAM ĐOAN----------------------
+\input{assurance}
+
+% ----------------------MỤC LỤC----------------------
+\renewcommand{\contentsname}{Mục lục}
+\tableofcontents
+
+% ----------------------- Abstract -----------------
+\input{abstract}
+
+
+\thispagestyle{empty}
+
+\renewcommand{\listfigurename}{Danh sách hình vẽ}
+\listoffigures
+
+\renewcommand{\listtablename}{Danh sách bảng}
+\listoftables
+
+% ----------------------CHÚ THÍCH VIẾT TẮT----------------------
+\input{glossary}
+
+\clearpage
+
+\mainmatter
+\changefontsizes[16pt]{13pt}
+\pagestyle{plain}
+
+% Đánh số 
+\pagenumbering{arabic}
+
+% ----------------------MỞ ĐẦU----------------------
+\input{modau}
+
+% ----------------------CHƯƠNG 1----------------------
+\input{Chap1/chap1}
+
+% ----------------------CHƯƠNG 2----------------------
+\input{Chap2/chap2}
+
+% ----------------------CHƯƠNG 3----------------------
+\input{Chap3/chap3}
+
+% ----------------------CHƯƠNG 4----------------------
+\input{Chap4/chap4}
+
+% ----------------------CHƯƠNG 5----------------------
+\input{Chap5/chap5}
+
+% ----------------------CHƯƠNG 6----------------------
+\input{Chap6/chap6}
+
+% ----------------------TÀI LIỆU THAM KHẢO----------------------
+% \bibliographystyle{plain}
+% \bibliography{references}
+\renewcommand{\bibname}{Danh mục tham khảo}
+{\small
+	\bibliographystyle{unsrt}
+	\bibliography{references}
+}
+
+\end{document}

@@ -1,0 +1,45 @@
+\def\makeprintversion{}
+
+%% Remember to load babel before loading this package or define the command \abstractname!
+\makeatletter
+\newenvironment{acknowledgments}{
+	\titlepage \null\vfil
+	\begin{center}
+	{\fontsize{13}{1} \bfseries LỜI CẢM ƠN}
+	\end{center}
+% 	\quotation
+	 \setcounter{page}{1}
+  }{}
+\makeatother
+
+\makeatletter
+\newenvironment{abstract}{
+  \titlepage
+  \null\vfil
+  \@beginparpenalty\@lowpenalty
+  \begin{center}
+	{\fontsize{13}{1} \bfseries TÓM TẮT}
+	\@endparpenalty\@M
+  \end{center}}
+ {\par\vfil\null\endtitlepage}
+\makeatother
+
+
+% Declaration
+\makeatletter
+\newenvironment{declaration}{
+% 	\begin{center}
+% 	{\fontsize{13}{1} \bfseries LỜI CAM ĐOAN}
+% 	\end{center}
+% 	\quotation
+     \titlepage \null\vfil
+	\begin{center}
+	{\fontsize{13}{1} \bfseries LỜI CAM ĐOAN}
+	\end{center}
+% 	\quotation
+	 \setcounter{page}{1}
+  }{}
+\makeatother	  
+
+% \renewcommand\lstlistingname{Algorithm}
+% \renewcommand\lstlistlistingname{Algorithms}

@@ -1,0 +1,77 @@
+\contentsline {chapter}{Lời cảm ơn}{i}{chapter*.1}%
+\contentsline {chapter}{Lời cam đoan}{ii}{chapter*.2}%
+\contentsline {chapter}{Mục lục}{iii}{chapter*.3}%
+\contentsline {chapter}{Tóm tắt}{vii}{chapter*.4}%
+\contentsline {chapter}{Danh sách hình vẽ}{viii}{chapter*.5}%
+\contentsline {chapter}{Danh sách bảng}{xi}{chapter*.6}%
+\contentsline {chapter}{Thuật ngữ}{xii}{chapter*.7}%
+\contentsline {chapter}{Mở đầu}{1}{chapter*.9}%
+\contentsline {chapter}{\numberline {1}Giới thiệu chung}{4}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Đặt vấn đề và Động lực nghiên cứu}{4}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Tổng quan các nghiên cứu liên quan}{5}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Hệ thống CRS truyền thống tăng cường tri thức}{5}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Mô hình Ngôn ngữ Lớn trong Hệ thống gợi ý}{6}{subsection.1.2.2}%
+\contentsline {subsection}{\numberline {1.2.3}Các kiến trúc lai và tăng cường truy xuất (RAG)}{7}{subsection.1.2.3}%
+\contentsline {section}{\numberline {1.3}Khoảng trống nghiên cứu và Sự cần thiết của hệ thống đa tác tử}{7}{section.1.3}%
+\contentsline {section}{\numberline {1.4}Mục tiêu nghiên cứu}{9}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Đóng góp của khóa luận}{10}{section.1.5}%
+\contentsline {chapter}{\numberline {2}Kiến thức nền tảng}{12}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Định nghĩa bài toán Hệ thống Gợi ý Hội thoại (CRS)}{12}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Đồ thị Tri thức (Knowledge Graph - KG)}{14}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Mô hình Ngôn ngữ Lớn (LLMs) và Kỹ thuật RAG}{16}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Mô hình Ngôn ngữ Lớn (LLMs)}{16}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Kỹ thuật RAG (Retrieval-Augmented Generation)}{16}{subsection.2.3.2}%
+\contentsline {section}{\numberline {2.4}Kiến trúc Hệ thống Đa tác tử (Multi-Agent System) và ReAct}{17}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}Hệ thống Đa tác tử dựa trên LLM}{17}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}Vòng lặp ReAct (Reasoning and Acting)}{18}{subsection.2.4.2}%
+\contentsline {section}{\numberline {2.5}Các phương pháp đánh giá hệ thống (Evaluation Metrics)}{20}{section.2.5}%
+\contentsline {chapter}{\numberline {3}Nghiên cứu tiền đề: Hệ thống GRACE}{22}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Tổng quan kiến trúc GRACE}{22}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Xây dựng Đồ thị tri thức (Knowledge Graph Construction)}{23}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Tóm tắt hội thoại và xây dựng Hồ sơ sở thích (Dialogue Summarization)}{24}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Module Truy xuất Lai (Hybrid Retriever)}{25}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Truy xuất ngữ nghĩa (Semantic Search)}{25}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Lọc theo nội dung (Content-based Filtering)}{26}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}Mở rộng đồ thị (Graph Expansion - Collaborative)}{27}{subsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.4.4}Cơ chế hợp nhất (Hybrid Integration)}{28}{subsection.3.4.4}%
+\contentsline {section}{\numberline {3.5}Module Xếp hạng lại bằng Generative LLM}{28}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Phân tích điểm nghẽn mang tính cấu trúc}{29}{section.3.6}%
+\contentsline {chapter}{\numberline {4}Kiến trúc đề xuất: Hệ thống Đa tác tử ARGOS}{31}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Động lực chuyển đổi sang Vòng lặp phản hồi Đa tác tử (Multi-Agent Feedback Loop)}{31}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Tác tử Hồ sơ (Profiler Agent) và Phân rã ý định}{32}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Trích xuất thực thể và Ràng buộc cứng (Fact Extraction)}{34}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Đa dạng hóa ngữ nghĩa (Intent Expansion / Multi-Query)}{35}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Dự báo chiến lược trọng số động (Dynamic Weighting / Adaptive Routing)}{36}{subsection.4.2.3}%
+\contentsline {section}{\numberline {4.3}Tác tử Đồ thị (Graph Agent) với Vòng lặp ReAct}{37}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Nhận thức cấu trúc dữ liệu (Schema-Aware Intelligence)}{38}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Vòng lặp Suy luận và Hành động (Reasoning + Acting)}{38}{subsection.4.3.2}%
+\contentsline {section}{\numberline {4.4}Trung tâm Điều phối (Orchestrator Agent)}{39}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Thực thi truy xuất bất đồng bộ (Asynchronous Parallel Execution)}{40}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Hợp nhất thứ hạng với thuật toán WRRF (Dynamic WRRF)}{41}{subsection.4.4.2}%
+\contentsline {section}{\numberline {4.5}Tác tử Kiểm định (Critic Agent) - Kiểm soát chất lượng}{42}{section.4.5}%
+\contentsline {subsection}{\numberline {4.5.1}Đối soát chéo và triệt tiêu ảo giác (Anti-Hallucination)}{44}{subsection.4.5.1}%
+\contentsline {subsection}{\numberline {4.5.2}Kích hoạt phản hồi và Lập báo cáo lỗi (Feedback Trigger \& Error Reporting)}{44}{subsection.4.5.2}%
+\contentsline {section}{\numberline {4.6}Tác tử Thỏa hiệp (Relaxation Agent) - Cơ chế tự sửa lỗi}{45}{section.4.6}%
+\contentsline {subsection}{\numberline {4.6.1}Phân tích điểm nghẽn và Phân cấp ưu tiên (Sacrifice Hierarchy)}{46}{subsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.6.2}Tái cấu trúc ý định (Intent Reconstruction)}{46}{subsection.4.6.2}%
+\contentsline {section}{\numberline {4.7}Cải tiến Module Xếp hạng hai giai đoạn (Decoupled Reranking)}{47}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}Sinh phản hồi hội thoại (Dialogue Response Generation)}{48}{subsection.4.7.1}%
+\contentsline {chapter}{\numberline {5}Thiết lập và Kết quả Thực nghiệm}{50}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Thiết lập thí nghiệm}{50}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Tập dữ liệu ReDial và INSPIRED}{50}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Cấu hình hệ thống và Phương pháp đánh giá}{51}{subsection.5.1.2}%
+\contentsline {section}{\numberline {5.2}Kết quả đánh giá hệ thống}{52}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Khẳng định năng lực của kiến trúc tiền đề (GRACE vs. SOTA)}{52}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Đánh giá so sánh nội bộ: GRACE (Static) và ARGOS (Đa tác tử)}{53}{subsection.5.2.2}%
+\contentsline {section}{\numberline {5.3}Nghiên cứu tình huống (Case Studies)}{55}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Đa truy vấn: Khám phá các mối liên hệ ẩn (Hidden Relational Gems)}{55}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Tác tử Đồ thị (Graph Agent): Nội suy thông tin từ dữ liệu khuyết thiếu}{55}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Tác tử Kiểm định (Critic Agent): Cơ chế triệt tiêu ảo giác}{56}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}Tác tử Thỏa hiệp (Relaxation Agent): Điều chỉnh ý định truy vấn}{56}{subsection.5.3.4}%
+\contentsline {chapter}{Kết luận}{58}{chapter*.32}%
+\contentsline {section}{\numberline {5.4}Tổng kết các đóng góp}{58}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Hạn chế còn tồn tại}{59}{section.5.5}%
+\contentsline {section}{\numberline {5.6}Hướng phát triển tương lai}{60}{section.5.6}%
+\contentsline {section}{\numberline {5.7}Danh mục các công trình khoa học đã công bố}{60}{section.5.7}%
+\contentsline {chapter}{Danh mục tham khảo}{62}{chapter*.33}%
+\contentsfinish 

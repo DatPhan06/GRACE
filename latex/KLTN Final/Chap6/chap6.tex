@@ -1,0 +1,44 @@
+\chapter*{Kết luận}\label{chap:conclusion}
+\addcontentsline{toc}{chapter}{Kết luận}
+
+Chương này tổng kết những đóng góp khoa học và kỹ thuật cốt lõi của hệ thống ARGOS, đánh giá các hạn chế còn tồn tại và đề xuất các hướng phát triển tiếp theo.
+
+
+\section{Tổng kết các đóng góp}
+Khóa luận đã đề xuất và hiện thực hóa hệ thống gợi ý hội thoại ARGOS (Adaptive Reasoning and Graph Orchestration System), chuyển đổi từ kiến trúc dòng chảy tĩnh của mô hình tiền đề GRACE sang mô hình đa tác tử có vòng lặp phản hồi. Thông qua việc phân tích và giải quyết các điểm nghẽn cụ thể của pipeline tĩnh, nghiên cứu đã xác nhận tính hiệu quả của kiến trúc đa tác tử trong bài toán gợi ý hội thoại.
+
+Những đóng góp cốt lõi của khóa luận bao gồm:
+\begin{enumerate}
+  \item \textbf{Thiết lập mốc hiệu năng mới:} Trên tập mẫu đánh giá, ARGOS vượt qua mô hình tiền đề GRACE trên toàn bộ các ngưỡng đo lường của cả hai bộ dữ liệu ReDial và INSPIRED, đồng thời đạt kết quả cạnh tranh so với các mô hình tinh chỉnh hàng đầu như DCRS, đáng chú ý ở cả ngưỡng Top-1 lẫn ngưỡng sâu Top-50.
+  \item \textbf{Khắc phục điểm nghẽn của Pipeline tĩnh:} Bằng cách thiết lập vòng lặp phản hồi đa tác tử, ARGOS đã biến quá trình gợi ý thành một tiến trình nhận thức linh hoạt, có khả năng tự đánh giá và điều hướng chiến lược (ReAct) thông qua việc phân bổ Trọng số động.
+  \item \textbf{Giảm thiểu ảo giác và tăng độ tin cậy:} \textit{Critic Agent} hoạt động như một cổng kiểm định độc lập, đối chiếu trực tiếp với Đồ thị tri thức để loại bỏ phần lớn các thực thể không tồn tại và các ứng viên vi phạm ràng buộc cứng do người dùng đặt ra.
+  \item \textbf{Cải thiện sự thông suốt của mạch hội thoại:} \textit{Relaxation Agent} giải quyết tình huống kết quả rỗng đối với các yêu cầu quá khắt khe, thông qua cơ chế tự động nới lỏng ràng buộc theo phân cấp ưu tiên và diễn giải logic, giúp duy trì mạch hội thoại liên tục mà không cần can thiệp từ người dùng.
+  \item \textbf{Tối ưu hóa độ trễ:} Kiến trúc Decoupled Reranking (dùng Cross-Encoder chuyên dụng cho lọc nhanh và LLM chỉ ở bước suy luận cuối) giảm đáng kể khối lượng tính toán so với việc dùng LLM cho toàn bộ quá trình xếp hạng, giúp duy trì độ trễ chấp nhận được dù kiến trúc đa tác tử yêu cầu nhiều lần gọi mô hình.
+\end{enumerate}
+
+\section{Hạn chế còn tồn tại}
+Bên cạnh các kết quả đạt được, nghiên cứu ghi nhận một số hạn chế kỹ thuật cần tiếp tục giải quyết:
+\begin{itemize}
+  \item \textbf{Sự phụ thuộc vào cấu trúc Đồ thị tri thức:} Sức mạnh của luồng truy xuất lai bị ràng buộc chặt chẽ bởi mật độ và chất lượng của cơ sở dữ liệu Neo4j. Các truy vấn có thể bị giảm hiệu năng nếu dữ liệu nền tảng bị thiếu khuyết hoặc nhiễu.
+  \item \textbf{Xử lý các truy vấn cảm xúc trừu tượng (Vague Preference Resolution):} Với các yêu cầu quá mơ hồ hoặc mang tính chủ quan cao (ví dụ: "một bộ phim để khóc dưới mưa"), việc trích xuất thực thể cấu trúc gặp khó khăn, buộc hệ thống phải phụ thuộc nặng nề vào luồng truy xuất ngữ nghĩa (Semantic) và đôi khi làm tăng độ nhiễu của không gian ứng viên.
+  \item \textbf{Khoảng trống ngữ nghĩa (Zero-Shot Semantic Gap):} Hệ thống duy trì triết lý không huấn luyện, phụ thuộc vào kiến thức nền của LLM và Reranker. Điều này tạo ra khoảng cách nhất định khi ánh xạ ngôn ngữ hội thoại linh hoạt của người dùng sang cấu trúc siêu dữ liệu cứng nhắc của đồ thị, đặc biệt với các truy vấn dùng từ ngữ không phổ biến hoặc mang tính địa phương.
+  \item \textbf{Chi phí API từ các mô hình nền tảng:} Dù đã sử dụng các phiên bản tối ưu (Gemini 2.0 Flash), kiến trúc đa tác tử vẫn đòi hỏi thực thi nhiều lệnh gọi API, gây ra rào cản chi phí vận hành nếu muốn triển khai hoàn toàn miễn phí trên quy mô lớn.
+\end{itemize}
+
+\section{Hướng phát triển tương lai}
+Từ các hạn chế trên, một số hướng phát triển tiếp theo được xác định:
+\begin{itemize}
+  \item \textbf{Tối ưu hóa Prompt và triển khai SLMs (Open-weight SLMs):} Chuyển dịch sang các mô hình ngôn ngữ nhỏ gọn mã nguồn mở (như LLaMA-3 8B) triển khai cục bộ, kết hợp tối ưu hóa prompt tự động (như DSPy) thay vì phụ thuộc vào API thương mại. Hướng này giảm đáng kể chi phí vận hành trong khi vẫn duy trì triết lý không huấn luyện (training-free).
+  \item \textbf{Làm giàu Ontology cho Đồ thị (Schema Enrichment):} Thay vì tinh chỉnh tham số mô hình học sâu, hướng đi tương lai sẽ tập trung vào việc thiết kế lại mô hình đồ thị tri thức. Bổ sung các nút (nodes) mang đặc tính trừu tượng như "nhịp độ", "bầu không khí", "tông màu" để giúp hệ thống Graph RAG dễ dàng "hiểu" các truy vấn cảm xúc hơn.
+  \item \textbf{Mở rộng Đa phương thức (Multimodal Inputs):} Bổ sung khả năng nhận diện hình ảnh (poster phim) hoặc âm thanh (nhạc phim) để làm phong phú thêm ngữ cảnh hội thoại, hỗ trợ tốt hơn cho việc phân tích các "truy vấn cảm xúc trừu tượng".
+  \item \textbf{Cập nhật Đồ thị tri thức theo thời gian thực:} Xây dựng một Maintenance Agent chuyên thu thập phản hồi từ người dùng và tự động bổ sung các cạnh hoặc nút mới vào Neo4j, giúp đồ thị tri thức cải thiện liên tục mà không cần tái xây dựng thủ công.
+\end{itemize}
+
+\section{Danh mục các công trình khoa học đã công bố}
+
+Các nghiên cứu cốt lõi về thiết kế mô hình tiền đề, thuật toán và một phần kết quả thực nghiệm trình bày trong khóa luận này đã được đúc kết và công bố thành công trên diễn đàn khoa học quốc tế:
+
+\begin{itemize}
+  \item Tien-Dat Phan, Vy-Anh Tran, Bao-Long Hoang, Thi-Minh-Ngoc Truong, and Thi-Hau Nguyen. \textit{GRACE: A Knowledge Graph--Enhanced Conversational Recommendation System via Retrieval-Augmented Generation}. In Proceedings of the International Symposium on Information and Communication Technology (SOICT 2025) \cite{phan2025grace}.
+
+\end{itemize}
