@@ -13,7 +13,7 @@ GRACE được thiết kế theo mô hình hai giai đoạn công nghiệp tiêu
     \label{fig:grace_framework}
 \end{figure}
 
-Như minh họa trong Hình \ref{fig:grace_framework}, luồng hoạt động của GRACE gồm bốn bước tuần tự: (1) LLM tóm tắt lịch sử hội thoại thành một hồ sơ sở thích (Preference Profile); (2) ba chiến lược truy xuất song song (ngữ nghĩa, nội dung, đồ thị) tạo ra tập ứng viên; (3) các tập được hợp nhất và xếp hạng bằng Weighted Reciprocal Rank Fusion; (4) Generative LLM đánh giá lại và chọn ra kết quả cuối cùng. Kiến trúc này đảm bảo tuyệt đối không có thực thể ảo giác trong đầu ra vì mọi ứng viên đều được truy xuất trực tiếp từ KG.
+Như minh họa trong Hình \ref{fig:grace_framework}, luồng hoạt động của GRACE gồm bốn bước tuần tự: (1) LLM tóm tắt lịch sử hội thoại thành một hồ sơ sở thích (Preference Profile); (2) ba chiến lược truy xuất song song (ngữ nghĩa, nội dung, đồ thị) tạo ra tập ứng viên; (3) các tập được hợp nhất và xếp hạng bằng Weighted Reciprocal Rank Fusion; (4) Generative LLM đánh giá lại và chọn ra kết quả cuối cùng. Kiến trúc này đảm bảo mọi thực thể trong tập ứng viên đều tồn tại trong KG vì chúng được truy xuất trực tiếp — loại trừ khả năng LLM tự bịa ra phim không tồn tại. Tuy nhiên, pipeline không kiểm tra liệu các ứng viên này có thỏa mãn toàn bộ ràng buộc cứng mà người dùng đặt ra trong hội thoại (danh sách loại trừ, ngưỡng điểm đánh giá) hay không — đây là khoảng trống mà Critic Agent trong ARGOS được thiết kế để lấp đầy.
 
 \section{Xây dựng Đồ thị tri thức (Knowledge Graph Construction)}
 
@@ -121,11 +121,11 @@ Module Re-ranker (Hình \ref{fig:reranker}) nhận vào ba thành phần từ gi
 
 Để xử lý giới hạn context window, GRACE giới thiệu kỹ thuật \textit{two-stage batching with shortlist fusion} kết hợp \textit{metadata augmentation}: (i) giai đoạn Batch Re-ranking chia $M_{\text{final}}$ thành các lô nhỏ, mỗi lô được LLM xếp hạng độc lập thành một shortlist; (ii) giai đoạn Final Re-ranking hợp nhất các shortlist và thực hiện một lượt đánh giá tổng hợp cuối để chọn ra top-K. Đây là kỹ thuật chưa được kết hợp đồng thời trong các hệ thống CRS trước đó như LLM-ReDial, UniCRS hay G-CRS.
 
-Mô hình xuất ra một JSON object nghiêm ngặt chỉ chứa các phim từ tập ứng viên. Một validator độc lập kiểm tra tuân thủ schema, loại bỏ mục không hợp lệ, giải quyết trường hợp hòa (tie-breaking), và áp dụng cắt ngắn top-$k$ tất định. Cơ chế retry có giới hạn và sửa lỗi nhẹ đảm bảo hệ thống thoái hóa nhẹ nhàng (graceful degradation) thay vì thất bại hoàn toàn khi LLM trả về định dạng sai. Nhờ validator này, kết quả cuối cùng đảm bảo tuyệt đối không chứa thực thể ảo giác.
+Mô hình xuất ra một JSON object nghiêm ngặt chỉ chứa các phim từ tập ứng viên. Một validator độc lập kiểm tra tuân thủ schema, loại bỏ mục không hợp lệ, giải quyết trường hợp hòa (tie-breaking), và áp dụng cắt ngắn top-$k$ tất định. Cơ chế retry có giới hạn và sửa lỗi nhẹ đảm bảo hệ thống thoái hóa nhẹ nhàng (graceful degradation) thay vì thất bại hoàn toàn khi LLM trả về định dạng sai. Nhờ validator này, kết quả cuối cùng chỉ chứa các phim thuộc tập ứng viên đã được truy xuất từ KG — đảm bảo không có thực thể do LLM tự bịa ra. Giới hạn còn lại là validator chỉ kiểm tra tính hợp lệ schema của đầu ra, không đối chiếu ngược lại ràng buộc cứng của người dùng; điểm nghẽn này được giải quyết ở Chương 4.
 
 \section{Phân tích điểm nghẽn mang tính cấu trúc}\label{sec:grace_bottleneck}
 
-Mặc dù GRACE chứng minh được hiệu quả trong việc loại bỏ ảo giác và đạt kết quả cạnh tranh trên các bộ dữ liệu chuẩn (kết quả chi tiết tại Bảng \ref{tab:main_results}, Chương 5), kiến trúc Static Pipeline của nó bộc lộ ba điểm nghẽn có tính cấu trúc khi triển khai thực tế:
+Mặc dù GRACE chứng minh được hiệu quả trong việc loại bỏ ảo giác và đạt kết quả cạnh tranh trên các bộ dữ liệu chuẩn (kết quả chi tiết tại Bảng \ref{tab:baseline_comparison}, Chương 5), kiến trúc Static Pipeline của nó bộc lộ ba điểm nghẽn có tính cấu trúc khi triển khai thực tế:
 
 \begin{enumerate}
     \item \textbf{Tính phi linh hoạt của Pipeline (Pipeline Rigidity):} Luồng xử lý một chiều không có khả năng tự điều chỉnh khi một bước trung gian thất bại. Ví dụ điển hình: nếu LLM trong bước tóm tắt trích xuất nhầm thể loại từ hội thoại (diễn giải "phim căng thẳng" thành \textit{horror} thay vì \textit{thriller}), toàn bộ tập ứng viên từ luồng Content-based sẽ lệch hướng, nhưng pipeline không có cơ chế phát hiện và sửa lỗi này.

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025/Debian) (preloaded format=pdflatex 2026.5.1)  16 MAY 2026 17:53
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025/Debian) (preloaded format=pdflatex 2026.5.1)  17 MAY 2026 08:42
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1453,7 +1453,7 @@ Package tocbasic Info: usage of `tocbibind' detected on input line 104.
 \c@subsubsubsection=\count422
 
 (./coverpage1.tex
-<uet_logo.png, id=312, 1204.5pt x 1204.5pt>
+<uet_logo.png, id=320, 1204.5pt x 1204.5pt>
 File: uet_logo.png Graphic file (type png)
 <use uet_logo.png>
 Package pdftex.def Info: uet_logo.png  used on input line 16.
@@ -1673,46 +1673,46 @@ LaTeX Font Info:    Trying to load font information for T5+cmtt on input line 1
 24.
  (/usr/share/texlive/texmf-dist/tex/latex/vntex/t5cmtt.fd
 File: t5cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
-))
-(./Chap2/chap2.tex [10] [11]
+)) [10]
+(./Chap2/chap2.tex [11]
 Chapter 2.
 [12
 
 
 ]
-<Chap2/images/crs_dialogue_example.png, id=703, 950.55125pt x 1032.85875pt>
+<Chap2/images/crs_dialogue_example.png, id=715, 950.55125pt x 1032.85875pt>
 File: Chap2/images/crs_dialogue_example.png Graphic file (type png)
 <use Chap2/images/crs_dialogue_example.png>
 Package pdftex.def Info: Chap2/images/crs_dialogue_example.png  used on input l
 ine 21.
 (pdftex.def)             Requested size: 455.24411pt x 494.66336pt.
  [13] [14 <./Chap2/images/crs_dialogue_example.png>]
-<Chap3/images/KG_node.pdf, id=720, 641.5167pt x 341.35529pt>
+<Chap3/images/KG_node.pdf, id=732, 641.5167pt x 341.35529pt>
 File: Chap3/images/KG_node.pdf Graphic file (type pdf)
 <use Chap3/images/KG_node.pdf>
 Package pdftex.def Info: Chap3/images/KG_node.pdf  used on input line 44.
 (pdftex.def)             Requested size: 341.43307pt x 181.67789pt.
  [15 <./Chap3/images/KG_node.pdf>]
-<Chap2/images/rag_pipeline.png, id=853, 987.69pt x 489.027pt>
+<Chap2/images/rag_pipeline.png, id=865, 987.69pt x 489.027pt>
 File: Chap2/images/rag_pipeline.png Graphic file (type png)
 <use Chap2/images/rag_pipeline.png>
 Package pdftex.def Info: Chap2/images/rag_pipeline.png  used on input line 67.
 (pdftex.def)             Requested size: 455.24411pt x 225.39539pt.
  [16] [17 <./Chap2/images/rag_pipeline.png>]
-<Chap2/images/react_loop.png, id=873, 763.85374pt x 624.3325pt>
+<Chap2/images/react_loop.png, id=885, 763.85374pt x 624.3325pt>
 File: Chap2/images/react_loop.png Graphic file (type png)
 <use Chap2/images/react_loop.png>
 Package pdftex.def Info: Chap2/images/react_loop.png  used on input line 91.
 (pdftex.def)             Requested size: 455.24411pt x 372.08739pt.
- [18]
-Overfull \hbox (5.30588pt too wide) in paragraph at lines 98--98
+ [18] [19 <./Chap2/images/react_loop.png>]
+Overfull \hbox (5.30588pt too wide) in paragraph at lines 108--108
 |[]\T5/qtm/b/n/18.72003 C¡c ph÷ìng ph¡p ^^_¡nh gi¡ h» thèng (Eval-u-a-tion Met-
 
  []
 
-[19 <./Chap2/images/react_loop.png>]) [20] (./Chap3/chap3.tex [21]
+[20]) (./Chap3/chap3.tex [21]
 Chapter 3.
-<Chap3/images/grace.pdf, id=901, 949.62776pt x 566.115pt>
+<Chap3/images/grace.pdf, id=914, 949.62776pt x 566.115pt>
 File: Chap3/images/grace.pdf Graphic file (type pdf)
 <use Chap3/images/grace.pdf>
 Package pdftex.def Info: Chap3/images/grace.pdf  used on input line 11.
@@ -1726,49 +1726,45 @@ File: Chap3/images/KG_node.pdf Graphic file (type pdf)
 Package pdftex.def Info: Chap3/images/KG_node.pdf  used on input line 24.
 (pdftex.def)             Requested size: 386.96027pt x 205.90855pt.
  [23 <./Chap3/images/grace.pdf>] [24] [25]
-<Chap3/images/sem_retrieval.pdf, id=1072, 577.19638pt x 390.49887pt>
+<Chap3/images/sem_retrieval.pdf, id=1084, 577.19638pt x 390.49887pt>
 File: Chap3/images/sem_retrieval.pdf Graphic file (type pdf)
 <use Chap3/images/sem_retrieval.pdf>
 Package pdftex.def Info: Chap3/images/sem_retrieval.pdf  used on input line 61.
 
 (pdftex.def)             Requested size: 386.96027pt x 261.79376pt.
  [26 <./Chap3/images/sem_retrieval.pdf>]
-<Chap3/images/con_retrieval.pdf, id=1172, 729.68607pt x 223.7961pt>
+<Chap3/images/con_retrieval.pdf, id=1184, 729.68607pt x 223.7961pt>
 File: Chap3/images/con_retrieval.pdf Graphic file (type pdf)
 <use Chap3/images/con_retrieval.pdf>
 Package pdftex.def Info: Chap3/images/con_retrieval.pdf  used on input line 77.
 
 (pdftex.def)             Requested size: 386.96027pt x 118.68306pt.
-<Chap3/images/col_retrieval.pdf, id=1174, 1005.7575pt x 425.67029pt>
+<Chap3/images/col_retrieval.pdf, id=1186, 1005.7575pt x 425.67029pt>
 File: Chap3/images/col_retrieval.pdf Graphic file (type pdf)
 <use Chap3/images/col_retrieval.pdf>
 Package pdftex.def Info: Chap3/images/col_retrieval.pdf  used on input line 91.
 
 (pdftex.def)             Requested size: 386.96027pt x 163.7699pt.
- [27 <./Chap3/images/con_retrieval.pdf> <./Chap3/images/col_retrieval.pdf>]
-<Chap3/images/reranker.pdf, id=1374, 767.9892pt x 152.4897pt>
+ [27 <./Chap3/images/con_retrieval.pdf>] [28 <./Chap3/images/col_retrieval.pdf>
+]
+<Chap3/images/reranker.pdf, id=1395, 767.9892pt x 152.4897pt>
 File: Chap3/images/reranker.pdf Graphic file (type pdf)
 <use Chap3/images/reranker.pdf>
 Package pdftex.def Info: Chap3/images/reranker.pdf  used on input line 117.
 (pdftex.def)             Requested size: 386.96027pt x 76.83333pt.
- [28]
-
-LaTeX Warning: Reference `tab:main_results' on page 29 undefined on input line 
-128.
-
-[29 <./Chap3/images/reranker.pdf>]) (./Chap4/chap4.tex [30]
+ [29 <./Chap3/images/reranker.pdf>]) (./Chap4/chap4.tex [30]
 Chapter 4.
 [31
 
 
 ]
-<Chap4/images/argos_architecture.pdf, id=1482, 1139.21606pt x 578.16pt>
+<Chap4/images/argos_architecture.pdf, id=1497, 1139.21606pt x 578.16pt>
 File: Chap4/images/argos_architecture.pdf Graphic file (type pdf)
 <use Chap4/images/argos_architecture.pdf>
 Package pdftex.def Info: Chap4/images/argos_architecture.pdf  used on input lin
 e 14.
 (pdftex.def)             Requested size: 455.24411pt x 231.03935pt.
-<Chap4/images/profile_agent.pdf, id=1484, 893.25719pt x 958.54106pt>
+<Chap4/images/profile_agent.pdf, id=1499, 893.25719pt x 958.54106pt>
 File: Chap4/images/profile_agent.pdf Graphic file (type pdf)
 <use Chap4/images/profile_agent.pdf>
 Package pdftex.def Info: Chap4/images/profile_agent.pdf  used on input line 25.
@@ -1776,45 +1772,46 @@ Package pdftex.def Info: Chap4/images/profile_agent.pdf  used on input line 25.
 (pdftex.def)             Requested size: 455.24411pt x 488.51308pt.
  [32 <./Chap4/images/argos_architecture.pdf>] [33 <./Chap4/images/profile_agent
 .pdf>] [34] [35] [36]
-<Chap4/images/adaptive_weighting.pdf, id=1721, 919.51526pt x 330.27388pt>
+<Chap4/images/adaptive_weighting.pdf, id=1735, 919.51526pt x 330.27388pt>
 File: Chap4/images/adaptive_weighting.pdf Graphic file (type pdf)
 <use Chap4/images/adaptive_weighting.pdf>
 Package pdftex.def Info: Chap4/images/adaptive_weighting.pdf  used on input lin
-e 83.
+e 85.
 (pdftex.def)             Requested size: 455.24411pt x 163.51378pt.
  [37 <./Chap4/images/adaptive_weighting.pdf>] [38]
-<Chap4/images/graph_agent.pdf, id=1822, 1040.92882pt x 674.52pt>
+<Chap4/images/graph_agent.pdf, id=1833, 1040.92882pt x 674.52pt>
 File: Chap4/images/graph_agent.pdf Graphic file (type pdf)
 <use Chap4/images/graph_agent.pdf>
-Package pdftex.def Info: Chap4/images/graph_agent.pdf  used on input line 114.
+Package pdftex.def Info: Chap4/images/graph_agent.pdf  used on input line 116.
 (pdftex.def)             Requested size: 455.24411pt x 294.99886pt.
-<Chap4/images/Orchestrator.pdf, id=1824, 1621.01607pt x 639.34856pt>
+
+[39 <./Chap4/images/graph_agent.pdf>]
+<Chap4/images/Orchestrator.pdf, id=1858, 1621.01607pt x 639.34856pt>
 File: Chap4/images/Orchestrator.pdf Graphic file (type pdf)
 <use Chap4/images/Orchestrator.pdf>
-Package pdftex.def Info: Chap4/images/Orchestrator.pdf  used on input line 125.
+Package pdftex.def Info: Chap4/images/Orchestrator.pdf  used on input line 127.
 
 (pdftex.def)             Requested size: 455.24411pt x 179.55293pt.
-
-[39 <./Chap4/images/graph_agent.pdf>] [40 <./Chap4/images/Orchestrator.pdf>]
+ [40 <./Chap4/images/Orchestrator.pdf>]
 [41]
-<Chap4/images/critic_agent.pdf, id=1966, 854.23138pt x 1164.26962pt>
+<Chap4/images/critic_agent.pdf, id=1980, 854.23138pt x 1164.26962pt>
 File: Chap4/images/critic_agent.pdf Graphic file (type pdf)
 <use Chap4/images/critic_agent.pdf>
-Package pdftex.def Info: Chap4/images/critic_agent.pdf  used on input line 160.
+Package pdftex.def Info: Chap4/images/critic_agent.pdf  used on input line 162.
 
 (pdftex.def)             Requested size: 455.24411pt x 620.4709pt.
  [42] [43 <./Chap4/images/critic_agent.pdf>] [44]
-<Chap4/images/relaxation_agent.pdf, id=2065, 948.42331pt x 313.17pt>
+<Chap4/images/relaxation_agent.pdf, id=2078, 948.42331pt x 313.17pt>
 File: Chap4/images/relaxation_agent.pdf Graphic file (type pdf)
 <use Chap4/images/relaxation_agent.pdf>
 Package pdftex.def Info: Chap4/images/relaxation_agent.pdf  used on input line 
-195.
+197.
 (pdftex.def)             Requested size: 455.24411pt x 150.31989pt.
  [45 <./Chap4/images/relaxation_agent.pdf>] [46] [47]
-<Chap4/images/Reranker.pdf, id=2173, 767.9892pt x 186.6975pt>
+<Chap4/images/Reranker.pdf, id=2187, 767.9892pt x 186.6975pt>
 File: Chap4/images/Reranker.pdf Graphic file (type pdf)
 <use Chap4/images/Reranker.pdf>
-Package pdftex.def Info: Chap4/images/Reranker.pdf  used on input line 237.
+Package pdftex.def Info: Chap4/images/Reranker.pdf  used on input line 239.
 (pdftex.def)             Requested size: 455.24411pt x 110.67189pt.
  [48 <./Chap4/images/Reranker.pdf>])
 (./Chap5/chap5.tex [49]
@@ -1862,17 +1859,14 @@ LaTeX Font Warning: Size substitutions with differences
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-
-LaTeX Warning: There were undefined references.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: BEA2FED8D0158556C6904266B8DED7C9;22899.
+(rerunfilecheck)             Checksum: DE3A55A85EA191D3836A090B3CA07089;23396.
  ) 
 Here is how much of TeX's memory you used:
- 38272 strings out of 469514
- 734211 string characters out of 5470028
+ 38275 strings out of 469514
+ 734245 string characters out of 5470028
  1250831 words of memory out of 5000000
- 66007 multiletter control sequences out of 15000+600000
+ 66008 multiletter control sequences out of 15000+600000
  705564 words of font info for 141 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  94i,13n,131p,2493b,703s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -1891,10 +1885,10 @@ lic/amsfonts/cm/cmsy9.pfb></usr/share/texmf/fonts/type1/public/tex-gyre/qtmb.pf
 b></usr/share/texmf/fonts/type1/public/tex-gyre/qtmbi.pfb></usr/share/texmf/fon
 ts/type1/public/tex-gyre/qtmr.pfb></usr/share/texmf/fonts/type1/public/tex-gyre
 /qtmri.pfb></usr/share/texlive/texmf-dist/fonts/type1/vntex/vnr/vntt12.pfb>
-Output written on main.pdf (80 pages, 3188216 bytes).
+Output written on main.pdf (80 pages, 3191980 bytes).
 PDF statistics:
- 2481 PDF objects out of 2487 (max. 8388607)
- 1214 compressed objects within 13 object streams
- 238 named destinations out of 1000 (max. 500000)
- 711 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 2496 PDF objects out of 2984 (max. 8388607)
+ 1229 compressed objects within 13 object streams
+ 240 named destinations out of 1000 (max. 500000)
+ 727 words of extra memory for PDF output out of 10000 (max. 10000000)
 

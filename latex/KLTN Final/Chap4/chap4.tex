@@ -78,6 +78,8 @@ Trong đó:
 \end{itemize}
 Việc định tuyến linh hoạt (Adaptive Routing) này giúp ARGOS tự động điều phối tài nguyên tìm kiếm, tối ưu hóa sự kết hợp của nhiều nguồn tri thức mà không cần sự can thiệp thủ công của kỹ sư vào mã nguồn. Cơ chế này được minh họa cụ thể trong Hình \ref{fig:adaptive_weighting}.
 
+\textbf{Cơ chế triển khai kỹ thuật.} LLM được nhắc bằng một prompt có cấu trúc cố định, nhận đầu vào là hồ sơ sở thích $\hat{P}$ và kết quả phân loại ba nhánh (Explicit, Abstract, Behavioral), sau đó sinh ra một JSON object với ba trường số thực \texttt{\{sem, con, col\}}. Bước hậu xử lý (post-processing) chuẩn hóa bắt buộc bằng phép chia tổng để đảm bảo $\sum w_i = 1$ bất kể giá trị thô LLM trả về. Nếu đầu ra JSON không hợp lệ hoặc chứa giá trị âm, hệ thống tự động quay về bộ trọng số mặc định $(w_{\text{sem}}, w_{\text{con}}, w_{\text{col}}) = (0.40, 0.30, 0.30)$ và ghi log cảnh báo, đảm bảo hệ thống thoái hóa nhẹ nhàng (graceful degradation) mà không gián đoạn luồng hội thoại.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{Chap4/images/adaptive_weighting.pdf}
@@ -163,7 +165,7 @@ Tác tử kiểm định (Critic Agent) đóng vai trò là một cơ chế rà 
 \end{figure}
 
 \subsection{Đối soát chéo và triệt tiêu ảo giác (Anti-Hallucination)}
-Trong hệ thống RAG tĩnh, nếu LLM tự "bịa" ra một bộ phim không tồn tại (Fact Confabulation) hoặc đưa ra một phim không khớp với ràng buộc thời gian (Temporal Inconsistency), hệ thống thường chấp nhận và trả về trực tiếp cho người dùng. Điều này làm suy giảm nghiêm trọng độ tin cậy.
+Hệ thống tiền đề GRACE đã giải quyết ảo giác ở cấp độ thực thể: mọi ứng viên đều truy xuất từ KG nên không có phim "tưởng tượng" nào lọt vào tập kết quả. Tuy nhiên, GRACE chưa có cơ chế đối chiếu từng ứng viên với các ràng buộc cứng mà người dùng đặt ra trong hội thoại — ví dụ danh sách phim đã xem cần loại trừ, ngưỡng điểm đánh giá tối thiểu, hay các thể loại tường minh bị từ chối. Với kiến trúc tĩnh không có vòng lặp phản hồi, nếu tập ứng viên hợp lệ sau lọc quá ít hoặc rỗng, pipeline dừng lại mà không có cơ chế khắc phục.
 
 Danh sách ứng viên thu thập được từ Orchestrator sẽ trải qua quá trình đối soát nghiêm ngặt bởi Critic Agent. Tác tử thực hiện ánh xạ và so sánh trực tiếp các thuộc tính siêu dữ liệu (metadata) thực tế của từng ứng viên với tập hợp Ràng buộc cứng (Hard Constraints) đã được trích xuất ở pha Profiler. Quá trình này áp dụng logic Boolean chặt chẽ:
 \begin{itemize}

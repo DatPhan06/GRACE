@@ -1,5 +1,22 @@
 \begin{thebibliography}{10}
 
+\bibitem{fang2024multiagentconversationalrecommender}
+Jiabao Fang, Shen Gao, Pengjie Ren, Xiuying Chen, Suzan Verberne, and Zhaochun
+  Ren.
+\newblock A multi-agent conversational recommender system, 2024.
+
+\bibitem{singh2026agenticretrievalaugmentedgenerationsurvey}
+Aditi Singh, Abul Ehtesham, Saket Kumar, Tala~Talaei Khoei, and Athanasios~V.
+  Vasilakos.
+\newblock Agentic retrieval-augmented generation: A survey on agentic rag,
+  2026.
+
+\bibitem{yao2022react}
+Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan,
+  and Yuan Cao.
+\newblock React: Synergizing reasoning and acting in language models.
+\newblock {\em arXiv preprint arXiv:2210.03629}, 2022.
+
 \bibitem{li2018towards}
 Raymond Li, Samira Kahou, Hannes Schulz, Vincent Michalski, Laurent Charlin,
   and Chris Pal.
@@ -138,11 +155,6 @@ Zhiheng Xi, Wenxiang Chen, Xin Guo, Wei He, Yi~Ding, Boyang Hong, Ming Zhang,
   survey.
 \newblock {\em arXiv preprint arXiv:2309.07864}, 2023.
 
-\bibitem{fang2024multiagentconversationalrecommender}
-Jiabao Fang, Shen Gao, Pengjie Ren, Xiuying Chen, Suzan Verberne, and Zhaochun
-  Ren.
-\newblock A multi-agent conversational recommender system, 2024.
-
 \bibitem{min2023recent}
 Bonan Min, Hayley Ross, Elior Sulem, Amir Pouran~Ben Veyseh, Thien~Huu Nguyen,
   Oscar Sainz, Eneko Agirre, Ilana Heintz, and Dan Roth.
@@ -156,18 +168,6 @@ Zihuai Zhao, Wenqi Fan, Jiatong Li, Yunqing Liu, Xiaowei Mei, Yiqi Wang, Zhen
 \newblock Recommender systems in the era of large language models (llms).
 \newblock {\em IEEE Transactions on Knowledge and Data Engineering},
   36(11):6889--6907, 2024.
-
-\bibitem{singh2026agenticretrievalaugmentedgenerationsurvey}
-Aditi Singh, Abul Ehtesham, Saket Kumar, Tala~Talaei Khoei, and Athanasios~V.
-  Vasilakos.
-\newblock Agentic retrieval-augmented generation: A survey on agentic rag,
-  2026.
-
-\bibitem{yao2022react}
-Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan,
-  and Yuan Cao.
-\newblock React: Synergizing reasoning and acting in language models.
-\newblock {\em arXiv preprint arXiv:2210.03629}, 2022.
 
 \bibitem{hayati-etal-2020-inspired}
 Shirley~Anugrah Hayati, Dongyeop Kang, Qingxiaoyang Zhu, Weiyan Shi, and Zhou

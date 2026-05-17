@@ -9,7 +9,7 @@
 \contentsline {figure}{\numberline {3.2}{\ignorespaces Cấu trúc một node Phim (Film) trong Đồ thị tri thức. Node này liên kết trực tiếp với các thuộc tính (Năm, Điểm số, Thể loại) và các thực thể sáng tạo (Đạo diễn, Diễn viên).}}{24}{figure.caption.16}%
 \contentsline {figure}{\numberline {3.3}{\ignorespaces Quy trình truy xuất ngữ nghĩa dựa trên phép tính tương đồng Cosine giữa vector của câu truy vấn và vector cốt truyện phim.}}{26}{figure.caption.17}%
 \contentsline {figure}{\numberline {3.4}{\ignorespaces Cơ chế lọc theo nội dung dựa trên các thuộc tính cứng (Thể loại, Năm sản xuất, Điểm số).}}{27}{figure.caption.18}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces Thuật toán mở rộng đồ thị dựa trên việc chia sẻ các node đội ngũ sáng tạo (Diễn viên, Đạo diễn).}}{27}{figure.caption.19}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Thuật toán mở rộng đồ thị dựa trên việc chia sẻ các node đội ngũ sáng tạo (Diễn viên, Đạo diễn).}}{28}{figure.caption.19}%
 \contentsline {figure}{\numberline {3.6}{\ignorespaces Kiến trúc Module Xếp hạng lại, sử dụng cơ chế batching để xử lý tập ứng viên lớn thông qua LLM.}}{29}{figure.caption.20}%
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {4.1}{\ignorespaces Kiến trúc tổng quan của hệ thống đa tác tử ARGOS. Khác với kiến trúc tĩnh, ARGOS đưa vào các vòng lặp phản hồi nội bộ (feedback loops) và cơ chế đánh giá lại trọng số động thông qua các Agent chuyên biệt.}}{32}{figure.caption.21}%

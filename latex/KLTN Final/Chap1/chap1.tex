@@ -119,9 +119,9 @@ Khóa luận đặt ra bốn mục tiêu nghiên cứu:
 
 Khóa luận mang lại ba đóng góp kỹ thuật mới cho lĩnh vực CRS:
 \begin{enumerate}
-    \item \textbf{Kiến trúc đa tác tử ARGOS:} Lần đầu tiên áp dụng mô hình Multi-Agent với vòng lặp suy luận-hành động vào hệ thống CRS kết hợp Đồ thị tri thức. ARGOS phân tách pipeline thành bốn tác tử chuyên biệt (Orchestrator, Graph Agent, Critic Agent, Relaxation Agent) và sử dụng Dynamic Weighting để điều phối chiến lược truy xuất theo hình thái ngôn ngữ của truy vấn, cơ chế chưa xuất hiện trong các hệ thống CRS prior work.
+    \item \textbf{Kiến trúc đa tác tử ARGOS:} Lần đầu tiên áp dụng mô hình Multi-Agent với vòng lặp suy luận-hành động vào hệ thống CRS kết hợp Đồ thị tri thức. ARGOS phân tách pipeline thành năm tác tử chuyên biệt (Profiler Agent, Orchestrator, Graph Agent, Critic Agent, Relaxation Agent) và sử dụng Dynamic Weighting để điều phối chiến lược truy xuất theo hình thái ngôn ngữ của truy vấn, cơ chế chưa xuất hiện trong các hệ thống CRS prior work.
     \item \textbf{Cơ chế Critic-Relaxation:} Phương pháp tự kiểm định và thỏa hiệp ràng buộc tự động trong CRS. Critic Agent đối chiếu trực tiếp ứng viên với KG Neo4j để loại bỏ hallucination; Relaxation Agent áp dụng thuật toán phân cấp ưu tiên (Sacrifice Hierarchy) để tái cấu trúc truy vấn khi gặp tập kết quả rỗng. Đây là đóng góp kỹ thuật độc lập, có thể tách rời và ứng dụng cho các hệ thống RAG khác ngoài CRS.
-    \item \textbf{Kết quả thực nghiệm và mã nguồn mở:} ARGOS thiết lập mốc hiệu năng mới trên ReDial và INSPIRED về các chỉ số Recall@K và NDCG@K. Toàn bộ mã nguồn và dữ liệu thực nghiệm được công bố công khai tại \url{https://github.com/DatPhan06/GRACE}, tạo nền tảng cho các nghiên cứu tiếp theo trong lĩnh vực.
+    \item \textbf{Kết quả thực nghiệm và mã nguồn mở:} ARGOS cải thiện đáng kể so với kiến trúc tiền đề GRACE và đạt kết quả cạnh tranh với các hệ thống tiên tiến trên ReDial và INSPIRED về chỉ số Recall@K. Toàn bộ mã nguồn và dữ liệu thực nghiệm được công bố công khai tại \url{https://github.com/DatPhan06/GRACE}, tạo nền tảng cho các nghiên cứu tiếp theo trong lĩnh vực.
 \end{enumerate}
 
 \section*{Kết luận chương}

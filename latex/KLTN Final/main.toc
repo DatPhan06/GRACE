@@ -24,28 +24,29 @@
 \contentsline {section}{\numberline {2.4}Kiến trúc Hệ thống Đa tác tử (Multi-Agent System) và ReAct}{17}{section.2.4}%
 \contentsline {subsection}{\numberline {2.4.1}Hệ thống Đa tác tử dựa trên LLM}{17}{subsection.2.4.1}%
 \contentsline {subsection}{\numberline {2.4.2}Vòng lặp ReAct (Reasoning and Acting)}{18}{subsection.2.4.2}%
-\contentsline {section}{\numberline {2.5}Các phương pháp đánh giá hệ thống (Evaluation Metrics)}{20}{section.2.5}%
+\contentsline {section}{\numberline {2.5}Bộ dữ liệu thực nghiệm}{20}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Các phương pháp đánh giá hệ thống (Evaluation Metrics)}{20}{section.2.6}%
 \contentsline {chapter}{\numberline {3}Nghiên cứu tiền đề: Hệ thống GRACE}{22}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Tổng quan kiến trúc GRACE}{22}{section.3.1}%
 \contentsline {section}{\numberline {3.2}Xây dựng Đồ thị tri thức (Knowledge Graph Construction)}{23}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Tóm tắt hội thoại và xây dựng Hồ sơ sở thích (Dialogue Summarization)}{24}{section.3.3}%
+\contentsline {section}{\numberline {3.3}Tóm tắt hội thoại và xây dựng Hồ sơ sở thích (Dialogue Summarization)}{25}{section.3.3}%
 \contentsline {section}{\numberline {3.4}Module Truy xuất Lai (Hybrid Retriever)}{25}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Truy xuất ngữ nghĩa (Semantic Search)}{25}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.1}Truy xuất ngữ nghĩa (Semantic Search)}{26}{subsection.3.4.1}%
 \contentsline {subsection}{\numberline {3.4.2}Lọc theo nội dung (Content-based Filtering)}{26}{subsection.3.4.2}%
 \contentsline {subsection}{\numberline {3.4.3}Mở rộng đồ thị (Graph Expansion - Collaborative)}{27}{subsection.3.4.3}%
 \contentsline {subsection}{\numberline {3.4.4}Cơ chế hợp nhất (Hybrid Integration)}{28}{subsection.3.4.4}%
-\contentsline {section}{\numberline {3.5}Module Xếp hạng lại bằng Generative LLM}{28}{section.3.5}%
-\contentsline {section}{\numberline {3.6}Phân tích điểm nghẽn mang tính cấu trúc}{29}{section.3.6}%
+\contentsline {section}{\numberline {3.5}Module Xếp hạng lại bằng Generative LLM}{29}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Phân tích điểm nghẽn mang tính cấu trúc}{30}{section.3.6}%
 \contentsline {chapter}{\numberline {4}Kiến trúc đề xuất: Hệ thống Đa tác tử ARGOS}{31}{chapter.4}%
 \contentsline {section}{\numberline {4.1}Động lực chuyển đổi sang Vòng lặp phản hồi Đa tác tử (Multi-Agent Feedback Loop)}{31}{section.4.1}%
 \contentsline {section}{\numberline {4.2}Tác tử Hồ sơ (Profiler Agent) và Phân rã ý định}{32}{section.4.2}%
 \contentsline {subsection}{\numberline {4.2.1}Trích xuất thực thể và Ràng buộc cứng (Fact Extraction)}{34}{subsection.4.2.1}%
 \contentsline {subsection}{\numberline {4.2.2}Đa dạng hóa ngữ nghĩa (Intent Expansion / Multi-Query)}{35}{subsection.4.2.2}%
 \contentsline {subsection}{\numberline {4.2.3}Dự báo chiến lược trọng số động (Dynamic Weighting / Adaptive Routing)}{36}{subsection.4.2.3}%
-\contentsline {section}{\numberline {4.3}Tác tử Đồ thị (Graph Agent) với Vòng lặp ReAct}{37}{section.4.3}%
+\contentsline {section}{\numberline {4.3}Tác tử Đồ thị (Graph Agent) với Vòng lặp ReAct}{38}{section.4.3}%
 \contentsline {subsection}{\numberline {4.3.1}Nhận thức cấu trúc dữ liệu (Schema-Aware Intelligence)}{38}{subsection.4.3.1}%
 \contentsline {subsection}{\numberline {4.3.2}Vòng lặp Suy luận và Hành động (Reasoning + Acting)}{38}{subsection.4.3.2}%
-\contentsline {section}{\numberline {4.4}Trung tâm Điều phối (Orchestrator Agent)}{39}{section.4.4}%
+\contentsline {section}{\numberline {4.4}Trung tâm Điều phối (Orchestrator Agent)}{40}{section.4.4}%
 \contentsline {subsection}{\numberline {4.4.1}Thực thi truy xuất bất đồng bộ (Asynchronous Parallel Execution)}{40}{subsection.4.4.1}%
 \contentsline {subsection}{\numberline {4.4.2}Hợp nhất thứ hạng với thuật toán WRRF (Dynamic WRRF)}{41}{subsection.4.4.2}%
 \contentsline {section}{\numberline {4.5}Tác tử Kiểm định (Critic Agent) - Kiểm soát chất lượng}{42}{section.4.5}%
@@ -72,6 +73,7 @@
 \contentsline {section}{\numberline {5.4}Tổng kết các đóng góp}{58}{section.5.4}%
 \contentsline {section}{\numberline {5.5}Hạn chế còn tồn tại}{59}{section.5.5}%
 \contentsline {section}{\numberline {5.6}Hướng phát triển tương lai}{60}{section.5.6}%
-\contentsline {section}{\numberline {5.7}Danh mục các công trình khoa học đã công bố}{60}{section.5.7}%
-\contentsline {chapter}{Danh mục tham khảo}{62}{chapter*.33}%
+\contentsline {section}{\numberline {5.7}Mối quan hệ với công trình tiền đề GRACE}{60}{section.5.7}%
+\contentsline {section}{\numberline {5.8}Danh mục các công trình khoa học đã công bố}{61}{section.5.8}%
+\contentsline {chapter}{Danh mục tham khảo}{62}{chapter*.34}%
 \contentsfinish 

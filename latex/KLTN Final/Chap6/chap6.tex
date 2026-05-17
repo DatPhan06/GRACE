@@ -9,7 +9,7 @@ Khóa luận đã đề xuất và hiện thực hóa hệ thống gợi ý hộ
 
 Những đóng góp cốt lõi của khóa luận bao gồm:
 \begin{enumerate}
-  \item \textbf{Thiết lập mốc hiệu năng mới:} Trên tập mẫu đánh giá, ARGOS vượt qua mô hình tiền đề GRACE trên toàn bộ các ngưỡng đo lường của cả hai bộ dữ liệu ReDial và INSPIRED, đồng thời đạt kết quả cạnh tranh so với các mô hình tinh chỉnh hàng đầu như DCRS, đáng chú ý ở cả ngưỡng Top-1 lẫn ngưỡng sâu Top-50.
+  \item \textbf{Cải thiện hiệu năng có kiểm chứng thống kê:} Trên tập mẫu đánh giá (20\%, $p < 0.01$), ARGOS vượt qua mô hình tiền đề GRACE trên toàn bộ các ngưỡng đo lường của cả hai bộ dữ liệu ReDial và INSPIRED, và đạt kết quả cạnh tranh so với các mô hình tinh chỉnh hàng đầu như DCRS — lưu ý rằng so sánh với SOTA chỉ mang tính định hướng do sự khác biệt về kích thước tập kiểm thử.
   \item \textbf{Khắc phục điểm nghẽn của Pipeline tĩnh:} Bằng cách thiết lập vòng lặp phản hồi đa tác tử, ARGOS đã biến quá trình gợi ý thành một tiến trình nhận thức linh hoạt, có khả năng tự đánh giá và điều hướng chiến lược (ReAct) thông qua việc phân bổ Trọng số động.
   \item \textbf{Giảm thiểu ảo giác và tăng độ tin cậy:} \textit{Critic Agent} hoạt động như một cổng kiểm định độc lập, đối chiếu trực tiếp với Đồ thị tri thức để loại bỏ phần lớn các thực thể không tồn tại và các ứng viên vi phạm ràng buộc cứng do người dùng đặt ra.
   \item \textbf{Cải thiện sự thông suốt của mạch hội thoại:} \textit{Relaxation Agent} giải quyết tình huống kết quả rỗng đối với các yêu cầu quá khắt khe, thông qua cơ chế tự động nới lỏng ràng buộc theo phân cấp ưu tiên và diễn giải logic, giúp duy trì mạch hội thoại liên tục mà không cần can thiệp từ người dùng.
@@ -33,6 +33,32 @@ Từ các hạn chế trên, một số hướng phát triển tiếp theo đư�
   \item \textbf{Mở rộng Đa phương thức (Multimodal Inputs):} Bổ sung khả năng nhận diện hình ảnh (poster phim) hoặc âm thanh (nhạc phim) để làm phong phú thêm ngữ cảnh hội thoại, hỗ trợ tốt hơn cho việc phân tích các "truy vấn cảm xúc trừu tượng".
   \item \textbf{Cập nhật Đồ thị tri thức theo thời gian thực:} Xây dựng một Maintenance Agent chuyên thu thập phản hồi từ người dùng và tự động bổ sung các cạnh hoặc nút mới vào Neo4j, giúp đồ thị tri thức cải thiện liên tục mà không cần tái xây dựng thủ công.
 \end{itemize}
+
+\section{Mối quan hệ với công trình tiền đề GRACE}
+
+Khóa luận này kế thừa và mở rộng đáng kể so với bài báo GRACE \cite{phan2025grace} đã được công bố. Bảng dưới đây phân định rõ ranh giới giữa những gì có trong bài báo và những đóng góp kỹ thuật mới được phát triển trong phạm vi khóa luận:
+
+\begin{table}[H]
+  \centering
+  \caption{Phân định đóng góp giữa bài báo GRACE (SOICT 2025) và khóa luận ARGOS.}
+  \begin{tabular}{p{0.45\linewidth} p{0.45\linewidth}}
+    \toprule
+    \textbf{Bài báo GRACE (tiền đề)} & \textbf{Khóa luận ARGOS (mới)} \\
+    \midrule
+    Kiến trúc Hybrid Retrieval (Semantic + Content + Graph) & Profiler Agent với phân rã ý định đa nhánh và Multi-Query Expansion \\
+    \addlinespace
+    Công thức WRRF với trọng số tĩnh & Cơ chế Dynamic Weighting — trọng số thích nghi theo ngữ cảnh hội thoại \\
+    \addlinespace
+    Validator JSON schema đầu ra & Critic Agent — kiểm định ràng buộc cứng người dùng và tích hợp vòng lặp phản hồi \\
+    \addlinespace
+    Two-stage batching re-ranking & Relaxation Agent — tái cấu trúc ý định khi tập kết quả rỗng \\
+    \addlinespace
+    Pipeline tuyến tính một chiều & Kiến trúc đa tác tử với vòng lặp phản hồi ReAct (Multi-Agent Feedback Loop) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Nói cách khác, bài báo GRACE đặt nền tảng cho cơ chế truy xuất lai và xếp hạng; khóa luận này xây dựng toàn bộ lớp điều phối đa tác tử phía trên — bao gồm khả năng tự phân tích ý định, tự kiểm định kết quả, và tự phục hồi khi thất bại.
 
 \section{Danh mục các công trình khoa học đã công bố}
 

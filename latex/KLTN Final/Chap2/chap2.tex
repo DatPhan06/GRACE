@@ -95,19 +95,25 @@ Hình \ref{fig:react_loop} so sánh trực quan vòng lặp ReAct với các ph�
 
 ReAct phù hợp đặc biệt với bài toán CRS vì bản chất tương tác đa lượt của hội thoại đòi hỏi hệ thống phải liên tục quan sát, điều chỉnh, hành động trong vòng lặp, chứ không thể xử lý một lần rồi kết thúc như pipeline tĩnh. Cụ thể, khi một bước truy xuất KG thất bại, ReAct cho phép tác tử nhận biết sự cố qua Observation, suy luận nguyên nhân qua Thought tiếp theo, và thử chiến lược truy xuất khác qua Action mới, thay vì dừng hẳn và trả về kết quả rỗng. Đây chính xác là cơ chế mà các pipeline tĩnh đang thiếu.
 
+\section{Bộ dữ liệu thực nghiệm}
+
+Toàn bộ quá trình đánh giá trong khóa luận sử dụng hai bộ dữ liệu hội thoại chuẩn của lĩnh vực CRS:
+
+\textbf{ReDial} \cite{li2018towards} là bộ dữ liệu hội thoại gợi ý phim tiếng Anh được thu thập qua Amazon Mechanical Turk, gồm hơn 10.000 hội thoại đa lượt giữa người hỏi và người trả lời. Mỗi hội thoại chứa ít nhất một lượt gợi ý phim với nhãn xác nhận (accepted/rejected), tạo thành ground truth rõ ràng cho đánh giá Recall@K.
+
+\textbf{INSPIRED} \cite{hayati-etal-2020-inspired} là bộ dữ liệu hội thoại gợi ý phim tập trung vào chiến lược thuyết phục xã hội (social influence strategies), gồm 1.001 hội thoại với ngôn ngữ tự nhiên, cảm xúc và phong cách giao tiếp đa dạng hơn ReDial. Bộ dữ liệu này kiểm tra khả năng hiểu ngôn ngữ linh hoạt và hội thoại phi cấu trúc của hệ thống.
+
+Hai bộ dữ liệu bổ sung cho nhau: ReDial đánh giá hiệu năng ở quy mô lớn với phân phối cân bằng, còn INSPIRED kiểm tra khả năng xử lý các truy vấn cảm xúc và ngôn ngữ đời thường. Giao thức đánh giá chi tiết (chiến lược lấy mẫu, kiểm định thống kê) được trình bày trong Chương 5.
+
 \section{Các phương pháp đánh giá hệ thống (Evaluation Metrics)}
-Nghiên cứu này sử dụng hai thang đo tiêu chuẩn trong lĩnh vực gợi ý để đánh giá module Recommendation của ARGOS: \textbf{Recall@K} và \textbf{NDCG@K}.
+Nghiên cứu này sử dụng thang đo tiêu chuẩn \textbf{Recall@K} trong lĩnh vực gợi ý để đánh giá module Recommendation của ARGOS. Thang đo này phù hợp với bài toán CRS vì mỗi lượt hội thoại thường chỉ có một mục ground truth duy nhất, nên việc đo tỷ lệ xuất hiện trong top-K là chỉ số đánh giá trực tiếp và có ý nghĩa nhất.
 
 \textbf{Recall@K} đo tỷ lệ item mục tiêu (ground truth) xuất hiện trong top-K gợi ý. Ký hiệu $V_u$ là tập item thực tế người dùng quan tâm, $R_u@K$ là top-K gợi ý của hệ thống:
 \begin{equation}
     \text{Recall@K} = \frac{1}{|U|} \sum_{u \in U} \frac{|R_u@K \cap V_u|}{|V_u|}
 \end{equation}
 
-\textbf{NDCG@K} (Normalized Discounted Cumulative Gain) bổ sung chiều thứ hạng: item đúng xuất hiện càng sớm trong danh sách được thưởng điểm cao hơn:
-\begin{equation}
-    \text{DCG@K} = \sum_{i=1}^{K} \frac{rel_i}{\log_2(i+1)}, \quad \text{NDCG@K} = \frac{\text{DCG@K}}{\text{IDCG@K}}
-\end{equation}
-trong đó $rel_i = 1$ nếu item ở vị trí $i$ thuộc ground truth, ngược lại $= 0$; IDCG là giá trị DCG lý tưởng khi tất cả item đúng đều được xếp hàng đầu. Các thang đo này được tính trên hai bộ dữ liệu chuẩn ReDial \cite{li2018towards} và INSPIRED \cite{hayati-etal-2020-inspired}.
+Thang đo được tính tại bốn ngưỡng $K \in \{1, 5, 10, 50\}$ trên hai bộ dữ liệu chuẩn ReDial \cite{li2018towards} và INSPIRED \cite{hayati-etal-2020-inspired}, nhất quán với giao thức đánh giá của các hệ thống SOTA được đối sánh trong Chương 5.
 
 \section*{Kết luận chương}
 
