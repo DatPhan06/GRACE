@@ -11,6 +11,7 @@ from fastapi import BackgroundTasks
 from domain.generation.service import GenerationService
 from domain.retrieval.service import RetrievalService
 from domain.reranking.service import RerankingService
+from domain.agent.critic import CriticAgent
 from domain.evaluation import EvaluationDomainService
 from domain.evaluation_storage.service import EvaluationStorageService
 from shared.settings.config import settings
@@ -34,6 +35,7 @@ class EvaluationService:
         self.generation_service = GenerationService()
         self.retrieval_service = RetrievalService()
         self.reranking_service = RerankingService()
+        self.critic_agent = CriticAgent()
         self.evaluation_domain_service = EvaluationDomainService()
         self.evaluation_storage_service = EvaluationStorageService()
 
@@ -323,9 +325,9 @@ class EvaluationService:
         finally:
             db.close()
 
-    async def run_summarization_step(self, run_id: int, name: Optional[str] = None, background_tasks: Optional[BackgroundTasks] = None) -> Dict[str, Any]:
+    async def run_profiler_step(self, run_id: int, name: Optional[str] = None, background_tasks: Optional[BackgroundTasks] = None) -> Dict[str, Any]:
         """
-        Run summarization step for a specific run (parallel execution).
+        Run Profiler Agent step — extract user preferences from all conversations (parallel).
         """
         import asyncio
 
@@ -556,7 +558,8 @@ class EvaluationService:
 
     async def run_reranking_step(self, run_id: int, top_k: int = 10, model: Literal["llm", "cohere"] = "llm", retrieval_batch_id: Optional[int] = None, name: Optional[str] = None, background_tasks: Optional[BackgroundTasks] = None) -> Dict[str, Any]:
         """
-        Run reranking step for a specific run.
+        Run Critic Agent + Reranker step.
+        Critic filters retrieved candidates, then Reranker selects top-K.
         Requires retrieval to be completed.
         """
         db = next(get_db())
@@ -632,10 +635,17 @@ class EvaluationService:
                     user_preferences = step_summ.user_preferences
                     context = log.dialog
 
-                    # 3. Reranking
-                    reranking_results = await self.reranking_service.rerank_movies(
+                    # 3a. Critic Agent — cross-stream filter
+                    critic_result = await self.critic_agent.filter_candidates(
                         user_preferences=user_preferences,
                         candidates=candidates,
+                    )
+                    filtered = critic_result.get("movies", candidates) or candidates
+
+                    # 3b. Reranker — select top-K
+                    reranking_results = await self.reranking_service.rerank_movies(
+                        user_preferences=user_preferences,
+                        candidates=filtered,
                         conversation=str(context),
                         top_k=top_k,
                         model=model
@@ -823,13 +833,11 @@ class EvaluationService:
             logger.info(
                 f"Processing conversation {conv_id} | Found {len(liked_movies)} liked movies: {liked_movies}")
 
-            # 1. Summarization (Domain: Generation)
-            # Note: We rely on the generic summarization domain service
+            # 1. Profiler Agent
             user_pref_obj = await self.generation_service.summarize_conversation(context)
             user_preferences = user_pref_obj.user_preferences
 
-            # 2. Retrieval (Domain: Retrieval)
-            # Returns dict with keys: 'combined', 'semantic', 'content', 'collaborative'
+            # 2. Retrieval — semantic + content + graph fused via WRRF
             retrieval_results = await self.retrieval_service.retrieve_movies(
                 user_preferences=user_preferences,
                 liked_movies=liked_movies,
@@ -841,10 +849,17 @@ class EvaluationService:
             content_cands = retrieval_results['content']
             collab_cands = retrieval_results['collaborative']
 
-            # 3. Reranking (Domain: Reranking)
-            reranking_results = await self.reranking_service.rerank_movies(
+            # 3a. Critic Agent — cross-stream constraint verification
+            critic_result = await self.critic_agent.filter_candidates(
                 user_preferences=user_preferences,
                 candidates=candidates,
+            )
+            filtered = critic_result.get("movies", candidates) or candidates
+
+            # 3b. Reranker — select top-K from filtered candidates
+            reranking_results = await self.reranking_service.rerank_movies(
+                user_preferences=user_preferences,
+                candidates=filtered,
                 conversation=context,
                 top_k=top_k,
                 model=model

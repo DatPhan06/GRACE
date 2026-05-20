@@ -88,12 +88,12 @@ async def initialize_run(request: InitRunRequest, background_tasks: BackgroundTa
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/step/summarize")
-async def run_summarization_step(request: SummarizationStepRequest, background_tasks: BackgroundTasks):
-    """Run summarization step for a specific run."""
+@router.post("/step/profiler")
+async def run_profiler_step(request: SummarizationStepRequest, background_tasks: BackgroundTasks):
+    """Run Profiler Agent step — extract user preferences from conversation history."""
     service = EvaluationService()
     try:
-        return await service.run_summarization_step(
+        return await service.run_profiler_step(
             run_id=request.run_id,
             name=request.name,
             background_tasks=background_tasks
@@ -104,7 +104,7 @@ async def run_summarization_step(request: SummarizationStepRequest, background_t
 
 @router.post("/step/retrieve")
 async def run_retrieval_step(request: RetrievalStepRequest, background_tasks: BackgroundTasks):
-    """Run retrieval step for a specific run."""
+    """Run Retrieval step — semantic, content, and graph retrieval with WRRF fusion."""
     service = EvaluationService()
     try:
         return await service.run_retrieval_step(
@@ -120,7 +120,7 @@ async def run_retrieval_step(request: RetrievalStepRequest, background_tasks: Ba
 
 @router.post("/step/rerank")
 async def run_reranking_step(request: RerankingStepRequest, background_tasks: BackgroundTasks):
-    """Run reranking step for a specific run."""
+    """Run Critic Agent + Reranker step — filter candidates then select top-K."""
     service = EvaluationService()
     try:
         return await service.run_reranking_step(
@@ -175,10 +175,11 @@ async def get_evaluation_info():
             }
         },
         "pipeline_steps": [
-            "1. Summarize conversation to extract user preferences",
-            "2. Retrieve candidate movies from graph database",
-            "3. Re-rank movies using LLM",
-            "4. Evaluate results against ground truth"
+            "1. Profiler Agent — extract user preferences and retrieval weights",
+            "2. Retrieval — semantic, content, and graph streams fused via WRRF",
+            "3. Critic Agent — cross-stream verification and constraint filtering",
+            "4. Reranker — select top-K from filtered candidates",
+            "5. Evaluate — compute Recall@K against ground truth"
         ],
         "metrics": ["recall@k"]
     }
