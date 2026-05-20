@@ -639,17 +639,27 @@ class EvaluationService:
                     user_preferences = step_summ.user_preferences
                     context = log.dialog
 
-                    # 3a. Critic Agent — cross-stream filter
-                    critic_result = await self.critic_agent.filter_candidates(
-                        user_preferences=user_preferences,
-                        candidates=candidates,
-                    )
-                    filtered = critic_result.get("movies", candidates) or candidates
+                    # 3. Critic → Relaxation → Retrieval loop (mirrors LangGraph, max 1 relaxation)
+                    # After MAX_RELAXATION_ATTEMPTS the loop always exits to Reranker.
+                    # Relaxation only goes back to Retrieval — never to Profiler Agent.
+                    MAX_RELAXATION_ATTEMPTS = 1
+                    current_candidates = candidates
+                    current_prefs_str = user_preferences
+                    filtered = candidates
 
-                    # 3b. Relaxation Agent — if Critic requires it, relax constraints and re-retrieve
-                    if critic_result.get("requires_relaxation", False):
+                    for attempt in range(MAX_RELAXATION_ATTEMPTS + 1):
+                        critic_result = await self.critic_agent.filter_candidates(
+                            user_preferences=current_prefs_str,
+                            candidates=current_candidates,
+                        )
+                        filtered = critic_result.get("movies", current_candidates) or current_candidates
+
+                        if not critic_result.get("requires_relaxation", False) or attempt >= MAX_RELAXATION_ATTEMPTS:
+                            break
+
+                        # Relaxation: widen constraints, then re-retrieve (not re-profile)
                         prefs_obj = UserPreference(
-                            user_preferences=user_preferences,
+                            user_preferences=current_prefs_str,
                             dynamic_weights=RetrievalWeights(**(step_summ.dynamic_weights or {})),
                         )
                         relaxed = await self.relaxation_agent.run(prefs_obj, critic_result.get("reasoning", ""))
@@ -659,15 +669,12 @@ class EvaluationService:
                             n=len(candidates),
                             dynamic_weights=relaxed.dynamic_weights.model_dump(),
                         )
-                        new_candidates = re_retrieval.get("combined", []) or candidates
-                        re_critic = await self.critic_agent.filter_candidates(
-                            user_preferences=relaxed.user_preferences,
-                            candidates=new_candidates,
-                        )
-                        filtered = re_critic.get("movies", new_candidates) or new_candidates
-                        user_preferences = relaxed.user_preferences
+                        current_candidates = re_retrieval.get("combined", []) or current_candidates
+                        current_prefs_str = relaxed.user_preferences
 
-                    # 3c. Reranker — select top-K from filtered candidates
+                    user_preferences = current_prefs_str
+
+                    # 4. Reranker — select top-K from filtered candidates
                     reranking_results = await self.reranking_service.rerank_movies(
                         user_preferences=user_preferences,
                         candidates=filtered,
@@ -875,15 +882,26 @@ class EvaluationService:
             collab_cands = retrieval_results['collaborative']
 
             # 3a. Critic Agent — cross-stream constraint verification
-            critic_result = await self.critic_agent.filter_candidates(
-                user_preferences=user_preferences,
-                candidates=candidates,
-            )
-            filtered = critic_result.get("movies", candidates) or candidates
+            # 3. Critic → Relaxation → Retrieval loop (mirrors LangGraph, max 1 relaxation)
+            # After MAX_RELAXATION_ATTEMPTS the loop always exits to Reranker.
+            # Relaxation only goes back to Retrieval — never to Profiler Agent.
+            MAX_RELAXATION_ATTEMPTS = 1
+            current_candidates = candidates
+            current_prefs_str = user_preferences
+            filtered = candidates
 
-            # 3b. Relaxation Agent — if Critic requires it, relax and re-retrieve
-            if critic_result.get("requires_relaxation", False):
-                prefs_obj = UserPreference(user_preferences=user_preferences)
+            for attempt in range(MAX_RELAXATION_ATTEMPTS + 1):
+                critic_result = await self.critic_agent.filter_candidates(
+                    user_preferences=current_prefs_str,
+                    candidates=current_candidates,
+                )
+                filtered = critic_result.get("movies", current_candidates) or current_candidates
+
+                if not critic_result.get("requires_relaxation", False) or attempt >= MAX_RELAXATION_ATTEMPTS:
+                    break
+
+                # Relaxation: widen constraints, then re-retrieve (not re-profile)
+                prefs_obj = UserPreference(user_preferences=current_prefs_str)
                 relaxed = await self.relaxation_agent.run(prefs_obj, critic_result.get("reasoning", ""))
                 re_retrieval = await self.retrieval_service.retrieve_movies(
                     user_preferences=relaxed.user_preferences,
@@ -891,15 +909,12 @@ class EvaluationService:
                     n=n_sample,
                     dynamic_weights=relaxed.dynamic_weights.model_dump(),
                 )
-                new_candidates = re_retrieval.get("combined", []) or candidates
-                re_critic = await self.critic_agent.filter_candidates(
-                    user_preferences=relaxed.user_preferences,
-                    candidates=new_candidates,
-                )
-                filtered = re_critic.get("movies", new_candidates) or new_candidates
-                user_preferences = relaxed.user_preferences
+                current_candidates = re_retrieval.get("combined", []) or current_candidates
+                current_prefs_str = relaxed.user_preferences
 
-            # 3c. Reranker — select top-K from filtered candidates
+            user_preferences = current_prefs_str
+
+            # 4. Reranker — select top-K from filtered candidates
             reranking_results = await self.reranking_service.rerank_movies(
                 user_preferences=user_preferences,
                 candidates=filtered,
