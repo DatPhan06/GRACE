@@ -1,6 +1,5 @@
 from typing import List, Dict, Any
 from shared.utils.logger import setup_logger
-from domain.retrieval.components.genre_extractor import GenreExtractor
 from domain.retrieval.components.semantic import SemanticRetriever
 from domain.retrieval.components.content import ContentRetriever
 from domain.retrieval.components.graph_agent import GraphReasoningAgent
@@ -15,12 +14,11 @@ class RetrievalService:
     """
 
     def __init__(self):
-        self.genre_extractor = GenreExtractor()
         self.semantic_retriever = SemanticRetriever()
         self.content_retriever = ContentRetriever()
         self.collab_retriever = GraphReasoningAgent()
 
-    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = None, n: int = 100, dynamic_weights: Dict[str, float] = None, semantic_queries: List[str] = None, hard_constraints: List[str] = None) -> Dict[str, Any]:
+    async def retrieve_movies(self, user_preferences: str, liked_movies: List[str] = None, n: int = 100, dynamic_weights: Dict[str, float] = None, semantic_queries: List[str] = None, hard_constraints: List[str] = None, genres: List[str] = None) -> Dict[str, Any]:
         """
         Retrieve movies using hybrid approach (Semantic + Content + Collab) in parallel and fuse with WRRF.
         """
@@ -33,6 +31,8 @@ class RetrievalService:
             semantic_queries = [user_preferences]
         if hard_constraints is None:
             hard_constraints = []
+        if genres is None:
+            genres = []
 
         agent_trace = []
         
@@ -58,13 +58,13 @@ class RetrievalService:
 
         async def _content_flow():
             if w_con < 0.05:
-                agent_trace.append(f"Orchestrator: Bypassing Content Agent (weight {w_con} below threshold)")
+                agent_trace.append(f"Orchestrator: Bypassing Content Filter (weight {w_con} below threshold)")
                 return []
-            agent_trace.append(f"Orchestrator: Activating Content Agent (weight {w_con})")
-            found_genres = await self.genre_extractor.extract_genres(user_preferences)
-            if found_genres:
-                return await self.content_retriever.retrieve(found_genres, n)
-            return []
+            if not genres:
+                agent_trace.append(f"Orchestrator: Bypassing Content Filter (no genres extracted by Profiler)")
+                return []
+            agent_trace.append(f"Orchestrator: Activating Content Filter (weight {w_con}) with genres: {genres}")
+            return await self.content_retriever.retrieve(genres, n)
 
         async def _collab_flow():
             if w_col < 0.05:

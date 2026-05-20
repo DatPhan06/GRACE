@@ -3,10 +3,10 @@ from typing import Optional
 
 
 class LLMSettings(BaseSettings):
-    LLM_PROVIDER: str = "openai"  # or "gemini"
+    LLM_PROVIDER: str = "gemini"  # or "openai"
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
-    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    EMBEDDING_MODEL: str = "text-embedding-3-large"
 
     # AWS Bedrock for Cohere
     AWS_LLM_REGION: str = "us-west-2"

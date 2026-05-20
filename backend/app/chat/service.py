@@ -68,12 +68,13 @@ class ChatService:
             })
 
             retrieval_results = await self.retrieval_service.retrieve_movies(
-                user_preferences, 
-                liked_movies, 
-                n=20, 
+                user_preferences,
+                liked_movies,
+                n=20,
                 dynamic_weights=dynamic_weights,
                 semantic_queries=semantic_queries,
-                hard_constraints=hard_constraints
+                hard_constraints=hard_constraints,
+                genres=preferences_data.genres
             )
             candidates = retrieval_results.get("combined", [])
             retrieval_trace = retrieval_results.get("agent_trace", [])
@@ -93,13 +94,13 @@ class ChatService:
             })
 
             reranking_results = await self.reranking_service.rerank_movies(
-                user_preferences, candidates, top_k=5
+                user_preferences, candidates, top_k=5, hard_constraints=hard_constraints
             )
             final_movies = reranking_results.get("movies", [])
             reranking_trace = reranking_results.get("agent_trace", [])
             requires_relaxation = reranking_results.get("requires_relaxation", False)
             critic_reasoning = reranking_results.get("reasoning", "")
-            
+
             agent_trace.extend(reranking_trace)
 
             if requires_relaxation and attempt < max_attempts:
@@ -166,25 +167,26 @@ class ChatService:
             dynamic_weights = preferences_data.dynamic_weights.model_dump()
 
             retrieval_results = await self.retrieval_service.retrieve_movies(
-                user_preferences, 
-                liked_movies, 
-                n=20, 
+                user_preferences,
+                liked_movies,
+                n=20,
                 dynamic_weights=dynamic_weights,
                 semantic_queries=semantic_queries,
-                hard_constraints=hard_constraints
+                hard_constraints=hard_constraints,
+                genres=preferences_data.genres
             )
             candidates = retrieval_results.get("combined", [])
             retrieval_trace = retrieval_results.get("agent_trace", [])
             agent_trace.extend(retrieval_trace)
 
             reranking_results = await self.reranking_service.rerank_movies(
-                user_preferences, candidates, top_k=5
+                user_preferences, candidates, top_k=5, hard_constraints=hard_constraints
             )
             final_movies = reranking_results.get("movies", [])
             reranking_trace = reranking_results.get("agent_trace", [])
             requires_relaxation = reranking_results.get("requires_relaxation", False)
             critic_reasoning = reranking_results.get("reasoning", "")
-            
+
             agent_trace.extend(reranking_trace)
 
             if requires_relaxation and attempt < max_attempts:

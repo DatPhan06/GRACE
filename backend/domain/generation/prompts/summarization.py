@@ -5,8 +5,9 @@ content (Do not contain assistant preferences), and summarize them.
 
 Furthermore, you must:
 1. Extract `hard_constraints`: These are strict, non-negotiable filters (e.g., "released before 2000", "only animation", "must have Tom Hanks").
-2. Generate `semantic_queries`: Break down the user's abstract preferences into 2-3 specific search queries for a vector database. Focus on mood, style, or specific plot elements.
-3. Predict a dynamic weight distribution (w_sem, w_con, w_col) for three retrieval strategies:
+2. Extract `genres`: List of genre names explicitly mentioned or strongly implied (e.g., ["horror", "comedy"]). Use only standard genre names. Empty list if none.
+3. Generate `semantic_queries`: Break down the user's abstract preferences into 2-3 specific search queries for a vector database. Focus on mood, style, or specific plot elements.
+4. Predict a dynamic weight distribution (w_sem, w_con, w_col) for three retrieval strategies:
 - w_sem (Semantic/Thematic Intent): Weight for plot, abstract concepts, or themes (e.g., "movies about time travel").
 - w_con (Content/Categorical Intent): Weight for strict explicit constraints like genres or release years (e.g., "90s action movies").
 - w_col (Collaborative/Entity-Centric Intent): Weight for specific entities like actors, directors, or creators (e.g., "films by Nolan").
@@ -18,6 +19,7 @@ The output should be a formatted JSON object with the following schema:
     "profiler_reasoning": "Explain your logic here. Analyzed the dialogue to discover explicit constraints (genres, actors, years) versus abstract themes.",
     "user_preferences": "Detailed summary of preferences...",
     "hard_constraints": ["Released after 2010", "Duration > 120 mins", "Rating R"],
+    "genres": ["horror", "thriller"],
     "semantic_queries": ["dark atmospheric psychological thriller", "movies with complex plot twists", "gritty cinematography"],
     "liked_movies": ["Movie 1", "Movie 2"],
     "dynamic_weights": {

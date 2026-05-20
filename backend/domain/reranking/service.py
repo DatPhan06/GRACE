@@ -16,6 +16,7 @@ class RerankingService:
         conversation: str = "",
         top_k: int = 5,
         model: RerankerType = "cohere",
+        hard_constraints: List[str] = None,
     ) -> Dict[str, Any]:
         """
         Rerank a list of candidate movies based on user preferences.
@@ -29,7 +30,7 @@ class RerankingService:
         # 1. Critic Agent Reflection Filter
         from domain.reranking.components.critic_agent import CriticAgent
         critic = CriticAgent()
-        critic_result = await critic.filter_candidates(user_preferences, candidates)
+        critic_result = await critic.filter_candidates(user_preferences, candidates, hard_constraints=hard_constraints or [])
         clean_candidates = critic_result.get("movies", [])
         critic_reasoning = critic_result.get("reasoning", "")
         

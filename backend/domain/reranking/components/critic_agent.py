@@ -6,18 +6,21 @@ from infra.llm import get_llm_client
 logger = setup_logger(__name__)
 
 CRITIC_SYSTEM_PROMPT = r"""
-You are the Reranking Critic Agent in a conversational recommender system. Your job is to perform a fast, harsh filter on candidate movies before they are sent to the final scoring model.
-You will be provided with the user's intent/preferences and a list of candidate movies retrieved from various sources (vector, text, graph).
-Analyze the candidates and aggressively filter out any movies that clearly hallucinatory, flagrantly violate a hard constraint (like asking for a comedy and getting a horror movie), or are simply irrelevant to the core intent.
+You are the Critic Agent in a conversational recommender system. Your job is a cross-stream verification: candidates come from multiple retrieval sources (semantic vector search, content filter, graph traversal), and only the graph stream filters by hard constraints. The other streams may contain movies that violate the user's explicit requirements.
 
-If a movie is borderline or potentially interesting, keep it. 
-Only filter out bad matches.
+Your task:
+1. Check every candidate against the provided Hard Constraints (year range, director, rating threshold, content restrictions, etc.).
+2. Aggressively remove candidates that CLEARLY violate a hard constraint or are completely irrelevant to the core intent.
+3. If a movie is borderline or uncertain, keep it — only remove obvious violations.
+4. Set `requires_relaxation: true` if fewer than 3 valid candidates remain after filtering.
 
-Your response MUST be a valid JSON object containing the list of approved `movieId`s like this:
+ALL candidate information (title, plot, year, rating) is sourced directly from the knowledge graph — judge solely based on this provided metadata, not your own parametric memory of the films.
+
+Your response MUST be a valid JSON object:
 {
     "approved_movie_ids": ["id1", "id2", "id3"],
     "requires_relaxation": true/false,
-    "critic_reasoning": "I removed Movie X because it was a horror but the user asked for children's comedy. Very few movies left, consider relaxing genre constraints."
+    "critic_reasoning": "Removed Movie X: user requested post-2015 release but it was from 2008. Only 2 candidates remain — recommend relaxing the year constraint."
 }
 DO NOT output markdown (`\```json`) or extra text outside the JSON block.
 """
@@ -25,32 +28,42 @@ DO NOT output markdown (`\```json`) or extra text outside the JSON block.
 CRITIC_USER_PROMPT = """
 User Preferences: {user_preferences}
 
+Hard Constraints: {hard_constraints}
+
 Candidate Movies:
 {candidates_str}
 
-Please evaluate and output the JSON of approved IDs.
+Please evaluate each candidate against the hard constraints and output the JSON of approved IDs.
 """
 
 class CriticAgent:
     def __init__(self):
         self.llm_client = get_llm_client()
 
-    async def filter_candidates(self, user_preferences: str, candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def filter_candidates(self, user_preferences: str, candidates: List[Dict[str, Any]], hard_constraints: List[str] = None) -> Dict[str, Any]:
         if not candidates:
             return {"movies": [], "reasoning": "No candidates to filter."}
-            
+
         logger.info(f"[Critic Agent] Filtering {len(candidates)} candidates...")
-        
+
         # Batching for LLM context limit - limit to top 50 to avoid massive prompt
         review_batch = candidates[:50]
-        
+
         candidates_str = ""
         for m in review_batch:
-            candidates_str += f"- ID: {m.get('movieId')} | Title: {m.get('title')} | Plot: {str(m.get('plot'))[:100]}...\n"
+            year = m.get('year', 'N/A')
+            rating = m.get('imdbRating', 'N/A')
+            plot = str(m.get('plot', ''))[:150]
+            candidates_str += (
+                f"- ID: {m.get('movieId')} | Title: {m.get('title')} "
+                f"| Year: {year} | IMDb: {rating} | Plot: {plot}...\n"
+            )
 
+        constraints_str = "; ".join(hard_constraints) if hard_constraints else "None"
         prompt = CRITIC_USER_PROMPT.format(
             user_preferences=user_preferences,
-            candidates_str=candidates_str
+            hard_constraints=constraints_str,
+            candidates_str=candidates_str,
         )
 
         try:

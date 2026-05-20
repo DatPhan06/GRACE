@@ -27,6 +27,8 @@ class UserPreference(BaseModel):
         description="Summarized seeker's preferences")
     hard_constraints: list[str] = Field(
         default=[], description="Explicit hard constraints like 'after 2010', 'horror genre', etc.")
+    genres: list[str] = Field(
+        default=[], description="Explicit genre names extracted from user preferences")
     semantic_queries: list[str] = Field(
         default=[], description="List of sub-queries for semantic search")
     liked_movies: list[str] = Field(
