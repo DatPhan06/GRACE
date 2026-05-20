@@ -122,25 +122,19 @@ function PipelineFlowDiagram() {
                         <div className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-2 text-center">
                             Critic → Relax → Reranker
                         </div>
-                        <div className="flex flex-col items-center gap-1.5">
-                            <div className="bg-white border border-orange-200 rounded-lg px-3 py-1 text-[11px] font-semibold text-orange-700 w-full text-center">
+                        <div className="flex flex-col items-center gap-1">
+                            <div className="bg-white border border-orange-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-orange-700 w-full text-center">
                                 Critic Agent
                             </div>
-                            <div className="text-[10px] text-gray-400 italic">requires_relaxation?</div>
-                            <div className="flex w-full gap-2 items-start">
-                                <div className="flex-1 flex flex-col items-center gap-1">
-                                    <div className="text-[10px] font-semibold text-amber-500">Yes ↓</div>
-                                    <div className="bg-white border border-amber-200 rounded-lg px-2 py-1 text-[10px] font-semibold text-amber-700 w-full text-center">
-                                        Relaxation
-                                    </div>
-                                    <div className="text-[9px] text-gray-400 text-center leading-tight">re-retrieve<br />(max 1×)</div>
-                                </div>
-                                <div className="flex-1 flex flex-col items-center justify-start pt-4">
-                                    <div className="text-[10px] text-gray-400">No ↓</div>
-                                </div>
+                            <div className="text-[10px] text-gray-400">↓</div>
+                            {/* Optional loop — dashed border signals conditional */}
+                            <div className="w-full border border-dashed border-amber-300 bg-amber-50/60 rounded-lg px-2.5 py-1.5 text-center">
+                                <div className="text-[9px] font-semibold text-amber-600 mb-0.5">if |M| &lt; τ · max 1×</div>
+                                <div className="text-[10px] text-amber-700">Relaxation</div>
+                                <div className="text-[9px] text-amber-600">→ re-retrieve → Critic</div>
                             </div>
                             <div className="text-[10px] text-gray-400 italic">↓ always</div>
-                            <div className="bg-white border border-green-200 rounded-lg px-3 py-1 text-[11px] font-semibold text-green-700 w-full text-center">
+                            <div className="bg-white border border-green-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-green-700 w-full text-center">
                                 Reranker → Recall@K
                             </div>
                         </div>
