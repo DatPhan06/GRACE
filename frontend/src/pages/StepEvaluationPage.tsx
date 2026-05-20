@@ -4,18 +4,6 @@ import VersionDetailModal from '@/components/evaluation/VersionDetailModal';
 
 // ─── Shared UI components (defined OUTSIDE the page to keep stable references) ───
 
-const TabButton = ({ id, label, activeTab, setActiveTab }: { id: string; label: string; activeTab: string; setActiveTab: (id: string) => void }) => (
-    <button
-        onClick={() => setActiveTab(id)}
-        className={`px-4 py-2 font-medium text-sm rounded-t-lg transition-colors ${activeTab === id
-            ? 'bg-white text-blue-600 border-t border-x border-gray-200'
-            : 'bg-gray-50 text-gray-500 hover:text-gray-700'
-            }`}
-    >
-        {label}
-    </button>
-);
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const VersionCard = ({ batch, color, onClick, children }: { batch: BatchStepExecutionResponse; color: { bg: string; border: string; text: string }; onClick: () => void; children?: any }) => (
     <div
@@ -65,9 +53,9 @@ const ModalBackdrop = ({ title, onClose, children, onSubmit, submitLabel, submit
 );
 
 const EmptyState = ({ icon, message }: { icon: string; message: string }) => (
-    <div className="text-center py-16">
-        <div className="text-5xl mb-4">{icon}</div>
-        <p className="text-gray-500">{message}</p>
+    <div className="text-center py-12">
+        <div className="text-4xl mb-3">{icon}</div>
+        <p className="text-gray-500 text-sm">{message}</p>
     </div>
 );
 
@@ -81,43 +69,152 @@ const NewVersionButton = ({ onClick, color }: { onClick: () => void; color: stri
     </button>
 );
 
+// ─── Pipeline Flow Diagram ─────────────────────────────────────────────────────
+
+function Arrow() {
+    return (
+        <div className="flex items-center self-start mt-8 shrink-0">
+            <div className="w-5 h-0.5 bg-gray-300" />
+            <div className="w-0 h-0" style={{ borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '7px solid #d1d5db' }} />
+        </div>
+    );
+}
+
+function PipelineFlowDiagram() {
+    return (
+        <div className="bg-white border border-gray-200 rounded-xl px-6 py-5 mb-8 shadow-sm">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">ARGOS Evaluation Pipeline</p>
+            <div className="flex items-start gap-0 overflow-x-auto pb-2">
+
+                {/* Step 1: Initialize */}
+                <div className="flex flex-col items-center shrink-0">
+                    <div className="w-28 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-center">
+                        <div className="text-xl mb-1">🚀</div>
+                        <div className="text-xs font-bold text-blue-800">Initialize</div>
+                        <div className="text-[10px] text-blue-500 mt-0.5">Dataset sample</div>
+                    </div>
+                </div>
+                <Arrow />
+
+                {/* Step 2: Profiler Agent */}
+                <div className="flex flex-col items-center shrink-0">
+                    <div className="w-28 p-3 bg-indigo-50 border-2 border-indigo-200 rounded-xl text-center">
+                        <div className="text-xl mb-1">🤖</div>
+                        <div className="text-xs font-bold text-indigo-800">Profiler Agent</div>
+                        <div className="text-[10px] text-indigo-500 mt-0.5">Extract prefs</div>
+                    </div>
+                </div>
+                <Arrow />
+
+                {/* Step 3: Retrieval */}
+                <div className="flex flex-col items-center shrink-0">
+                    <div className="w-28 p-3 bg-purple-50 border-2 border-purple-200 rounded-xl text-center">
+                        <div className="text-xl mb-1">🔍</div>
+                        <div className="text-xs font-bold text-purple-800">Retrieval</div>
+                        <div className="text-[10px] text-purple-500 mt-0.5">WRRF fusion</div>
+                    </div>
+                </div>
+                <Arrow />
+
+                {/* Step 4: Critic → Relax → Reranker */}
+                <div className="flex flex-col items-center shrink-0">
+                    <div className="border-2 border-green-200 bg-green-50 rounded-xl p-3 w-52">
+                        <div className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-2 text-center">
+                            Critic → Relax → Reranker
+                        </div>
+                        <div className="flex flex-col items-center gap-1.5">
+                            <div className="bg-white border border-orange-200 rounded-lg px-3 py-1 text-[11px] font-semibold text-orange-700 w-full text-center">
+                                Critic Agent
+                            </div>
+                            <div className="text-[10px] text-gray-400 italic">requires_relaxation?</div>
+                            <div className="flex w-full gap-2 items-start">
+                                <div className="flex-1 flex flex-col items-center gap-1">
+                                    <div className="text-[10px] font-semibold text-amber-500">Yes ↓</div>
+                                    <div className="bg-white border border-amber-200 rounded-lg px-2 py-1 text-[10px] font-semibold text-amber-700 w-full text-center">
+                                        Relaxation
+                                    </div>
+                                    <div className="text-[9px] text-gray-400 text-center leading-tight">re-retrieve<br />(max 1×)</div>
+                                </div>
+                                <div className="flex-1 flex flex-col items-center justify-start pt-4">
+                                    <div className="text-[10px] text-gray-400">No ↓</div>
+                                </div>
+                            </div>
+                            <div className="text-[10px] text-gray-400 italic">↓ always</div>
+                            <div className="bg-white border border-green-200 rounded-lg px-3 py-1 text-[11px] font-semibold text-green-700 w-full text-center">
+                                Reranker → Recall@K
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Section wrapper ───────────────────────────────────────────────────────────
+
+function PipelineSection({ id, stepNumber, title, subtitle, accentColor, headerRight, children }: {
+    id: string;
+    stepNumber: string;
+    title: string;
+    subtitle: string;
+    accentColor: string;
+    headerRight?: React.ReactNode;
+    children: React.ReactNode;
+}) {
+    return (
+        <section id={id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+            <div className={`px-6 py-4 border-b border-gray-100 flex justify-between items-start ${accentColor}`}>
+                <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{stepNumber}</span>
+                        <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+                    </div>
+                    <p className="text-sm text-gray-500">{subtitle}</p>
+                </div>
+                {headerRight}
+            </div>
+            <div className="px-6 py-5">
+                {children}
+            </div>
+        </section>
+    );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+
 export default function StepEvaluationPage() {
     const [loading, setLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState<"init" | "summ" | "retr" | "rerank">("init");
 
-    // Init State (for modal)
+    // Params
     const [dataset, setDataset] = useState<"inspired" | "redial">("redial");
     const [sampleSize, setSampleSize] = useState(5);
-
-    // Retrieval State (for modal)
     const [nSample, setNSample] = useState(100);
-
-    // Rerank State (for modal)
     const [topK, setTopK] = useState(10);
     const [model, setModel] = useState<"llm" | "cohere">("cohere");
 
-    // Data per tab
+    // Data
     const [allRuns, setAllRuns] = useState<EvaluationRunResponse[]>([]);
     const [summBatches, setSummBatches] = useState<BatchStepExecutionResponse[]>([]);
     const [retrBatches, setRetrBatches] = useState<BatchStepExecutionResponse[]>([]);
     const [rerankBatches, setRerankBatches] = useState<BatchStepExecutionResponse[]>([]);
 
-    // Detail Modal State
+    // Detail Modal
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [batchDetail, setBatchDetail] = useState<BatchDetailResponse | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
-    // New Version Modal State
+    // New Version Modal
     const [showNewVersionModal, setShowNewVersionModal] = useState<"summ" | "retr" | "rerank" | null>(null);
     const [newVersionName, setNewVersionName] = useState('');
     const [selectedRunId, setSelectedRunId] = useState<number | undefined>(undefined);
     const [selectedSummBatch, setSelectedSummBatch] = useState<number | undefined>(undefined);
     const [selectedRetrBatch, setSelectedRetrBatch] = useState<number | undefined>(undefined);
 
-    // Run Modal State (for Init only)
+    // Init Run Modal
     const [showRunModal, setShowRunModal] = useState(false);
 
-    // Run Detail Modal State (conversation list)
+    // Run Detail Modal
     const [showRunDetailModal, setShowRunDetailModal] = useState(false);
     const [runConversations, setRunConversations] = useState<ConversationLogItem[]>([]);
     const [runDetailLoading, setRunDetailLoading] = useState(false);
@@ -140,40 +237,33 @@ export default function StepEvaluationPage() {
         try { setRerankBatches(await getStepsByType('reranking')); } catch (e) { console.error(e); }
     }, []);
 
-    // Load tab data when switching
+    // Load all on mount
     useEffect(() => {
-        if (activeTab === 'init') loadRuns();
-        if (activeTab === 'summ') loadSummBatches();
-        if (activeTab === 'retr') loadRetrBatches();
-        if (activeTab === 'rerank') loadRerankBatches();
-    }, [activeTab, loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
+        loadRuns();
+        loadSummBatches();
+        loadRetrBatches();
+        loadRerankBatches();
+    }, [loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
 
-    // --- Polling Effect ---
+    // Polling: watch any running batch across all sections
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        const hasRunning =
+            allRuns.some(r => r.status === 'initialized' || r.status === 'running') ||
+            summBatches.some(b => b.status === 'running') ||
+            retrBatches.some(b => b.status === 'running') ||
+            rerankBatches.some(b => b.status === 'running');
 
-        const checkRunning = () => {
-            if (activeTab === 'init') return allRuns.some(r => r.status === 'initialized' || r.status === 'running');
-            if (activeTab === 'summ') return summBatches.some(b => b.status === 'running');
-            if (activeTab === 'retr') return retrBatches.some(b => b.status === 'running');
-            if (activeTab === 'rerank') return rerankBatches.some(b => b.status === 'running');
-            return false;
-        };
+        if (!hasRunning) return;
 
-        if (checkRunning()) {
-            interval = setInterval(() => {
-                if (activeTab === 'init') loadRuns();
-                if (activeTab === 'summ') loadSummBatches();
-                if (activeTab === 'retr') loadRetrBatches();
-                if (activeTab === 'rerank') loadRerankBatches();
-            }, 3000);
-        }
+        const interval = setInterval(() => {
+            if (allRuns.some(r => r.status === 'initialized' || r.status === 'running')) loadRuns();
+            if (summBatches.some(b => b.status === 'running')) loadSummBatches();
+            if (retrBatches.some(b => b.status === 'running')) loadRetrBatches();
+            if (rerankBatches.some(b => b.status === 'running')) loadRerankBatches();
+        }, 3000);
 
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [activeTab, allRuns, summBatches, retrBatches, rerankBatches, loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
-
+        return () => clearInterval(interval);
+    }, [allRuns, summBatches, retrBatches, rerankBatches, loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
 
     // --- Open New Version Modal (preload prev step data) ---
     const openNewVersionModal = async (step: "summ" | "retr" | "rerank") => {
@@ -181,7 +271,6 @@ export default function StepEvaluationPage() {
         setSelectedRunId(undefined);
         setSelectedSummBatch(undefined);
         setSelectedRetrBatch(undefined);
-        // Preload previous step data for the dropdown
         if (step === 'summ') await loadRuns();
         if (step === 'retr') await loadSummBatches();
         if (step === 'rerank') await loadRetrBatches();
@@ -194,8 +283,7 @@ export default function StepEvaluationPage() {
         setRunDetailLoading(true);
         setShowRunDetailModal(true);
         try {
-            const convs = await getRunConversations(run.id);
-            setRunConversations(convs);
+            setRunConversations(await getRunConversations(run.id));
         } catch (e) {
             console.error('Failed to load conversations:', e);
             setRunConversations([]);
@@ -218,7 +306,7 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateProfiler = async (runIdOverride?: number | any) => {
+    const handleCreateProfiler = async (runIdOverride?: number | unknown) => {
         const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
         if (!runId) return;
         setLoading(true);
@@ -234,7 +322,7 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateRetrieval = async (runIdOverride?: number | any) => {
+    const handleCreateRetrieval = async (runIdOverride?: number | unknown) => {
         const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
         if (!runId) return;
         setLoading(true);
@@ -250,7 +338,7 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateReranking = async (runIdOverride?: number | any) => {
+    const handleCreateReranking = async (runIdOverride?: number | unknown) => {
         const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
         if (!runId) return;
         setLoading(true);
@@ -266,7 +354,6 @@ export default function StepEvaluationPage() {
         }
     };
 
-    // Handle from detail modal "Run Next Step"
     const handleRunNextFromDetail = async (runId: number, batchId: number, stepType: string) => {
         setLoading(true);
         try {
@@ -274,13 +361,11 @@ export default function StepEvaluationPage() {
                 await runRetrievalStep(runId, nSample, batchId);
                 setShowDetailModal(false);
                 setBatchDetail(null);
-                setActiveTab('retr');
                 loadRetrBatches();
             } else if (stepType === 'retrieval') {
                 await runRerankingStep(runId, topK, model, batchId);
                 setShowDetailModal(false);
                 setBatchDetail(null);
-                setActiveTab('rerank');
                 loadRerankBatches();
             }
         } catch (error) {
@@ -303,154 +388,136 @@ export default function StepEvaluationPage() {
         }
     };
 
-    // --- UI Components ---
-    // (TabButton, VersionCard, ModalBackdrop, EmptyState, NewVersionButton are defined at module level)
     const getRunIdFromSummBatch = (batchId: number | undefined) => {
         if (!batchId) return undefined;
-        const batch = summBatches.find(b => b.id === batchId);
-        return batch?.run_id;
+        return summBatches.find(b => b.id === batchId)?.run_id;
     };
     const getRunIdFromRetrBatch = (batchId: number | undefined) => {
         if (!batchId) return undefined;
-        const batch = retrBatches.find(b => b.id === batchId);
-        return batch?.run_id;
+        return retrBatches.find(b => b.id === batchId)?.run_id;
     };
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <h1 className="text-3xl font-bold mb-6">Step-by-Step Optimization</h1>
+            <h1 className="text-3xl font-bold mb-2">Step-by-Step Optimization</h1>
+            <p className="text-gray-500 text-sm mb-8">Run each pipeline stage independently and compare versions.</p>
 
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200 mb-6">
-                <TabButton id="init" label="1. Initialize" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
-                <TabButton id="summ" label="2. Profiler Agent" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
-                <TabButton id="retr" label="3. Retrieval" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
-                <TabButton id="rerank" label="4. Critic → Relax → Reranker" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
-            </div>
+            {/* Pipeline Diagram */}
+            <PipelineFlowDiagram />
 
-            {/* Tab Content */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 min-h-[400px]">
-
-                {/* 1. Init Tab — List of Runs */}
-                {activeTab === 'init' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Evaluation Runs</h2>
-                                <p className="text-sm text-gray-500 mt-1">Create runs with dataset samples.</p>
-                            </div>
-                            <button
-                                onClick={() => setShowRunModal(true)}
-                                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                                New Run
-                            </button>
-                        </div>
-                        <div className="space-y-3">
-                            {allRuns.length === 0 && <EmptyState icon="🚀" message="No runs yet. Click '+ New Run' to create one." />}
-                            {allRuns.map(run => (
-                                <div
-                                    key={run.id}
-                                    onClick={() => handleViewRun(run)}
-                                    className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="flex items-center gap-3">
-                                            <span className="font-semibold text-blue-900">
-                                                {run.name ? run.name : `Run #${run.id}`}
-                                            </span>
-                                            {run.name && <span className="text-xs text-gray-400">Run #{run.id}</span>}
-                                            <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${run.status === 'completed' ? 'bg-green-100 text-green-700' : run.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
-                                                {run.status}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-gray-500">{run.timestamp ? new Date(run.timestamp).toLocaleString() : ''}</span>
-                                            <span className="text-xs text-blue-400">👁 View</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Dataset: <strong className="capitalize">{run.dataset}</strong></span>
-                                        <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Samples: <strong>{run.sample_size}</strong></span>
-                                        {run.avg_recall != null && run.avg_recall > 0 && (
-                                            <span className="bg-green-50 px-2 py-0.5 rounded border border-green-200">Recall: <strong>{run.avg_recall.toFixed(4)}</strong></span>
-                                        )}
-                                    </div>
+            {/* ─── Section 1: Evaluation Runs ─── */}
+            <PipelineSection
+                id="section-init"
+                stepNumber="Step 1"
+                title="Evaluation Runs"
+                subtitle="Create runs with dataset samples to use across all pipeline steps."
+                accentColor="bg-blue-50/50"
+                headerRight={
+                    <button
+                        onClick={() => { setNewVersionName(''); setShowRunModal(true); }}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        New Run
+                    </button>
+                }
+            >
+                <div className="space-y-3">
+                    {allRuns.length === 0 && <EmptyState icon="🚀" message="No runs yet. Click '+ New Run' to create one." />}
+                    {allRuns.map(run => (
+                        <div
+                            key={run.id}
+                            onClick={() => handleViewRun(run)}
+                            className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-3">
+                                    <span className="font-semibold text-blue-900">
+                                        {run.name ? run.name : `Run #${run.id}`}
+                                    </span>
+                                    {run.name && <span className="text-xs text-gray-400">Run #{run.id}</span>}
+                                    <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${run.status === 'completed' ? 'bg-green-100 text-green-700' : run.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
+                                        {run.status}
+                                    </span>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* 2. Profiler Agent Tab */}
-                {activeTab === 'summ' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Profiler Agent Versions</h2>
-                                <p className="text-sm text-gray-500 mt-1">Click a version to view extracted preferences and create retrieval.</p>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500">{run.timestamp ? new Date(run.timestamp).toLocaleString() : ''}</span>
+                                    <span className="text-xs text-blue-400">👁 View</span>
+                                </div>
                             </div>
-                            <NewVersionButton onClick={() => openNewVersionModal('summ')} color="bg-indigo-600 hover:bg-indigo-700" />
-                        </div>
-                        <div className="space-y-3">
-                            {summBatches.length === 0 && <EmptyState icon="🤖" message="No Profiler Agent versions yet. Click '+ New Version' to create one." />}
-                            {summBatches.map(b => (
-                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-800' }} onClick={() => handleViewDetail(b)} />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* 3. Retrieval Tab */}
-                {activeTab === 'retr' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Retrieval Versions</h2>
-                                <p className="text-sm text-gray-500 mt-1">Click a version to view details and create reranking.</p>
+                            <div className="flex justify-between items-center">
+                                <span className="bg-white px-2 py-0.5 rounded border border-gray-200 text-xs">Dataset: <strong className="capitalize">{run.dataset}</strong></span>
+                                <span className="bg-white px-2 py-0.5 rounded border border-gray-200 text-xs">Samples: <strong>{run.sample_size}</strong></span>
+                                {run.avg_recall != null && run.avg_recall > 0 && (
+                                    <span className="bg-green-50 px-2 py-0.5 rounded border border-green-200 text-xs">Recall: <strong>{run.avg_recall.toFixed(4)}</strong></span>
+                                )}
                             </div>
-                            <NewVersionButton onClick={() => openNewVersionModal('retr')} color="bg-purple-600 hover:bg-purple-700" />
                         </div>
-                        <div className="space-y-3">
-                            {retrBatches.length === 0 && <EmptyState icon="🔍" message="No retrieval versions yet. Click '+ New Version' to create one." />}
-                            {retrBatches.map(b => (
-                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
-                                    <div className="flex gap-3 text-xs text-gray-600">
-                                        <span>N={(b.config as Record<string, unknown>).n_sample as number}</span>
-                                        {!!(b.config as Record<string, unknown>).input_batch && <span className="text-gray-400">(Input: Batch #{String((b.config as Record<string, unknown>).input_batch)})</span>}
-                                    </div>
-                                </VersionCard>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                    ))}
+                </div>
+            </PipelineSection>
 
-                {/* 4. Critic → Relax → Reranker Tab */}
-                {activeTab === 'rerank' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Critic → Relax → Reranker Versions</h2>
-                                <p className="text-sm text-gray-500 mt-1">Critic filters candidates; if too few remain, Relaxation Agent widens constraints and re-retrieves before Reranker selects top-K.</p>
+            {/* ─── Section 2: Profiler Agent ─── */}
+            <PipelineSection
+                id="section-profiler"
+                stepNumber="Step 2"
+                title="Profiler Agent"
+                subtitle="Extracts user preferences, genres, hard constraints, and WRRF weights from conversation history."
+                accentColor="bg-indigo-50/50"
+                headerRight={<NewVersionButton onClick={() => openNewVersionModal('summ')} color="bg-indigo-600 hover:bg-indigo-700" />}
+            >
+                <div className="space-y-3">
+                    {summBatches.length === 0 && <EmptyState icon="🤖" message="No Profiler Agent versions yet. Click '+ New Version' to create one." />}
+                    {summBatches.map(b => (
+                        <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-800' }} onClick={() => handleViewDetail(b)} />
+                    ))}
+                </div>
+            </PipelineSection>
+
+            {/* ─── Section 3: Retrieval ─── */}
+            <PipelineSection
+                id="section-retrieval"
+                stepNumber="Step 3"
+                title="Retrieval"
+                subtitle="Semantic, content, and graph retrieval streams fused via WRRF into candidate pool."
+                accentColor="bg-purple-50/50"
+                headerRight={<NewVersionButton onClick={() => openNewVersionModal('retr')} color="bg-purple-600 hover:bg-purple-700" />}
+            >
+                <div className="space-y-3">
+                    {retrBatches.length === 0 && <EmptyState icon="🔍" message="No retrieval versions yet. Click '+ New Version' to create one." />}
+                    {retrBatches.map(b => (
+                        <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
+                            <div className="flex gap-3 text-xs text-gray-600">
+                                <span>N={(b.config as Record<string, unknown>).n_sample as number}</span>
+                                {!!(b.config as Record<string, unknown>).input_batch && <span className="text-gray-400">(Input: Batch #{String((b.config as Record<string, unknown>).input_batch)})</span>}
                             </div>
-                            <NewVersionButton onClick={() => openNewVersionModal('rerank')} color="bg-green-600 hover:bg-green-700" />
-                        </div>
-                        <div className="space-y-3">
-                            {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No Critic → Relax → Reranker versions yet. Click '+ New Version' to create one." />}
-                            {rerankBatches.map(b => (
-                                <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
-                                    <div className="flex gap-3 text-xs text-gray-600">
-                                        <span>TopK={(b.config as Record<string, unknown>).top_k as number}</span>
-                                        <span>{String((b.config as Record<string, unknown>).model)}</span>
-                                        {!!(b.config as Record<string, unknown>).input_batch && <span className="text-gray-400">(Input: Batch #{String((b.config as Record<string, unknown>).input_batch)})</span>}
-                                    </div>
-                                </VersionCard>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
+                        </VersionCard>
+                    ))}
+                </div>
+            </PipelineSection>
+
+            {/* ─── Section 4: Critic → Relax → Reranker ─── */}
+            <PipelineSection
+                id="section-reranking"
+                stepNumber="Step 4"
+                title="Critic → Relax → Reranker"
+                subtitle="Critic filters candidates; if too few pass, Relaxation widens constraints and re-retrieves (max 1×); Reranker selects top-K."
+                accentColor="bg-green-50/50"
+                headerRight={<NewVersionButton onClick={() => openNewVersionModal('rerank')} color="bg-green-600 hover:bg-green-700" />}
+            >
+                <div className="space-y-3">
+                    {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No versions yet. Click '+ New Version' to create one." />}
+                    {rerankBatches.map(b => (
+                        <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
+                            <div className="flex gap-3 text-xs text-gray-600">
+                                <span>TopK={(b.config as Record<string, unknown>).top_k as number}</span>
+                                <span>{String((b.config as Record<string, unknown>).model)}</span>
+                                {!!(b.config as Record<string, unknown>).input_batch && <span className="text-gray-400">(Input: Batch #{String((b.config as Record<string, unknown>).input_batch)})</span>}
+                            </div>
+                        </VersionCard>
+                    ))}
+                </div>
+            </PipelineSection>
 
             {/* === MODALS === */}
 
@@ -467,7 +534,7 @@ export default function StepEvaluationPage() {
                 </div>
             )}
 
-            {/* Version Detail Modal (with next-step action) */}
+            {/* Version Detail Modal */}
             {showDetailModal && batchDetail && (
                 <VersionDetailModal
                     detail={batchDetail}
@@ -484,11 +551,10 @@ export default function StepEvaluationPage() {
                 />
             )}
 
-            {/* Run Detail Modal — Conversation List */}
+            {/* Run Detail Modal */}
             {showRunDetailModal && selectedRun && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }}>
                     <div className="bg-white rounded-xl shadow-2xl w-[92vw] max-w-3xl flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
-                        {/* Header */}
                         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-800">
@@ -501,8 +567,6 @@ export default function StepEvaluationPage() {
                             </div>
                             <button onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
                         </div>
-
-                        {/* Body */}
                         <div className="overflow-y-auto flex-1 px-6 py-4">
                             {runDetailLoading ? (
                                 <div className="flex items-center justify-center py-16 gap-3">
@@ -522,10 +586,9 @@ export default function StepEvaluationPage() {
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs font-mono text-gray-400">#{idx + 1}</span>
                                                     <span className="text-sm font-medium text-gray-800 truncate max-w-[200px]">{conv.conv_id}</span>
-                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full capitalize ${conv.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                        conv.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-gray-100 text-gray-600'
-                                                        }`}>{conv.status}</span>
+                                                    <span className={`text-xs px-1.5 py-0.5 rounded-full capitalize ${conv.status === 'completed' ? 'bg-green-100 text-green-700' : conv.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                        {conv.status}
+                                                    </span>
                                                 </div>
                                                 <span className="text-xs text-gray-500 shrink-0">
                                                     Target: <strong>{Array.isArray(conv.target) ? conv.target.join(', ') : conv.target}</strong>
@@ -542,8 +605,6 @@ export default function StepEvaluationPage() {
                                 </div>
                             )}
                         </div>
-
-                        {/* Footer */}
                         <div className="px-6 py-3 border-t border-gray-200 flex justify-end shrink-0">
                             <button
                                 onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }}
@@ -599,10 +660,6 @@ export default function StepEvaluationPage() {
                 </ModalBackdrop>
             )}
 
-            {/* ========================================= */}
-            {/* NEW VERSION MODALS FOR EACH STEP          */}
-            {/* ========================================= */}
-
             {/* New Profiler Agent Version Modal */}
             {showNewVersionModal === 'summ' && (
                 <ModalBackdrop
@@ -652,7 +709,6 @@ export default function StepEvaluationPage() {
                     title="🔍 New Retrieval Version"
                     onClose={() => setShowNewVersionModal(null)}
                     onSubmit={() => {
-                        // Infer run_id from selected summarization batch
                         const runId = getRunIdFromSummBatch(selectedSummBatch) || selectedRunId;
                         if (!runId) return;
                         setSelectedRunId(runId);
@@ -673,13 +729,12 @@ export default function StepEvaluationPage() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Input Summarization Version <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Input Profiler Agent Version <span className="text-red-500">*</span></label>
                         <select
                             value={selectedSummBatch || ''}
                             onChange={(e) => {
                                 const batchId = e.target.value ? Number(e.target.value) : undefined;
                                 setSelectedSummBatch(batchId);
-                                // Auto-set run_id from the selected batch
                                 if (batchId) {
                                     const batch = summBatches.find(b => b.id === batchId);
                                     if (batch) setSelectedRunId(batch.run_id);
@@ -687,7 +742,7 @@ export default function StepEvaluationPage() {
                             }}
                             className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
                         >
-                            <option value="">— Select a summarization version —</option>
+                            <option value="">— Select a profiler version —</option>
                             {summBatches.map(b => (
                                 <option key={b.id} value={b.id}>
                                     {b.name ? b.name : `v${b.version}`} (Run #{b.run_id}) — {b.status} — {new Date(b.created_at).toLocaleString()}
