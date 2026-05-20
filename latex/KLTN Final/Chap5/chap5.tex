@@ -65,7 +65,7 @@ GRACE thể hiện sự vượt trội rõ rệt so với các mô hình dựa t
 Kiến trúc đề xuất cho thấy hiệu suất cao hơn so với cả mô hình Zero-shot/Few-shot và các hệ thống tăng cường tri thức tiêu chuẩn. Các mô hình Zero-shot như LLM-ReDial ghi nhận mức Recall thấp do rủi ro phát sinh ảo giác (hallucination). Các phương pháp như UniCRS hay MESE cải thiện được tính thực tế nhưng bị giới hạn ở các truy vấn đồ thị đơn bước. Việc xây dựng cơ chế đối soát kết quả với Neo4j đã giúp GRACE loại bỏ hiệu quả thông tin sai lệch. Cụ thể, Recall@10 trên ReDial đạt 0.302, cao hơn đáng kể so với mức 0.256 của mô hình MESE.
 
 \textbf{So sánh với các Hệ thống tinh chỉnh (Fine-Tuned Frameworks):}
-Khi đối chiếu với các hệ thống được tối ưu hóa qua quá trình huấn luyện như DCRS, GRACE duy trì mức hiệu suất ổn định dù sử dụng phương pháp \textit{không cần huấn luyện} (training-free). DCRS ghi nhận mức cao hơn tại Recall@1, chủ yếu do sự tương đồng mật thiết (overfit) với phân phối dữ liệu của tập huấn luyện. Tuy nhiên, GRACE thể hiện khả năng tổng quát hóa tốt hơn khi đánh giá ở các ngưỡng sâu trên ReDial (Recall@50 đạt 0.527 so với 0.439 của DCRS) và duy trì mức hiệu năng ổn định trên tập INSPIRED.
+Khi đối chiếu với các hệ thống được tối ưu hóa qua quá trình huấn luyện như DCRS, GRACE duy trì mức hiệu suất ổn định dù sử dụng phương pháp không cần huấn luyện (training-free). DCRS ghi nhận mức cao hơn tại Recall@1, chủ yếu do sự tương đồng mật thiết (overfit) với phân phối dữ liệu của tập huấn luyện. Tuy nhiên, GRACE thể hiện khả năng tổng quát hóa tốt hơn khi đánh giá ở các ngưỡng sâu trên ReDial (Recall@50 đạt 0.527 so với 0.439 của DCRS) và duy trì mức hiệu năng ổn định trên tập INSPIRED.
 
 \begin{table}[H]
     \caption{Hiệu năng của Mô hình tiền đề (GRACE) so với các hệ thống SOTA trên toàn bộ tập dữ liệu (100\%). Các kết quả tốt nhất được in đậm, và tốt thứ hai được gạch chân.}
@@ -161,11 +161,11 @@ Bên cạnh các đánh giá định lượng, các nghiên cứu tình huống 
     \item \textbf{Hệ thống ARGOS (Tác tử Đồ thị):} Tác tử thực thi mô hình ReAct. Lượt 1: Truy vấn \texttt{studio} không thành công. Lượt 2 (Tư duy logic): Tác tử nhận diện sự thiếu hụt của trường dữ liệu và lập kế hoạch thay thế, dựa trên Schema-Aware Intelligence, nó xác định KG có quan hệ \texttt{(:Director)-[:DIRECTED]->(:Movie)}, và sử dụng tri thức ngữ cảnh (từ LLM) rằng A24 gắn liền với các đạo diễn như Ari Aster hoặc Robert Eggers để xây dựng điều kiện lọc mới. Lượt 3 (Hành động): Tác tử sinh lệnh Cypher tìm phim theo danh sách đạo diễn và trả về \textit{Hereditary}, \textit{The Lighthouse}. Ví dụ này minh họa sự kết hợp giữa cấu trúc KG và suy luận LLM để bù đắp dữ liệu khuyết thiếu.
 \end{itemize}
 
-\subsection{Tác tử Kiểm định (Critic Agent): Cơ chế triệt tiêu ảo giác}
+\subsection{Tác tử Kiểm định (Critic Agent): Kiểm định ràng buộc xuyên luồng}
 \textbf{Truy vấn người dùng:} \textit{"Phim hoạt hình nhẹ nhàng cho trẻ em, có robot giống Wall-E nhé."}
 \begin{itemize}
-    \item \textbf{Hệ thống tĩnh:} Từ khóa "robot" có thể khiến cơ chế truy xuất ngữ nghĩa vô tình đưa \textit{The Terminator} vào danh sách ứng viên. Do thiếu sự kiểm soát độc lập, mô hình xếp hạng có thể ưu tiên ứng viên này do điểm tương đồng vector cao.
-    \item \textbf{Hệ thống ARGOS (Tác tử Kiểm định):} Tác tử nhận diện mâu thuẫn logic: \textit{"Yêu cầu nhấn mạnh đối tượng 'trẻ em', trong khi The Terminator được dán nhãn R. Vi phạm Ràng buộc cứng (Hard Constraint) về đối tượng khán giả"}. Tác tử ngay lập tức thanh lọc kết quả này, chỉ giữ lại các lựa chọn an toàn như \textit{Big Hero 6} hoặc \textit{Next Gen}, đảm bảo tính chuẩn xác (Precision) của hệ thống.
+    \item \textbf{Hệ thống tĩnh:} Từ khóa "robot" có thể khiến cơ chế truy xuất ngữ nghĩa vô tình đưa \textit{The Terminator} vào danh sách ứng viên. Luồng Semantic Retrieval không có kiến thức về ràng buộc đối tượng khán giả, và do thiếu tầng kiểm định độc lập, mô hình xếp hạng có thể ưu tiên ứng viên này vì điểm tương đồng vector cao.
+    \item \textbf{Hệ thống ARGOS (Tác tử Kiểm định):} Tác tử đối chiếu từng ứng viên với tập Ràng buộc cứng và phát hiện vi phạm: \textit{"Yêu cầu chỉ định đối tượng 'trẻ em', trong khi The Terminator mang nhãn phân loại R. Vi phạm ràng buộc về phân loại độ tuổi"}. Tác tử loại bỏ ứng viên vi phạm trước khi chuyển sang giai đoạn xếp hạng, chỉ giữ lại các lựa chọn phù hợp như \textit{Big Hero 6} hoặc \textit{Next Gen}. Đây là ví dụ điển hình của kiểm định ràng buộc xuyên luồng: luồng Semantic Retrieval trả về ứng viên theo vector nhưng không lọc theo ràng buộc; Critic Agent là tầng duy nhất đảm bảo toàn bộ ứng viên đưa ra xếp hạng đều thỏa mãn các điều kiện cứng của người dùng.
 \end{itemize}
 
 \subsection{Tác tử Thỏa hiệp (Relaxation Agent): Điều chỉnh ý định truy vấn}

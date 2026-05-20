@@ -16,7 +16,7 @@ Bài toán CRS được hình thức hóa như sau: cho tập item $\mathcal{I}$
 
 Hình \ref{fig:crs_dialogue_example} minh họa một đoạn hội thoại CRS điển hình, cho thấy hệ thống luân phiên đặt câu hỏi khai thác sở thích và đưa ra gợi ý qua nhiều lượt trao đổi với người dùng.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{Chap2/images/crs_dialogue_example.png}
     \caption{Ví dụ hội thoại nhiều lượt trong Hệ thống gợi ý hội thoại. Hệ thống chủ động đặt câu hỏi làm rõ sở thích, cập nhật trạng thái hội thoại và đưa ra gợi ý kèm giải thích qua từng lượt tương tác \cite{fang2024multiagentconversationalrecommender}.}
@@ -39,7 +39,7 @@ Trong ngữ cảnh CRS, dữ liệu tương tác người dùng - item thường
 
 Hình \ref{fig:kg_structure_bg} minh họa cụ thể cách một node Phim được tổ chức trong KG, với các cạnh có hướng nối tới các thực thể liên quan như Đạo diễn, Diễn viên và Thể loại, thể hiện trực quan cấu trúc bộ ba $(h, r, t)$ được định nghĩa ở trên.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.75\linewidth]{Chap3/images/KG_node.pdf}
     \caption{Ví dụ cấu trúc một node Phim trong Đồ thị tri thức, liên kết với các thực thể Đạo diễn, Diễn viên, Thể loại và các thuộc tính định lượng. Mỗi bộ ba $(h, r, t)$ biểu diễn một quan hệ có hướng giữa hai thực thể trong đồ thị.}
@@ -62,14 +62,14 @@ RAG giải quyết hạn chế của LLM bằng cách tách biệt lưu trữ tr
 
 Luồng hoạt động tổng thể của pipeline RAG được minh họa trong Hình \ref{fig:rag_pipeline}.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{Chap2/images/rag_pipeline.png}
     \caption{Pipeline RAG cơ bản gồm ba giai đoạn: \textit{Retrieval} (truy xuất tài liệu liên quan từ kho dữ liệu ngoài), \textit{Augmentation} (tích hợp tài liệu vào ngữ cảnh) và \textit{Generation} (LLM sinh câu trả lời được neo giữ vào dữ liệu thực chứng) \cite{singh2026agenticretrievalaugmentedgenerationsurvey}.}
     \label{fig:rag_pipeline}
 \end{figure}
 
-RAG đặc biệt phù hợp với bài toán CRS vì ba lý do thực tiễn: \textit{(i)} danh mục item thay đổi liên tục: RAG chỉ cần cập nhật KG mà không cần fine-tune lại LLM; \textit{(ii)} mỗi gợi ý đều cần có cơ sở thực chứng: đường dẫn truy xuất của RAG cung cấp trực tiếp khả năng giải thích (explainability); \textit{(iii)} chi phí thấp hơn đáng kể so với fine-tuning khi quy mô dữ liệu lớn.
+RAG đặc biệt phù hợp với bài toán CRS vì ba lý do thực tiễn: (i) danh mục item thay đổi liên tục: RAG chỉ cần cập nhật KG mà không cần fine-tune lại LLM; (ii) mỗi gợi ý đều cần có cơ sở thực chứng: đường dẫn truy xuất của RAG cung cấp trực tiếp khả năng giải thích (explainability); (iii) chi phí thấp hơn đáng kể so với fine-tuning khi quy mô dữ liệu lớn.
 
 \section{Kiến trúc Hệ thống Đa tác tử (Multi-Agent System) và ReAct}
 
@@ -86,7 +86,7 @@ ReAct \cite{yao2022react} là framework cho phép tác tử xen kẽ giữa suy 
 
 Hình \ref{fig:react_loop} so sánh trực quan vòng lặp ReAct với các phương pháp prompting khác, làm rõ cách xen kẽ giữa Thought và Action-Observation tạo nên khả năng tự điều chỉnh mà các phương pháp đơn thuần không có.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{Chap2/images/react_loop.png}
     \caption{So sánh các phương pháp prompting LLM: Standard, Chain-of-Thought, Act-only và \textbf{ReAct}. ReAct xen kẽ giữa suy luận (Thought) và hành động tương tác với môi trường (Action-Observation), cho phép tác tử tự điều chỉnh chiến lược dựa trên phản hồi từ môi trường \cite{yao2022react}.}
@@ -117,6 +117,6 @@ Thang đo được tính tại bốn ngưỡng $K \in \{1, 5, 10, 50\}$ trên ha
 
 \section*{Kết luận chương}
 
-Chương 2 đã thiết lập bốn nhóm kiến thức cốt lõi phục vụ cho việc hiểu và đánh giá hệ thống ARGOS. \textit{Bài toán CRS} xác lập không gian vấn đề với hai nhiệm vụ song song mà ARGOS phải giải quyết. \textit{Đồ thị tri thức} là nguồn dữ liệu thực chứng trung tâm, đảm bảo mọi gợi ý đều có cơ sở kiểm chứng và là nền tảng cho Hybrid Retrieval. \textit{LLM kết hợp RAG} cung cấp năng lực suy luận ngôn ngữ mà không cần fine-tuning khi dữ liệu thay đổi. \textit{Kiến trúc đa tác tử với ReAct} là mô hình tổ chức cho phép thiết lập vòng lặp phản hồi nội bộ, thành phần then chốt mà các hệ thống RAG tĩnh đang thiếu, và là nền tảng kỹ thuật của ARGOS.
+Chương 2 đã thiết lập bốn nhóm kiến thức cốt lõi phục vụ cho việc hiểu và đánh giá hệ thống ARGOS. Bài toán CRS xác lập không gian vấn đề với hai nhiệm vụ song song mà ARGOS phải giải quyết. Đồ thị tri thức là nguồn dữ liệu thực chứng trung tâm, đảm bảo mọi gợi ý đều có cơ sở kiểm chứng và là nền tảng cho Hybrid Retrieval. LLM kết hợp RAG cung cấp năng lực suy luận ngôn ngữ mà không cần fine-tuning khi dữ liệu thay đổi. Kiến trúc đa tác tử với ReAct là mô hình tổ chức cho phép thiết lập vòng lặp phản hồi nội bộ, thành phần then chốt mà các hệ thống RAG tĩnh đang thiếu, và là nền tảng kỹ thuật của ARGOS.
 
 Chương 3 tiếp theo phân tích chi tiết mô hình tiền đề GRACE, nơi RAG kết hợp KG lần đầu được áp dụng vào CRS của chính tác giả, để định lượng chính xác các điểm nghẽn mà ARGOS cần khắc phục.

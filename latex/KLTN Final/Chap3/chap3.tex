@@ -6,20 +6,20 @@ Chương này phân tích chi tiết hệ thống \textit{GRACE} (Graph-Reasonin
 
 GRACE được thiết kế theo mô hình hai giai đoạn công nghiệp tiêu chuẩn: Tạo ứng viên (Candidate Generation) và Xếp hạng lại (Re-ranking). Toàn bộ quy trình hoạt động theo cơ chế đường ống tĩnh (Static Pipeline) và không yêu cầu tinh chỉnh (fine-tune) trọng số của bất kỳ mô hình ngôn ngữ nào.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{Chap3/images/grace.pdf}
     \caption{Tổng quan kiến trúc hệ thống tiền đề GRACE, bao gồm hai module chính: LLM Retriever và LLM Re-ranker.}
     \label{fig:grace_framework}
 \end{figure}
 
-Như minh họa trong Hình \ref{fig:grace_framework}, luồng hoạt động của GRACE gồm bốn bước tuần tự: (1) LLM tóm tắt lịch sử hội thoại thành một hồ sơ sở thích (Preference Profile); (2) ba chiến lược truy xuất song song (ngữ nghĩa, nội dung, đồ thị) tạo ra tập ứng viên; (3) các tập được hợp nhất và xếp hạng bằng Weighted Reciprocal Rank Fusion; (4) Generative LLM đánh giá lại và chọn ra kết quả cuối cùng. Kiến trúc này đảm bảo mọi thực thể trong tập ứng viên đều tồn tại trong KG vì chúng được truy xuất trực tiếp — loại trừ khả năng LLM tự bịa ra phim không tồn tại. Tuy nhiên, pipeline không kiểm tra liệu các ứng viên này có thỏa mãn toàn bộ ràng buộc cứng mà người dùng đặt ra trong hội thoại (danh sách loại trừ, ngưỡng điểm đánh giá) hay không — đây là khoảng trống mà Critic Agent trong ARGOS được thiết kế để lấp đầy.
+Như minh họa trong Hình \ref{fig:grace_framework}, luồng hoạt động của GRACE gồm bốn bước tuần tự: (1) LLM tóm tắt lịch sử hội thoại thành một hồ sơ sở thích (Preference Profile); (2) ba chiến lược truy xuất song song (ngữ nghĩa, nội dung, đồ thị) tạo ra tập ứng viên; (3) các tập được hợp nhất và xếp hạng bằng Weighted Reciprocal Rank Fusion; (4) Generative LLM đánh giá lại và chọn ra kết quả cuối cùng. Kiến trúc này đảm bảo mọi thực thể trong tập ứng viên đều tồn tại trong KG vì chúng được truy xuất trực tiếp, do đó loại trừ khả năng LLM tự bịa ra phim không tồn tại. Tuy nhiên, pipeline không kiểm tra liệu các ứng viên này có thỏa mãn toàn bộ ràng buộc cứng mà người dùng đặt ra trong hội thoại (danh sách loại trừ, ngưỡng điểm đánh giá) hay không; đây là khoảng trống mà Critic Agent trong ARGOS được thiết kế để lấp đầy.
 
 \section{Xây dựng Đồ thị tri thức (Knowledge Graph Construction)}
 
 Hiệu quả của GRACE phụ thuộc trực tiếp vào cấu trúc của Đồ thị tri thức (KG). Đồ thị này thống nhất siêu dữ liệu có cấu trúc và biểu diễn ngữ nghĩa cốt truyện vào cùng một không gian truy vấn.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\linewidth]{Chap3/images/KG_node.pdf}
     \caption{Cấu trúc một node Phim (Film) trong Đồ thị tri thức. Node này liên kết trực tiếp với các thuộc tính (Năm, Điểm số, Thể loại) và các thực thể sáng tạo (Đạo diễn, Diễn viên).}
@@ -56,7 +56,7 @@ s_f = \cos(\mathbf{q}, \mathbf{e}_f) =
 \end{equation}
 trong đó $\lVert \mathbf{x} \rVert_2 = \sqrt{\sum_i x_i^2}$ là chuẩn Euclidean ($\ell_2$). Top-$m$ phim có $s_f$ cao nhất tạo thành tập kết quả $M_{\text{sem}}$. Luồng này đặc biệt hiệu quả khi nhu cầu người dùng mang tính chất thái, chủ đề hoặc cảm xúc khó biểu diễn bằng từ khóa cứng (Hình \ref{fig:semantic_retrieval}).
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\linewidth]{Chap3/images/sem_retrieval.pdf}
     \caption{Quy trình truy xuất ngữ nghĩa dựa trên phép tính tương đồng Cosine giữa vector của câu truy vấn và vector cốt truyện phim.}
@@ -72,7 +72,7 @@ g_f = \big(|\Gamma_f \cap G|,\, r_f,\, y_f \big)\label{eq:enhanced_content_based
 \end{equation}
 trong đó $|\Gamma_f \cap G|$ là số thể loại trùng khớp (ưu tiên tuyệt đối), $r_f$ là điểm IMDb, và $y_f$ là năm phát hành. Cách sắp xếp theo $y_f$ giảm dần mặc định ưu tiên phim mới hơn, một heuristic hợp lý trong phần lớn trường hợp nhưng có thể không phù hợp khi người dùng tìm phim cổ điển. Top-$m$ phim tạo thành tập $M_{\text{con}}$ (Hình \ref{fig:content_retrieval}).
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\linewidth]{Chap3/images/con_retrieval.pdf}
     \caption{Cơ chế lọc theo nội dung dựa trên các thuộc tính cứng (Thể loại, Năm sản xuất, Điểm số).}
@@ -86,7 +86,7 @@ S_{\text{col}}(f) = \sum_{s\in L} c(s,f) \label{eq:connection_count}
 \end{equation}
 trong đó $c(s,f)$ là số thực thể sáng tạo chia sẻ chung giữa phim hạt giống $s$ và phim ứng viên $f$. Các phim được sắp xếp theo tuple $\big(S_{\text{col}}(f), r_f\big)$ và top-$m$ tạo thành tập $M_{\text{col}}$ (Hình \ref{fig:collaborative_retrieval}).
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\linewidth]{Chap3/images/col_retrieval.pdf}
     \caption{Thuật toán mở rộng đồ thị dựa trên việc chia sẻ các node đội ngũ sáng tạo (Diễn viên, Đạo diễn).}
@@ -112,7 +112,7 @@ trong đó $w_i$ là trọng số của từng luồng (thực nghiệm: $w_{\te
 
 Module Re-ranker (Hình \ref{fig:reranker}) nhận vào ba thành phần từ giai đoạn truy xuất: hồ sơ sở thích $\hat{P}$, tập ứng viên $M_{\text{final}}$, và siêu dữ liệu đã làm giàu (cốt truyện, thể loại, diễn viên, điểm số) của từng ứng viên. Cách tiếp cận này neo giữ quyết định của LLM vào thuộc tính thực chứng thay vì chỉ dựa vào ngữ cảnh hội thoại phẳng (flat dialogue context).
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\linewidth]{Chap3/images/reranker.pdf}
     \caption{Kiến trúc Module Xếp hạng lại, sử dụng cơ chế batching để xử lý tập ứng viên lớn thông qua LLM.}
@@ -121,7 +121,7 @@ Module Re-ranker (Hình \ref{fig:reranker}) nhận vào ba thành phần từ gi
 
 Để xử lý giới hạn context window, GRACE giới thiệu kỹ thuật \textit{two-stage batching with shortlist fusion} kết hợp \textit{metadata augmentation}: (i) giai đoạn Batch Re-ranking chia $M_{\text{final}}$ thành các lô nhỏ, mỗi lô được LLM xếp hạng độc lập thành một shortlist; (ii) giai đoạn Final Re-ranking hợp nhất các shortlist và thực hiện một lượt đánh giá tổng hợp cuối để chọn ra top-K. Đây là kỹ thuật chưa được kết hợp đồng thời trong các hệ thống CRS trước đó như LLM-ReDial, UniCRS hay G-CRS.
 
-Mô hình xuất ra một JSON object nghiêm ngặt chỉ chứa các phim từ tập ứng viên. Một validator độc lập kiểm tra tuân thủ schema, loại bỏ mục không hợp lệ, giải quyết trường hợp hòa (tie-breaking), và áp dụng cắt ngắn top-$k$ tất định. Cơ chế retry có giới hạn và sửa lỗi nhẹ đảm bảo hệ thống thoái hóa nhẹ nhàng (graceful degradation) thay vì thất bại hoàn toàn khi LLM trả về định dạng sai. Nhờ validator này, kết quả cuối cùng chỉ chứa các phim thuộc tập ứng viên đã được truy xuất từ KG — đảm bảo không có thực thể do LLM tự bịa ra. Giới hạn còn lại là validator chỉ kiểm tra tính hợp lệ schema của đầu ra, không đối chiếu ngược lại ràng buộc cứng của người dùng; điểm nghẽn này được giải quyết ở Chương 4.
+Mô hình xuất ra một JSON object nghiêm ngặt chỉ chứa các phim từ tập ứng viên. Một validator độc lập kiểm tra tuân thủ schema, loại bỏ mục không hợp lệ, giải quyết trường hợp hòa (tie-breaking), và áp dụng cắt ngắn top-$k$ tất định. Cơ chế retry có giới hạn và sửa lỗi nhẹ đảm bảo hệ thống thoái hóa nhẹ nhàng (graceful degradation) thay vì thất bại hoàn toàn khi LLM trả về định dạng sai. Nhờ validator này, kết quả cuối cùng chỉ chứa các phim thuộc tập ứng viên đã được truy xuất từ KG, đảm bảo không có thực thể do LLM tự bịa ra. Giới hạn còn lại là validator chỉ kiểm tra tính hợp lệ schema của đầu ra, không đối chiếu ngược lại ràng buộc cứng của người dùng; điểm nghẽn này được giải quyết ở Chương 4.
 
 \section{Phân tích điểm nghẽn mang tính cấu trúc}\label{sec:grace_bottleneck}
 

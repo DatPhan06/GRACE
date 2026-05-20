@@ -7,11 +7,11 @@ Chương này xác định bài toán Hệ thống gợi ý hội thoại (CRS) 
 
 Khi khối lượng nội dung số bùng nổ và các nền tảng giải trí, thương mại điện tử ngày càng đa dạng, các hệ thống gợi ý truyền thống (Recommender Systems - RS) đang đối mặt với giới hạn cấu trúc khó vượt qua. Các mô hình lọc cộng tác và dựa trên nội dung vốn chỉ khai thác lịch sử tương tác một chiều (click, view, purchase), không thể nắm bắt sở thích tức thời hay các nhu cầu ngữ cảnh phức tạp phát sinh trong thực tế \cite{li2018towards, christakopoulou2016towardscrs}. Hệ thống gợi ý hội thoại (Conversational Recommender System - CRS) ra đời để lấp đầy khoảng trống này: thông qua giao tiếp bằng ngôn ngữ tự nhiên, CRS cho phép hệ thống chủ động làm rõ nhu cầu của người dùng và cung cấp các gợi ý có tính thuyết phục qua nhiều lượt tương tác.
 
-Sự trưởng thành của các Mô hình ngôn ngữ lớn (Large Language Models - LLMs) mở ra cơ hội lớn cho CRS nhờ năng lực hiểu và sinh ngôn ngữ tự nhiên vượt trội. Tuy nhiên, ứng dụng trực tiếp LLM vào CRS bộc lộ hai rào cản cốt lõi. Về \textit{tính tin cậy}, LLM sinh văn bản theo phân phối xác suất chứ không truy xuất dữ liệu thực tế, khiến chúng dễ phát sinh hiện tượng "ảo giác" (hallucination), tự bịa ra các thực thể không tồn tại như tên phim, đạo diễn hay năm phát hành. Về \textit{hiệu quả vận hành}, việc tinh chỉnh LLM cho mỗi thay đổi dữ liệu tốn kém tài nguyên; ngược lại, nếu đưa toàn bộ tri thức vào context window thì chi phí API và độ trễ tăng vọt, ảnh hưởng trực tiếp đến khả năng phản hồi thời gian thực.
+Sự trưởng thành của các Mô hình ngôn ngữ lớn (Large Language Models - LLMs) mở ra cơ hội lớn cho CRS nhờ năng lực hiểu và sinh ngôn ngữ tự nhiên vượt trội. Tuy nhiên, ứng dụng trực tiếp LLM vào CRS bộc lộ hai rào cản cốt lõi. Về tính tin cậy, LLM sinh văn bản theo phân phối xác suất chứ không truy xuất dữ liệu thực tế, khiến chúng dễ phát sinh hiện tượng "ảo giác" (hallucination), tự bịa ra các thực thể không tồn tại như tên phim, đạo diễn hay năm phát hành. Về hiệu quả vận hành, việc tinh chỉnh LLM cho mỗi thay đổi dữ liệu tốn kém tài nguyên; ngược lại, nếu đưa toàn bộ tri thức vào context window thì chi phí API và độ trễ tăng vọt, ảnh hưởng trực tiếp đến khả năng phản hồi thời gian thực.
 
 Để giải quyết bài toán ảo giác mà không cần huấn luyện lại mô hình, các kiến trúc kết hợp RAG (Retrieval-Augmented Generation) với Đồ thị tri thức (Knowledge Graph - KG) đã được đề xuất. Tiêu biểu trong số này là kiến trúc GRACE (Graph-Reasoning Augmented Conversational Engine) \cite{phan2025grace}, nghiên cứu tiền đề của chính tác giả đã được công bố tại SOICT 2025, vận hành bằng cách đối soát (grounding) kết quả sinh bởi LLM với dữ liệu thực trong KG thông qua cơ chế Truy xuất lai. Mặc dù giải quyết hiệu quả vấn đề ảo giác, GRACE và các hệ thống RAG tương tự vẫn hoạt động theo kiến trúc đường ống tĩnh (Static Pipeline), bộc lộ hạn chế rõ rệt khi đối mặt với các truy vấn yêu cầu suy luận đa bước hoặc chứa các ràng buộc mâu thuẫn, tình huống phổ biến trong hội thoại thực tế.
 
-Điểm mấu chốt bị thiếu trong các hệ thống RAG tĩnh là \textit{cơ chế phản hồi nội bộ}: khi một bước xử lý thất bại (truy xuất rỗng, thực thể sai), toàn bộ pipeline bị tắc mà không có khả năng tự điều chỉnh. Đây là động lực để khóa luận đề xuất hệ thống \textbf{ARGOS} (Adaptive Reasoning and Graph Orchestration System), một khung làm việc đa tác tử có khả năng tự phát hiện điểm nghẽn, điều chỉnh chiến lược truy xuất và duy trì mạch hội thoại ngay cả trong các tình huống phức tạp.
+Điểm mấu chốt bị thiếu trong các hệ thống RAG tĩnh là cơ chế phản hồi nội bộ: khi một bước xử lý thất bại (truy xuất rỗng, thực thể sai), toàn bộ pipeline bị tắc mà không có khả năng tự điều chỉnh. Đây là động lực để khóa luận đề xuất hệ thống \textbf{ARGOS} (Adaptive Reasoning and Graph Orchestration System), một khung làm việc đa tác tử có khả năng tự phát hiện điểm nghẽn, điều chỉnh chiến lược truy xuất và duy trì mạch hội thoại ngay cả trong các tình huống phức tạp.
 
 \section{Tổng quan các nghiên cứu liên quan}
 
@@ -90,7 +90,7 @@ Bảng \ref{tab:related_work_summary} hệ thống hóa các hướng tiếp c�
         \cmidrule{2-5}
                            & G-CRS \cite{qiu2025graphragllm}                                                                        & Graph RAG kết hợp với LLM nền tảng.                               & ReDial, INSPIRED          & Không                   \\
         \cmidrule{2-5}
-                           & \textbf{GRACE (Baseline)}                                                                              & \textbf{Truy xuất lai (Sem+Content+Graph) kết hợp SLM Re-ranker.} & \textbf{ReDial, INSPIRED} & \textbf{Không}          \\
+                           & \textbf{GRACE (Baseline)}                                                                              & \textbf{Truy xuất lai (Sem+Content+Graph) kết hợp LLM Re-ranker.} & \textbf{ReDial, INSPIRED} & \textbf{Không}          \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -101,16 +101,16 @@ Phân tích kỹ hơn, hai khoảng trống nghiên cứu cụ thể được x�
 
 \textbf{(1) Thiếu cơ chế tự kiểm định (Self-Correction):} Không có hệ thống CRS hiện tại nào có khả năng phát hiện và sửa lỗi nội bộ trong quá trình xử lý. Ví dụ cụ thể: nếu LLM trích xuất sai tên thực thể và gợi ý không tồn tại trong KG, hệ thống không thể nhận biết và loại bỏ ứng viên đó trước khi trả về người dùng.
 
-\textbf{(2) Thiếu khả năng thỏa hiệp ràng buộc (Constraint Relaxation):} Khi người dùng đặt ra các điều kiện mâu thuẫn hoặc quá hạn hẹp, các hệ thống tĩnh không thể tự quyết định nên nới lỏng ràng buộc nào để đưa ra gợi ý xấp xỉ; thay vào đó chúng trả về kết quả rỗng, một trải nghiệm người dùng rất kém.
+\textbf{(2) Thiếu khả năng thỏa hiệp ràng buộc (Constraint Relaxation):} Khi người dùng đặt ra các điều kiện mâu thuẫn hoặc quá hạn hẹp, chúng không thể tự quyết định nên nới lỏng ràng buộc nào để đưa ra gợi ý xấp xỉ; thay vào đó chúng trả về kết quả rỗng, một trải nghiệm người dùng rất kém.
 
-Trong khi đó, nghiên cứu về kiến trúc đa tác tử dựa trên LLM \cite{xi2023rise} đã chứng minh rằng việc phân tách hệ thống thành các tác tử chuyên biệt với vòng lặp phản hồi (feedback loop) có thể xử lý hiệu quả các bài toán đòi hỏi suy luận đa bước và tự sửa lỗi. Tuy nhiên, hướng tiếp cận này \textit{chưa được áp dụng vào bài toán CRS kết hợp Đồ thị tri thức}, đây chính là khoảng trống mà khóa luận đề xuất lấp đầy thông qua hệ thống \textbf{ARGOS}.
+Trong khi đó, nghiên cứu về kiến trúc đa tác tử dựa trên LLM \cite{xi2023rise} đã chứng minh rằng việc phân tách hệ thống thành các tác tử chuyên biệt với vòng lặp phản hồi (feedback loop) có thể xử lý hiệu quả các bài toán đòi hỏi suy luận đa bước và tự sửa lỗi. Tuy nhiên, hướng tiếp cận này chưa được áp dụng vào bài toán CRS kết hợp Đồ thị tri thức, đây chính là khoảng trống mà khóa luận đề xuất lấp đầy thông qua hệ thống \textbf{ARGOS}.
 
 \section{Mục tiêu nghiên cứu}
 
 Khóa luận đặt ra bốn mục tiêu nghiên cứu:
 \begin{itemize}
-    \item \textbf{Mục tiêu 1:} Phân tích và định lượng các điểm nghẽn của kiến trúc RAG tĩnh trong hệ thống CRS, cụ thể qua mô hình GRACE, để tạo cơ sở thực nghiệm cho việc đề xuất cơ chế mới.
-    \item \textbf{Mục tiêu 2:} Thiết kế kiến trúc đa tác tử ARGOS với cơ chế phân phối nhiệm vụ và vòng lặp phản hồi nội bộ, giải quyết hạn chế của pipeline tĩnh mà không yêu cầu huấn luyện lại mô hình.
+    \item \textbf{Mục tiêu 1:} Phân tích và định lượng các điểm nghẽn của kiến trúc GRACE trong bài toán CRS để tạo cơ sở thực nghiệm cho việc đề xuất cơ chế mới.
+    \item \textbf{Mục tiêu 2:} Thiết kế kiến trúc đa tác tử ARGOS với cơ chế phân phối nhiệm vụ và vòng lặp phản hồi nội bộ, giải quyết các hạn chế đó mà không yêu cầu huấn luyện lại mô hình.
     \item \textbf{Mục tiêu 3:} Phát triển và tích hợp cơ chế Critic-Relaxation (bao gồm Critic Agent kiểm định tính xác thực và Relaxation Agent nới lỏng ràng buộc) vào vòng lặp suy luận của ARGOS.
     \item \textbf{Mục tiêu 4:} Đánh giá toàn diện ARGOS trên hai bộ dữ liệu chuẩn ReDial và INSPIRED, so sánh với các mô hình tiên tiến nhất hiện nay, và phân tích định lượng đóng góp của từng thành phần.
 \end{itemize}
@@ -120,7 +120,7 @@ Khóa luận đặt ra bốn mục tiêu nghiên cứu:
 Khóa luận mang lại ba đóng góp kỹ thuật mới cho lĩnh vực CRS:
 \begin{enumerate}
     \item \textbf{Kiến trúc đa tác tử ARGOS:} Lần đầu tiên áp dụng mô hình Multi-Agent với vòng lặp suy luận-hành động vào hệ thống CRS kết hợp Đồ thị tri thức. ARGOS phân tách pipeline thành năm tác tử chuyên biệt (Profiler Agent, Orchestrator, Graph Agent, Critic Agent, Relaxation Agent) và sử dụng Dynamic Weighting để điều phối chiến lược truy xuất theo hình thái ngôn ngữ của truy vấn, cơ chế chưa xuất hiện trong các hệ thống CRS prior work.
-    \item \textbf{Cơ chế Critic-Relaxation:} Phương pháp tự kiểm định và thỏa hiệp ràng buộc tự động trong CRS. Critic Agent đối chiếu trực tiếp ứng viên với KG Neo4j để loại bỏ hallucination; Relaxation Agent áp dụng thuật toán phân cấp ưu tiên (Sacrifice Hierarchy) để tái cấu trúc truy vấn khi gặp tập kết quả rỗng. Đây là đóng góp kỹ thuật độc lập, có thể tách rời và ứng dụng cho các hệ thống RAG khác ngoài CRS.
+    \item \textbf{Cơ chế Critic-Relaxation:} Phương pháp tự kiểm định và thỏa hiệp ràng buộc tự động trong CRS. Critic Agent đối chiếu trực tiếp ứng viên với Đồ thị tri thức để loại bỏ hallucination; Relaxation Agent áp dụng thuật toán phân cấp ưu tiên (Sacrifice Hierarchy) để tái cấu trúc truy vấn khi gặp tập kết quả rỗng. Đây là đóng góp kỹ thuật độc lập, có thể tách rời và ứng dụng cho các hệ thống RAG khác ngoài CRS.
     \item \textbf{Kết quả thực nghiệm và mã nguồn mở:} ARGOS cải thiện đáng kể so với kiến trúc tiền đề GRACE và đạt kết quả cạnh tranh với các hệ thống tiên tiến trên ReDial và INSPIRED về chỉ số Recall@K. Toàn bộ mã nguồn và dữ liệu thực nghiệm được công bố công khai tại \url{https://github.com/DatPhan06/GRACE}, tạo nền tảng cho các nghiên cứu tiếp theo trong lĩnh vực.
 \end{enumerate}
 
