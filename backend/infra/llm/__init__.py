@@ -1,9 +1,6 @@
 from typing import Optional
 from shared.settings.config import settings
 from infra.llm.base import BaseLLM
-from infra.llm.openai import OpenAILLM
-from infra.llm.gemini import GeminiLLM
-from infra.llm.azure_openai import AzureOpenAILLM
 
 
 class LLMService:
@@ -14,10 +11,13 @@ class LLMService:
         if cls._instance is None:
             provider = settings.llm.LLM_PROVIDER.lower()
             if provider == "openai":
+                from infra.llm.openai import OpenAILLM
                 cls._instance = OpenAILLM()
             elif provider == "gemini":
+                from infra.llm.gemini import GeminiLLM
                 cls._instance = GeminiLLM()
             elif provider == "azure":
+                from infra.llm.azure_openai import AzureOpenAILLM
                 cls._instance = AzureOpenAILLM()
             else:
                 raise ValueError(f"Unsupported LLM provider: {provider}")
