@@ -1,211 +1,144 @@
-from domain.retrieval.service import RetrievalService
-from domain.generation.service import GenerationService
-from domain.reranking.service import RerankingService
 from typing import Dict, Any, AsyncGenerator
 import json
 
+from app.chat.graph import graph
+from app.chat.state import ARGOSState
+
+# Maps graph node names → NDJSON display names + messages
+_NODE_CFG: Dict[str, Dict[str, str]] = {
+    "profiler": {
+        "display": "profiler",
+        "start_msg": "Profiler Agent: Analyzing your movie preferences...",
+        "end_msg":   "Profiler Agent: Done.",
+    },
+    "retrieval": {
+        "display": "retrieval",
+        "start_msg": "Orchestrator: Launching Semantic, Content & Graph Agents...",
+        "end_msg":   "Orchestrator: Done.",
+    },
+    "critic": {
+        "display": "reranking",
+        "start_msg": "Critic Agent: Filtering & validating candidates...",
+        "end_msg":   "Critic Agent: Done.",
+    },
+    "relaxation": {
+        "display": "reranking",
+        "start_msg": "Orchestrator: Constraints too tight. Triggering relaxation loop...",
+        "end_msg":   "Relaxation Agent: Done.",
+    },
+    "reranker": {
+        "display": "reranking",
+        "start_msg": "Ranker: Finalizing top-K recommendations...",
+        "end_msg":   "Ranker: Done.",
+    },
+    "generator": {
+        "display": "generation",
+        "start_msg": "GRACE: Composing your personalized response...",
+        "end_msg":   "GRACE: Done!",
+    },
+}
+
+_GRAPH_NODES = set(_NODE_CFG.keys())
+
+
+def _make_initial_state(conversation_history: str) -> ARGOSState:
+    return {
+        "conversation_history": conversation_history,
+        "preferences": None,
+        "candidates": [],
+        "critic_reasoning": "",
+        "requires_relaxation": False,
+        "final_movies": [],
+        "response": "",
+        "attempt": 0,
+        "agent_trace": [],
+    }
+
 
 class ChatService:
-    def __init__(self):
-        self.retrieval_service = RetrievalService()
-        self.generation_service = GenerationService()
-        self.reranking_service = RerankingService()
-
     def _event(self, event_type: str, payload: Dict[str, Any]) -> str:
-        """Serialize a single NDJSON event line."""
         return json.dumps({"event": event_type, **payload}) + "\n"
 
     async def chat_stream(self, conversation_history: str) -> AsyncGenerator[str, None]:
-        """
-        Stream agent status events followed by the final result.
-        Each line is a JSON object with an 'event' key.
+        initial = _make_initial_state(conversation_history)
 
-        Events:
-          - {"event": "node", "node": "profiler", "status": "running", "message": "..."}
-          - {"event": "node", "node": "retrieval", "status": "running", ...}
-          - {"event": "node", "node": "reranking", "status": "running", ...}
-          - {"event": "node", "node": "generation", "status": "running", ...}
-          - {"event": "result", "response": "...", "recommendations": [...], "agent_trace": [...]}
-        """
-        agent_trace = []
+        # Accumulated state across all node outputs
+        acc: Dict[str, Any] = {"agent_trace": [], "attempt": 0}
 
-        # ── 1. Profiler Agent ──────────────────────────────────────────────
-        yield self._event("node", {
-            "node": "profiler",
-            "status": "running",
-            "message": "Profiler Agent: Analyzing your movie preferences..."
-        })
+        try:
+            async for event in graph.astream_events(initial, version="v2"):
+                kind = event["event"]
+                name = event.get("name", "")
+                meta = event.get("metadata", {})
 
-        preferences_data = await self.generation_service.summarize_conversation(conversation_history)
-        
-        yield self._event("node", {
-            "node": "profiler",
-            "status": "done",
-            "message": f"Profiler Agent: Done — extracted {len(preferences_data.liked_movies)} liked movies."
-        })
+                # Only handle top-level graph node events
+                if meta.get("langgraph_node") != name or name not in _GRAPH_NODES:
+                    continue
 
-        max_attempts = 2
-        attempt = 0
-        candidates = []
-        final_movies = []
-        
-        while attempt < max_attempts:
-            attempt += 1
-            user_preferences = preferences_data.user_preferences
-            liked_movies = preferences_data.liked_movies
-            hard_constraints = preferences_data.hard_constraints
-            semantic_queries = preferences_data.semantic_queries
-            dynamic_weights = preferences_data.dynamic_weights.model_dump()
-            
-            if preferences_data.profiler_reasoning:
-                agent_trace.append(f"Profiler (Attempt {attempt}): {preferences_data.profiler_reasoning}")
+                cfg = _NODE_CFG[name]
 
-            # ── 2. Retrieval / Orchestrator ────────────────────────────────────
-            yield self._event("node", {
-                "node": "retrieval",
-                "status": "running",
-                "message": f"Orchestrator (Attempt {attempt}): Launching Semantic, Content & Graph Agents..."
-            })
+                if kind == "on_chain_start":
+                    yield self._event("node", {
+                        "node": cfg["display"],
+                        "status": "running",
+                        "message": cfg["start_msg"],
+                    })
 
-            retrieval_results = await self.retrieval_service.retrieve_movies(
-                user_preferences,
-                liked_movies,
-                n=20,
-                dynamic_weights=dynamic_weights,
-                semantic_queries=semantic_queries,
-                hard_constraints=hard_constraints,
-                genres=preferences_data.genres
-            )
-            candidates = retrieval_results.get("combined", [])
-            retrieval_trace = retrieval_results.get("agent_trace", [])
-            agent_trace.extend(retrieval_trace)
+                elif kind == "on_chain_end":
+                    output = event.get("data", {}).get("output") or {}
 
-            yield self._event("node", {
-                "node": "retrieval",
-                "status": "done",
-                "message": f"Orchestrator: Done — fused {len(candidates)} candidates via WRRF."
-            })
+                    # Accumulate agent_trace separately (LangGraph reducer appends)
+                    acc["agent_trace"].extend(output.pop("agent_trace", []))
+                    acc.update(output)
 
-            # ── 3. Critic + Reranking ──────────────────────────────────────────
-            yield self._event("node", {
-                "node": "reranking",
-                "status": "running",
-                "message": f"Critic Agent (Attempt {attempt}): Filtering & validating candidates..."
-            })
+                    # Build dynamic end message
+                    msg = cfg["end_msg"]
+                    if name == "profiler" and acc.get("preferences"):
+                        n = len(acc["preferences"].liked_movies)
+                        msg = f"Profiler Agent: Done — extracted {n} liked movies."
+                    elif name == "retrieval":
+                        n = len(acc.get("candidates", []))
+                        msg = f"Orchestrator: Done — fused {n} candidates via WRRF."
+                    elif name == "reranker":
+                        n = len(acc.get("final_movies", []))
+                        msg = f"Ranker: Done — selected top-{n} recommendations."
 
-            reranking_results = await self.reranking_service.rerank_movies(
-                user_preferences, candidates, top_k=5, hard_constraints=hard_constraints
-            )
-            final_movies = reranking_results.get("movies", [])
-            reranking_trace = reranking_results.get("agent_trace", [])
-            requires_relaxation = reranking_results.get("requires_relaxation", False)
-            critic_reasoning = reranking_results.get("reasoning", "")
+                    yield self._event("node", {
+                        "node": cfg["display"],
+                        "status": "done",
+                        "message": msg,
+                    })
 
-            agent_trace.extend(reranking_trace)
+        except Exception as exc:
+            yield self._event("error", {"detail": str(exc)})
+            return
 
-            if requires_relaxation and attempt < max_attempts:
-                yield self._event("node", {
-                    "node": "reranking",
-                    "status": "running",
-                    "message": "Orchestrator: Constraints too tight. Triggering relaxation loop..."
-                })
-                preferences_data = await self.generation_service.relax_constraints(preferences_data, critic_reasoning)
-                continue # Retry with relaxed preferences
-            else:
-                yield self._event("node", {
-                    "node": "reranking",
-                    "status": "done",
-                    "message": f"Ranker: Done — selected top {len(final_movies)} recommendations."
-                })
-                break # Success or max attempts reached
-
-        # ── 4. Generation ──────────────────────────────────────────────────
-        yield self._event("node", {
-            "node": "generation",
-            "status": "running",
-            "message": "GRACE: Composing your personalized response..."
-        })
-
-        response_text = await self.generation_service.generate_response(preferences_data.user_preferences, final_movies)
-
-        yield self._event("node", {
-            "node": "generation",
-            "status": "done",
-            "message": "GRACE: Done!"
-        })
-
-        # ── Final result event ─────────────────────────────────────────────
+        prefs = acc.get("preferences")
         yield self._event("result", {
-            "response": response_text,
-            "recommendations": final_movies,
-            "agent_trace": agent_trace,
+            "response": acc.get("response", ""),
+            "recommendations": acc.get("final_movies", []),
+            "agent_trace": acc["agent_trace"],
             "debug_info": {
-                "preferences": preferences_data.user_preferences,
-                "liked_movies": preferences_data.liked_movies,
-                "candidate_count": len(candidates),
-                "attempts": attempt
-            }
+                "preferences": prefs.user_preferences if prefs else "",
+                "liked_movies": prefs.liked_movies if prefs else [],
+                "candidate_count": len(acc.get("candidates", [])),
+                "attempts": acc.get("attempt", 0),
+            },
         })
 
     async def chat(self, conversation_history: str) -> Dict[str, Any]:
         """Non-streaming version (kept for backward compatibility with evaluation service)."""
-        agent_trace = []
+        final = await graph.ainvoke(_make_initial_state(conversation_history))
 
-        preferences_data = await self.generation_service.summarize_conversation(conversation_history)
-        
-        max_attempts = 2
-        attempt = 0
-        candidates = []
-        final_movies = []
-        
-        while attempt < max_attempts:
-            attempt += 1
-            user_preferences = preferences_data.user_preferences
-            liked_movies = preferences_data.liked_movies
-            hard_constraints = preferences_data.hard_constraints
-            semantic_queries = preferences_data.semantic_queries
-            dynamic_weights = preferences_data.dynamic_weights.model_dump()
-
-            retrieval_results = await self.retrieval_service.retrieve_movies(
-                user_preferences,
-                liked_movies,
-                n=20,
-                dynamic_weights=dynamic_weights,
-                semantic_queries=semantic_queries,
-                hard_constraints=hard_constraints,
-                genres=preferences_data.genres
-            )
-            candidates = retrieval_results.get("combined", [])
-            retrieval_trace = retrieval_results.get("agent_trace", [])
-            agent_trace.extend(retrieval_trace)
-
-            reranking_results = await self.reranking_service.rerank_movies(
-                user_preferences, candidates, top_k=5, hard_constraints=hard_constraints
-            )
-            final_movies = reranking_results.get("movies", [])
-            reranking_trace = reranking_results.get("agent_trace", [])
-            requires_relaxation = reranking_results.get("requires_relaxation", False)
-            critic_reasoning = reranking_results.get("reasoning", "")
-
-            agent_trace.extend(reranking_trace)
-
-            if requires_relaxation and attempt < max_attempts:
-                preferences_data = await self.generation_service.relax_constraints(preferences_data, critic_reasoning)
-                continue
-            else:
-                break
-
-        response_text = await self.generation_service.generate_response(preferences_data.user_preferences, final_movies)
-
+        prefs = final.get("preferences")
         return {
-            "response": response_text,
-            "recommendations": final_movies,
-            "agent_trace": agent_trace,
+            "response": final.get("response", ""),
+            "recommendations": final.get("final_movies", []),
+            "agent_trace": final.get("agent_trace", []),
             "debug_info": {
-                "preferences": preferences_data.user_preferences,
-                "liked_movies": preferences_data.liked_movies,
-                "candidate_count": len(candidates),
-                "agent_trace": agent_trace,
-                "attempts": attempt
-            }
+                "preferences": prefs.user_preferences if prefs else "",
+                "liked_movies": prefs.liked_movies if prefs else [],
+                "candidate_count": len(final.get("candidates", [])),
+                "attempts": final.get("attempt", 0),
+            },
         }

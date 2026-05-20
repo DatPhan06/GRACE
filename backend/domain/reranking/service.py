@@ -67,3 +67,34 @@ class RerankingService:
             "requires_relaxation": critic_result.get("requires_relaxation", False),
             "reasoning": critic_reasoning
         }
+
+    async def run_critic(
+        self,
+        user_preferences: str,
+        candidates: List[Dict[str, Any]],
+        hard_constraints: List[str] = None,
+    ) -> Dict[str, Any]:
+        from domain.reranking.components.critic_agent import CriticAgent
+        critic = CriticAgent()
+        result = await critic.filter_candidates(
+            user_preferences, candidates, hard_constraints=hard_constraints or []
+        )
+        if not result.get("movies"):
+            logger.warning("[Critic] Filtered ALL candidates — reverting to original set.")
+            result["movies"] = candidates
+        return result
+
+    async def run_reranker(
+        self,
+        user_preferences: str,
+        candidates: List[Dict[str, Any]],
+        top_k: int = 5,
+        model: RerankerType = "cohere",
+    ) -> List[Dict[str, Any]]:
+        reranker = self._factory.create(model)
+        if hasattr(reranker, "is_available") and not reranker.is_available:
+            logger.warning(f"Reranker '{model}' unavailable — falling back to 'llm'.")
+            reranker = self._factory.create("llm")
+        return await reranker.rerank(
+            query=user_preferences, candidates=candidates, top_k=top_k
+        )
