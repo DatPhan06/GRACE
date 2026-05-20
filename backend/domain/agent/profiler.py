@@ -42,8 +42,8 @@ class ProfilerAgent:
                 logger.info(f"[Profiler PARSED] weights={result.dynamic_weights.model_dump()}")
                 return result
             else:
-                logger.error(f"Could not find JSON in response: {cleaned}")
+                logger.warning(f"Could not find JSON in response, falling back to defaults: {cleaned[:200]}")
                 return UserPreference(user_preferences=response, liked_movies=[], dynamic_weights=RetrievalWeights())
         except Exception as e:
-            logger.error(f"Profiler Agent error: {e}")
+            logger.warning(f"Profiler Agent parse error, falling back to defaults: {e}")
             return UserPreference(user_preferences="", liked_movies=[], dynamic_weights=RetrievalWeights())
