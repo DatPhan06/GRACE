@@ -4,10 +4,12 @@ from app.chat.state import ARGOSState
 from domain.generation.service import GenerationService
 from domain.retrieval.service import RetrievalService
 from domain.reranking.service import RerankingService
+from domain.agent.critic import CriticAgent
 
 _generation = GenerationService()
 _retrieval = RetrievalService()
 _reranking = RerankingService()
+_critic = CriticAgent()
 
 
 async def profiler_node(state: ARGOSState) -> dict:
@@ -38,7 +40,7 @@ async def retrieval_node(state: ARGOSState) -> dict:
 
 async def critic_node(state: ARGOSState) -> dict:
     prefs = state["preferences"]
-    result = await _reranking.run_critic(
+    result = await _critic.filter_candidates(
         user_preferences=prefs.user_preferences,
         candidates=state["candidates"],
         hard_constraints=prefs.hard_constraints,
@@ -72,7 +74,7 @@ async def relaxation_node(state: ARGOSState) -> dict:
 
 async def reranker_node(state: ARGOSState) -> dict:
     prefs = state["preferences"]
-    movies = await _reranking.run_reranker(
+    movies = await _reranking.rerank(
         user_preferences=prefs.user_preferences,
         candidates=state["candidates"],
         top_k=5,
@@ -84,7 +86,6 @@ async def reranker_node(state: ARGOSState) -> dict:
 
 
 async def generator_node(state: ARGOSState) -> dict:
-    # If relaxation was triggered, surface the trade-off in the response
     relaxation_note = state["critic_reasoning"] if state.get("attempt", 1) > 1 else ""
     response = await _generation.generate_response(
         state["preferences"].user_preferences,
