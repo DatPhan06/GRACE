@@ -3,10 +3,17 @@ from typing import Optional
 
 
 class LLMSettings(BaseSettings):
-    LLM_PROVIDER: str = "gemini"  # or "openai"
+    LLM_PROVIDER: str = "gemini"  # "openai" | "gemini" | "azure"
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
     EMBEDDING_MODEL: str = "text-embedding-3-large"
+
+    # Azure OpenAI
+    AZURE_OPENAI_API_KEY: Optional[str] = None
+    AZURE_OPENAI_ENDPOINT: Optional[str] = None
+    AZURE_OPENAI_API_VERSION: str = "2025-03-01-preview"
+    AZURE_LLM_MODEL: str = "gpt-4.1-mini"
+    AZURE_EMBEDDING_MODEL: str = "text-embedding-3-small"
 
     # AWS Bedrock for Cohere
     AWS_LLM_REGION: str = "us-west-2"

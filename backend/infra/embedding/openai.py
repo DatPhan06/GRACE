@@ -1,4 +1,4 @@
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AsyncAzureOpenAI
 from shared.settings.config import settings
 from typing import List, Optional
 import logging
@@ -7,17 +7,27 @@ import logging
 class OpenAIEmbeddingService:
     def __init__(self):
         self.client = None
-        self.model = settings.llm.EMBEDDING_MODEL
+        cfg = settings.llm
+        provider = cfg.LLM_PROVIDER.lower()
 
         try:
-            if settings.llm.OPENAI_API_KEY:
-                self.client = AsyncOpenAI(api_key=settings.llm.OPENAI_API_KEY)
-                logging.info(
-                    f"OpenAI Embedding client initialized with model {self.model}")
+            if provider == "azure" and cfg.AZURE_OPENAI_API_KEY and cfg.AZURE_OPENAI_ENDPOINT:
+                self.client = AsyncAzureOpenAI(
+                    api_key=cfg.AZURE_OPENAI_API_KEY,
+                    azure_endpoint=cfg.AZURE_OPENAI_ENDPOINT,
+                    api_version=cfg.AZURE_OPENAI_API_VERSION,
+                )
+                self.model = cfg.AZURE_EMBEDDING_MODEL
+                logging.info(f"Azure OpenAI Embedding client initialized with deployment '{self.model}'")
+            elif cfg.OPENAI_API_KEY:
+                self.client = AsyncOpenAI(api_key=cfg.OPENAI_API_KEY)
+                self.model = cfg.EMBEDDING_MODEL
+                logging.info(f"OpenAI Embedding client initialized with model '{self.model}'")
             else:
-                logging.warning("OpenAI API Key not found for embeddings.")
+                self.model = cfg.EMBEDDING_MODEL
+                logging.warning("No embedding API key found.")
         except Exception as e:
-            logging.error(f"Failed to initialize OpenAI Embedding client: {e}")
+            logging.error(f"Failed to initialize Embedding client: {e}")
 
     async def get_embedding(self, text: str) -> Optional[List[float]]:
         if not self.client or not text:
