@@ -31,7 +31,9 @@ Output ONLY a valid JSON object. DO NOT add markdown or extra text.
 RELAX_CONSTRAINTS_USER_PROMPT = """
 Current Preferences: {user_preferences}
 Hard Constraints: {hard_constraints}
+Current Semantic Queries: {semantic_queries}
 Critic Feedback: {critic_reasoning}
 
 Please provide a relaxed version of the preferences and constraints following the Sacrifice Hierarchy.
+Remember to also update semantic_queries to reflect the widened search space.
 """

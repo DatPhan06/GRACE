@@ -66,6 +66,15 @@ class GenerationService:
                 logger.info(f"[Profiler RAW] Parsed JSON before loading: {json_str[:300]}")
                 data = json.loads(json_str)
                 result = UserPreference(**data)
+                # Normalize weights so they always sum to 1.0 (graceful degradation)
+                w = result.dynamic_weights
+                total = w.w_sem + w.w_con + w.w_col
+                if total > 0 and abs(total - 1.0) > 1e-6:
+                    result.dynamic_weights = RetrievalWeights(
+                        w_sem=round(w.w_sem / total, 6),
+                        w_con=round(w.w_con / total, 6),
+                        w_col=round(w.w_col / total, 6),
+                    )
                 logger.info(f"[Profiler PARSED] weights={result.dynamic_weights.model_dump()}")
                 return result
             else:
@@ -76,17 +85,24 @@ class GenerationService:
             logger.error(f"Error during summarization: {e}")
             return UserPreference(user_preferences="", liked_movies=[], dynamic_weights=RetrievalWeights())
 
-    async def generate_response(self, user_preferences: str, recommendations: list) -> str:
-        """
-        Generate a final response to the user based on recommendations.
-        """
+    async def generate_response(
+        self,
+        user_preferences: str,
+        recommendations: list,
+        relaxation_note: str = "",
+    ) -> str:
         movies_str = ", ".join(
-            [f"{m['title']} ({m.get('year', 'N/A')})" for m in recommendations])
+            [f"{m['title']} ({m.get('year', 'N/A')})" for m in recommendations]
+        )
+        note_block = f"Relaxation Note: {relaxation_note}" if relaxation_note else ""
         prompt = RECOMMENDATION_RESPONSE_USER_PROMPT.format(
-            user_preferences=user_preferences, movies_str=movies_str)
+            user_preferences=user_preferences,
+            movies_str=movies_str,
+            relaxation_note=note_block,
+        )
         return await self.llm_client.agenerate(
             prompt=prompt,
-            system_instruction=RECOMMENDATION_RESPONSE_SYSTEM_PROMPT
+            system_instruction=RECOMMENDATION_RESPONSE_SYSTEM_PROMPT,
         )
 
     async def relax_constraints(self, preferences: UserPreference, critic_reasoning: str) -> UserPreference:
@@ -97,7 +113,8 @@ class GenerationService:
         prompt = RELAX_CONSTRAINTS_USER_PROMPT.format(
             user_preferences=preferences.user_preferences,
             hard_constraints=", ".join(preferences.hard_constraints),
-            critic_reasoning=critic_reasoning
+            semantic_queries="; ".join(preferences.semantic_queries),
+            critic_reasoning=critic_reasoning,
         )
         
         try:

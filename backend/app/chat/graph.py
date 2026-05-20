@@ -84,8 +84,12 @@ async def reranker_node(state: ARGOSState) -> dict:
 
 
 async def generator_node(state: ARGOSState) -> dict:
+    # If relaxation was triggered, surface the trade-off in the response
+    relaxation_note = state["critic_reasoning"] if state.get("attempt", 1) > 1 else ""
     response = await _generation.generate_response(
-        state["preferences"].user_preferences, state["final_movies"]
+        state["preferences"].user_preferences,
+        state["final_movies"],
+        relaxation_note=relaxation_note,
     )
     return {"response": response}
 
