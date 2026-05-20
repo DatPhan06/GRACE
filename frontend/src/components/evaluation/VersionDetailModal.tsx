@@ -11,7 +11,7 @@ interface Props {
 const stepDisplayNames: Record<string, string> = {
     summarization: 'Profiler Agent',
     retrieval: 'Retrieval',
-    reranking: 'Critic + Reranker',
+    reranking: 'Critic → Relax → Reranker',
 };
 
 const stepColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
@@ -22,7 +22,7 @@ const stepColors: Record<string, { bg: string; border: string; text: string; bad
 
 const nextStepInfo: Record<string, { label: string; icon: string; color: string; hoverColor: string }> = {
     summarization: { label: 'Run Retrieval →', icon: '🔍', color: 'bg-purple-600', hoverColor: 'hover:bg-purple-700' },
-    retrieval: { label: 'Run Critic + Reranker →', icon: '🏆', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
+    retrieval: { label: 'Run Critic → Relax → Reranker →', icon: '🏆', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
 };
 
 function SummarizationItem({ item }: { item: BatchDetailItem }) {

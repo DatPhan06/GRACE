@@ -325,7 +325,7 @@ export default function StepEvaluationPage() {
                 <TabButton id="init" label="1. Initialize" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
                 <TabButton id="summ" label="2. Profiler Agent" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
                 <TabButton id="retr" label="3. Retrieval" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
-                <TabButton id="rerank" label="4. Critic + Reranker" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
+                <TabButton id="rerank" label="4. Critic → Relax → Reranker" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
             </div>
 
             {/* Tab Content */}
@@ -426,18 +426,18 @@ export default function StepEvaluationPage() {
                     </div>
                 )}
 
-                {/* 4. Critic + Reranker Tab */}
+                {/* 4. Critic → Relax → Reranker Tab */}
                 {activeTab === 'rerank' && (
                     <div>
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Critic + Reranker Versions</h2>
-                                <p className="text-sm text-gray-500 mt-1">Critic filters candidates, then Reranker selects top-K. Click a version to view recall results.</p>
+                                <h2 className="text-xl font-semibold text-gray-800">Critic → Relax → Reranker Versions</h2>
+                                <p className="text-sm text-gray-500 mt-1">Critic filters candidates; if too few remain, Relaxation Agent widens constraints and re-retrieves before Reranker selects top-K.</p>
                             </div>
                             <NewVersionButton onClick={() => openNewVersionModal('rerank')} color="bg-green-600 hover:bg-green-700" />
                         </div>
                         <div className="space-y-3">
-                            {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No Critic + Reranker versions yet. Click '+ New Version' to create one." />}
+                            {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No Critic → Relax → Reranker versions yet. Click '+ New Version' to create one." />}
                             {rerankBatches.map(b => (
                                 <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
                                     <div className="flex gap-3 text-xs text-gray-600">
@@ -709,10 +709,10 @@ export default function StepEvaluationPage() {
                 </ModalBackdrop>
             )}
 
-            {/* New Critic + Reranker Version Modal */}
+            {/* New Critic → Relax → Reranker Version Modal */}
             {showNewVersionModal === 'rerank' && (
                 <ModalBackdrop
-                    title="🏆 New Critic + Reranker Version"
+                    title="🏆 New Critic → Relax → Reranker Version"
                     onClose={() => setShowNewVersionModal(null)}
                     onSubmit={() => {
                         const runId = getRunIdFromRetrBatch(selectedRetrBatch) || selectedRunId;
@@ -720,7 +720,7 @@ export default function StepEvaluationPage() {
                         setSelectedRunId(runId);
                         handleCreateReranking(runId);
                     }}
-                    submitLabel={loading ? 'Running...' : 'Run Critic + Reranker'}
+                    submitLabel={loading ? 'Running...' : 'Run Critic → Relax → Reranker'}
                     submitColor="bg-green-600 hover:bg-green-700"
                     submitDisabled={loading || !selectedRetrBatch}
                 >

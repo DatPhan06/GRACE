@@ -120,7 +120,7 @@ async def run_retrieval_step(request: RetrievalStepRequest, background_tasks: Ba
 
 @router.post("/step/rerank")
 async def run_reranking_step(request: RerankingStepRequest, background_tasks: BackgroundTasks):
-    """Run Critic Agent + Reranker step — filter candidates then select top-K."""
+    """Run Critic → Relaxation → Reranker step — filter, relax if needed, then rank top-K."""
     service = EvaluationService()
     try:
         return await service.run_reranking_step(
@@ -178,8 +178,9 @@ async def get_evaluation_info():
             "1. Profiler Agent — extract user preferences and retrieval weights",
             "2. Retrieval — semantic, content, and graph streams fused via WRRF",
             "3. Critic Agent — cross-stream verification and constraint filtering",
-            "4. Reranker — select top-K from filtered candidates",
-            "5. Evaluate — compute Recall@K against ground truth"
+            "4. Relaxation Agent — if <3 candidates remain, widen constraints and re-retrieve",
+            "5. Reranker — select top-K from filtered candidates",
+            "6. Evaluate — compute Recall@K against ground truth"
         ],
         "metrics": ["recall@k"]
     }

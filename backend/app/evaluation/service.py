@@ -12,6 +12,8 @@ from domain.generation.service import GenerationService
 from domain.retrieval.service import RetrievalService
 from domain.reranking.service import RerankingService
 from domain.agent.critic import CriticAgent
+from domain.agent.relaxation import RelaxationAgent
+from domain.agent.models import UserPreference, RetrievalWeights
 from domain.evaluation import EvaluationDomainService
 from domain.evaluation_storage.service import EvaluationStorageService
 from shared.settings.config import settings
@@ -36,6 +38,7 @@ class EvaluationService:
         self.retrieval_service = RetrievalService()
         self.reranking_service = RerankingService()
         self.critic_agent = CriticAgent()
+        self.relaxation_agent = RelaxationAgent()
         self.evaluation_domain_service = EvaluationDomainService()
         self.evaluation_storage_service = EvaluationStorageService()
 
@@ -558,8 +561,9 @@ class EvaluationService:
 
     async def run_reranking_step(self, run_id: int, top_k: int = 10, model: Literal["llm", "cohere"] = "llm", retrieval_batch_id: Optional[int] = None, name: Optional[str] = None, background_tasks: Optional[BackgroundTasks] = None) -> Dict[str, Any]:
         """
-        Run Critic Agent + Reranker step.
-        Critic filters retrieved candidates, then Reranker selects top-K.
+        Run Critic → Relaxation → Reranker step.
+        Critic filters candidates; if too few remain, Relaxation Agent widens constraints
+        and re-retrieves before the final Reranker pass.
         Requires retrieval to be completed.
         """
         db = next(get_db())
@@ -642,7 +646,28 @@ class EvaluationService:
                     )
                     filtered = critic_result.get("movies", candidates) or candidates
 
-                    # 3b. Reranker — select top-K
+                    # 3b. Relaxation Agent — if Critic requires it, relax constraints and re-retrieve
+                    if critic_result.get("requires_relaxation", False):
+                        prefs_obj = UserPreference(
+                            user_preferences=user_preferences,
+                            dynamic_weights=RetrievalWeights(**(step_summ.dynamic_weights or {})),
+                        )
+                        relaxed = await self.relaxation_agent.run(prefs_obj, critic_result.get("reasoning", ""))
+                        re_retrieval = await self.retrieval_service.retrieve_movies(
+                            user_preferences=relaxed.user_preferences,
+                            liked_movies=log.liked_movies or [],
+                            n=len(candidates),
+                            dynamic_weights=relaxed.dynamic_weights.model_dump(),
+                        )
+                        new_candidates = re_retrieval.get("combined", []) or candidates
+                        re_critic = await self.critic_agent.filter_candidates(
+                            user_preferences=relaxed.user_preferences,
+                            candidates=new_candidates,
+                        )
+                        filtered = re_critic.get("movies", new_candidates) or new_candidates
+                        user_preferences = relaxed.user_preferences
+
+                    # 3c. Reranker — select top-K from filtered candidates
                     reranking_results = await self.reranking_service.rerank_movies(
                         user_preferences=user_preferences,
                         candidates=filtered,
@@ -856,7 +881,25 @@ class EvaluationService:
             )
             filtered = critic_result.get("movies", candidates) or candidates
 
-            # 3b. Reranker — select top-K from filtered candidates
+            # 3b. Relaxation Agent — if Critic requires it, relax and re-retrieve
+            if critic_result.get("requires_relaxation", False):
+                prefs_obj = UserPreference(user_preferences=user_preferences)
+                relaxed = await self.relaxation_agent.run(prefs_obj, critic_result.get("reasoning", ""))
+                re_retrieval = await self.retrieval_service.retrieve_movies(
+                    user_preferences=relaxed.user_preferences,
+                    liked_movies=liked_movies,
+                    n=n_sample,
+                    dynamic_weights=relaxed.dynamic_weights.model_dump(),
+                )
+                new_candidates = re_retrieval.get("combined", []) or candidates
+                re_critic = await self.critic_agent.filter_candidates(
+                    user_preferences=relaxed.user_preferences,
+                    candidates=new_candidates,
+                )
+                filtered = re_critic.get("movies", new_candidates) or new_candidates
+                user_preferences = relaxed.user_preferences
+
+            # 3c. Reranker — select top-K from filtered candidates
             reranking_results = await self.reranking_service.rerank_movies(
                 user_preferences=user_preferences,
                 candidates=filtered,
