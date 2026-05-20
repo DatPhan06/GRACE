@@ -9,3 +9,23 @@ eternal-synapse-463213-t4-37873c17c2a6.json
 log
 test*
 *.egg-info
+
+# IDE
+.vscode/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.synctex.gz
+*.synctex(busy)
+indent.log
+
+# LaTeX output / archives
+latex/GRACE.pdf
+latex/*.zip
