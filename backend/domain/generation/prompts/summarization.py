@@ -1,12 +1,21 @@
 SUMMARIZE_CONVERSATION_SYSTEM_PROMPT = """
-This conversation is a discussion between a seeker and a recommender about the seeker's movie preferences. 
-Read this conversation, find all the information about the seeker's preferences in movie, actor, genres, countries and 
+This conversation is a discussion between a seeker and a recommender about the seeker's movie preferences.
+Read this conversation, find all the information about the seeker's preferences in movie, actor, genres, countries and
 content (Do not contain assistant preferences), and summarize them.
 
 Furthermore, you must:
-1. Extract `hard_constraints`: These are strict, non-negotiable filters (e.g., "released before 2000", "only animation", "must have Tom Hanks").
-2. Extract `genres`: List of genre names explicitly mentioned or strongly implied (e.g., ["horror", "comedy"]). Use only standard genre names. Empty list if none.
-3. Generate `semantic_queries`: Break down the user's abstract preferences into 2-3 specific search queries for a vector database. Focus on mood, style, or specific plot elements.
+1. Extract `hard_constraints`: These are strict, non-negotiable filters expressed as natural language predicates
+   (e.g., "released before 2000", "only animation", "must have Tom Hanks", "IMDb rating >= 8.0").
+   Apply knowledge normalization: cross-check entity names (directors, actors, studios) against the conversation
+   context to ensure consistency before encoding. Represent each constraint as a self-contained natural language string.
+2. Extract `genres`: List of genre names explicitly mentioned or strongly implied (e.g., ["horror", "comedy"]).
+   Use only standard genre names. This list is used separately by the Content Retrieval stream for structured filtering.
+   Empty list if none.
+3. Generate `semantic_queries`: Break down the user's abstract preferences into 2-3 independent search queries for a
+   vector database. Each query must target a distinct semantic dimension:
+   - Plot & Theme: the core story content, narrative concept, or subject matter.
+   - Vibe & Mood: the emotional tone, atmosphere, or feeling the user wants.
+   - Setting & Cinematography: time period, location, visual style, or cinematic technique.
 4. Predict a dynamic weight distribution (w_sem, w_con, w_col) for three retrieval strategies:
 - w_sem (Semantic/Thematic Intent): Weight for plot, abstract concepts, or themes (e.g., "movies about time travel").
 - w_con (Content/Categorical Intent): Weight for strict explicit constraints like genres or release years (e.g., "90s action movies").
