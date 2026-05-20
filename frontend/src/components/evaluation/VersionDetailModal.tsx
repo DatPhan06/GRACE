@@ -8,6 +8,12 @@ interface Props {
     loading?: boolean;
 }
 
+const stepDisplayNames: Record<string, string> = {
+    summarization: 'Profiler Agent',
+    retrieval: 'Retrieval',
+    reranking: 'Critic + Reranker',
+};
+
 const stepColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
     summarization: { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-800', badge: 'bg-indigo-100 text-indigo-700' },
     retrieval: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-800', badge: 'bg-purple-100 text-purple-700' },
@@ -16,7 +22,7 @@ const stepColors: Record<string, { bg: string; border: string; text: string; bad
 
 const nextStepInfo: Record<string, { label: string; icon: string; color: string; hoverColor: string }> = {
     summarization: { label: 'Run Retrieval →', icon: '🔍', color: 'bg-purple-600', hoverColor: 'hover:bg-purple-700' },
-    retrieval: { label: 'Run Reranking →', icon: '🏆', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
+    retrieval: { label: 'Run Critic + Reranker →', icon: '🏆', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
 };
 
 function SummarizationItem({ item }: { item: BatchDetailItem }) {
@@ -114,7 +120,7 @@ export default function VersionDetailModal({ detail, onClose, onRunNextStep, nex
                 <div className={`${colors.bg} ${colors.border} border-b px-6 py-4 rounded-t-xl flex justify-between items-start`}>
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <h2 className={`text-xl font-bold ${colors.text} capitalize`}>{detail.step_type} v{detail.version}</h2>
+                            <h2 className={`text-xl font-bold ${colors.text}`}>{stepDisplayNames[detail.step_type] || detail.step_type} v{detail.version}</h2>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>{detail.status}</span>
                         </div>
                         <div className="text-xs text-gray-500 space-x-3">

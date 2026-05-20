@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initializeRun, runSummarizationStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, getRunConversations, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse, ConversationLogItem } from '@/lib/api';
+import { initializeRun, runProfilerStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, getRunConversations, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse, ConversationLogItem } from '@/lib/api';
 import VersionDetailModal from '@/components/evaluation/VersionDetailModal';
 
 // ─── Shared UI components (defined OUTSIDE the page to keep stable references) ───
@@ -218,17 +218,17 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateSummarization = async (runIdOverride?: number | any) => {
+    const handleCreateProfiler = async (runIdOverride?: number | any) => {
         const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
         if (!runId) return;
         setLoading(true);
         try {
-            await runSummarizationStep(runId, newVersionName);
+            await runProfilerStep(runId, newVersionName);
             setShowNewVersionModal(null);
             setNewVersionName('');
             loadSummBatches();
         } catch (error) {
-            console.error('Summarization failed:', error);
+            console.error('Profiler step failed:', error);
         } finally {
             setLoading(false);
         }
@@ -323,9 +323,9 @@ export default function StepEvaluationPage() {
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-6">
                 <TabButton id="init" label="1. Initialize" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
-                <TabButton id="summ" label="2. Summarization" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
+                <TabButton id="summ" label="2. Profiler Agent" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
                 <TabButton id="retr" label="3. Retrieval" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
-                <TabButton id="rerank" label="4. Reranking" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
+                <TabButton id="rerank" label="4. Critic + Reranker" activeTab={activeTab} setActiveTab={(id) => setActiveTab(id as typeof activeTab)} />
             </div>
 
             {/* Tab Content */}
@@ -383,18 +383,18 @@ export default function StepEvaluationPage() {
                     </div>
                 )}
 
-                {/* 2. Summarization Tab */}
+                {/* 2. Profiler Agent Tab */}
                 {activeTab === 'summ' && (
                     <div>
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Summarization Versions</h2>
-                                <p className="text-sm text-gray-500 mt-1">Click a version to view details and create retrieval.</p>
+                                <h2 className="text-xl font-semibold text-gray-800">Profiler Agent Versions</h2>
+                                <p className="text-sm text-gray-500 mt-1">Click a version to view extracted preferences and create retrieval.</p>
                             </div>
                             <NewVersionButton onClick={() => openNewVersionModal('summ')} color="bg-indigo-600 hover:bg-indigo-700" />
                         </div>
                         <div className="space-y-3">
-                            {summBatches.length === 0 && <EmptyState icon="📝" message="No summarization versions yet. Click '+ New Version' to create one." />}
+                            {summBatches.length === 0 && <EmptyState icon="🤖" message="No Profiler Agent versions yet. Click '+ New Version' to create one." />}
                             {summBatches.map(b => (
                                 <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-800' }} onClick={() => handleViewDetail(b)} />
                             ))}
@@ -426,18 +426,18 @@ export default function StepEvaluationPage() {
                     </div>
                 )}
 
-                {/* 4. Reranking Tab */}
+                {/* 4. Critic + Reranker Tab */}
                 {activeTab === 'rerank' && (
                     <div>
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h2 className="text-xl font-semibold text-gray-800">Reranking Versions</h2>
-                                <p className="text-sm text-gray-500 mt-1">Click a version to view evaluation results.</p>
+                                <h2 className="text-xl font-semibold text-gray-800">Critic + Reranker Versions</h2>
+                                <p className="text-sm text-gray-500 mt-1">Critic filters candidates, then Reranker selects top-K. Click a version to view recall results.</p>
                             </div>
                             <NewVersionButton onClick={() => openNewVersionModal('rerank')} color="bg-green-600 hover:bg-green-700" />
                         </div>
                         <div className="space-y-3">
-                            {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No reranking versions yet. Click '+ New Version' to create one." />}
+                            {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No Critic + Reranker versions yet. Click '+ New Version' to create one." />}
                             {rerankBatches.map(b => (
                                 <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
                                     <div className="flex gap-3 text-xs text-gray-600">
@@ -603,13 +603,13 @@ export default function StepEvaluationPage() {
             {/* NEW VERSION MODALS FOR EACH STEP          */}
             {/* ========================================= */}
 
-            {/* New Summarization Version Modal */}
+            {/* New Profiler Agent Version Modal */}
             {showNewVersionModal === 'summ' && (
                 <ModalBackdrop
-                    title="📝 New Summarization Version"
+                    title="🤖 New Profiler Agent Version"
                     onClose={() => setShowNewVersionModal(null)}
-                    onSubmit={() => handleCreateSummarization()}
-                    submitLabel={loading ? 'Running...' : 'Run Summarization'}
+                    onSubmit={() => handleCreateProfiler()}
+                    submitLabel={loading ? 'Running...' : 'Run Profiler Agent'}
                     submitColor="bg-indigo-600 hover:bg-indigo-700"
                     submitDisabled={loading || !selectedRunId}
                 >
@@ -637,11 +637,11 @@ export default function StepEvaluationPage() {
                                 </option>
                             ))}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">The summarization step will process all conversations in this run.</p>
+                        <p className="text-xs text-gray-500 mt-1">Profiler Agent will extract user preferences from all conversations in this run.</p>
                     </div>
                     <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-indigo-800">
                         <p className="font-medium mb-1">ℹ️ No additional parameters needed</p>
-                        <p className="text-indigo-600 text-xs">This step extracts user preferences from conversations using the LLM.</p>
+                        <p className="text-indigo-600 text-xs">Extracts preferences, genres, hard constraints, and WRRF weights from conversation history.</p>
                     </div>
                 </ModalBackdrop>
             )}
@@ -694,7 +694,7 @@ export default function StepEvaluationPage() {
                                 </option>
                             ))}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">Select which summarization version to use as input for retrieval.</p>
+                        <p className="text-xs text-gray-500 mt-1">Select which Profiler Agent version to use as input for retrieval.</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">N Candidates</label>
@@ -709,10 +709,10 @@ export default function StepEvaluationPage() {
                 </ModalBackdrop>
             )}
 
-            {/* New Reranking Version Modal */}
+            {/* New Critic + Reranker Version Modal */}
             {showNewVersionModal === 'rerank' && (
                 <ModalBackdrop
-                    title="🏆 New Reranking Version"
+                    title="🏆 New Critic + Reranker Version"
                     onClose={() => setShowNewVersionModal(null)}
                     onSubmit={() => {
                         const runId = getRunIdFromRetrBatch(selectedRetrBatch) || selectedRunId;
@@ -720,7 +720,7 @@ export default function StepEvaluationPage() {
                         setSelectedRunId(runId);
                         handleCreateReranking(runId);
                     }}
-                    submitLabel={loading ? 'Running...' : 'Run Reranking'}
+                    submitLabel={loading ? 'Running...' : 'Run Critic + Reranker'}
                     submitColor="bg-green-600 hover:bg-green-700"
                     submitDisabled={loading || !selectedRetrBatch}
                 >

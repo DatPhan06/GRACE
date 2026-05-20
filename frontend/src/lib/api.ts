@@ -232,8 +232,8 @@ export const initializeRun = async (dataset: "inspired" | "redial", sample_size:
     return response.data;
 };
 
-export const runSummarizationStep = async (run_id: number, name?: string): Promise<StepResponse> => {
-    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/summarize`, { run_id, name });
+export const runProfilerStep = async (run_id: number, name?: string): Promise<StepResponse> => {
+    const response = await axios.post<StepResponse>(`${API_URL}/evaluate/step/profiler`, { run_id, name });
     return response.data;
 };
 

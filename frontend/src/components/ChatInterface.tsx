@@ -6,7 +6,6 @@ import {
     streamChatMessages,
     type MovieRecommendation,
     type AgentNode,
-    type NodeStatus,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
