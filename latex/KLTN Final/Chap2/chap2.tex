@@ -8,7 +8,7 @@ Không giống các hệ thống gợi ý truyền thống vốn chỉ nhận đ
 
 Về kiến trúc, một CRS truyền thống gồm ba module cốt lõi: NLU (Natural Language Understanding) trích xuất ý định, DST (Dialogue State Tracking) theo dõi trạng thái hội thoại, và NLG (Natural Language Generation) sinh phản hồi.
 
-Bài toán CRS được hình thức hóa như sau: cho tập item $\mathcal{I}$ và ngữ cảnh hội thoại tại lượt $t$, $C_t = \{u_1, s_1, \dots, u_t\}$, trong đó $u_i$ là phát ngôn người dùng và $s_i$ là phản hồi hệ thống ở lượt $i$, hệ thống thực hiện hai nhiệm vụ song song:
+Bài toán CRS được hình thức hóa như sau: cho tập item $\mathcal{I}$ và ngữ cảnh hội thoại tại lượt $t$, $C_t = \{u_1, s_1, \dots, u_t\}$, trong đó \mbox{$u_i$} là phát ngôn người dùng và \mbox{$s_i$} là phản hồi hệ thống ở lượt \mbox{$i$}, hệ thống thực hiện hai nhiệm vụ song song:
 \begin{enumerate}
     \item \textbf{Gợi ý (Recommendation):} Dự đoán tập con $I_{rec} \subset \mathcal{I}$ phù hợp nhất với hồ sơ sở thích động của người dùng, liên tục cập nhật theo phản hồi chấp nhận/từ chối ở các lượt trước.
     \item \textbf{Sinh hội thoại (Dialogue Generation):} Sinh phản hồi $s_t$: hoặc là câu hỏi khai thác thêm thông tin khi độ tin cậy chưa đủ, hoặc là lời giới thiệu tích hợp các item trong $I_{rec}$ cùng lý do giải thích để tăng mức độ tin tưởng của người dùng.
