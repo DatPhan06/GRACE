@@ -32,7 +32,7 @@ You operate in a loop of Thought, Action, and Observation.
 - ACTION: Produce a VALID Cypher query. 
 
 Rules for the Cypher Query:
-1. Always return films using this exact return format: `RETURN DISTINCT rec.movieId AS movieId, rec.title AS title, rec.plot AS plot, rec.year AS year LIMIT 50`
+1. Always return films using this exact return format: `RETURN DISTINCT rec.movieId AS movieId, rec.title AS title, rec.plot AS plot, rec.year AS year, rec.imdbRating AS imdbRating LIMIT 50`
 2. Use `toLower()` for text comparisons (e.g., `toLower(g.name) CONTAINS "action"`).
 3. Be robust to variations.
 4. Output your response EXACTLY in the following JSON format:
@@ -44,14 +44,28 @@ Rules for the Cypher Query:
 DO NOT output markdown (`\```json`) or any extra text outside of the JSON block.
 """
 
-GRAPH_REASONING_USER_PROMPT = """
+GRAPH_CONSTRAINT_USER_PROMPT = """
+Strategy: CONSTRAINT FILTERING — build a Cypher query that enforces the hard constraints via WHERE clauses to filter films precisely.
+
 User Intent: {user_preferences}
 Hard Constraints: {hard_constraints}
-Liked Movies: {liked_movies}
 
 Previous Attempts and Results:
 {history}
 
-Please provide your Thought and the next Cypher query to execute.
+Please provide your Thought and the next Cypher query.
+Remember to output ONLY valid JSON.
+"""
+
+GRAPH_COLLABORATIVE_USER_PROMPT = """
+Strategy: COLLABORATIVE TRAVERSAL — start from the liked movies as anchor nodes and traverse ACTED_IN / DIRECTED relationships to discover related films.
+
+User Intent: {user_preferences}
+Liked Movies (anchor nodes): {liked_movies}
+
+Previous Attempts and Results:
+{history}
+
+Please provide your Thought and the next Cypher query.
 Remember to output ONLY valid JSON.
 """
