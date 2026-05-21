@@ -14,7 +14,8 @@ class RerankingService:
         user_preferences: str,
         candidates: List[Dict[str, Any]],
         top_k: int = 5,
-        model: RerankerType = "llm",
+        model: RerankerType = "decoupled",
+        conversation: str = "",
     ) -> List[Dict[str, Any]]:
         if not candidates:
             return []
@@ -24,7 +25,7 @@ class RerankingService:
             logger.warning(f"Reranker '{model}' unavailable — falling back to 'llm'.")
             reranker = self._factory.create("llm")
         return await reranker.rerank(
-            query=user_preferences, candidates=candidates, top_k=top_k
+            query=user_preferences, candidates=candidates, top_k=top_k, conversation=conversation
         )
 
     async def rerank_movies(
@@ -33,8 +34,8 @@ class RerankingService:
         candidates: List[Dict[str, Any]],
         conversation: str = "",
         top_k: int = 5,
-        model: RerankerType = "llm",
+        model: RerankerType = "decoupled",
         hard_constraints: List[str] = None,
     ) -> Dict[str, Any]:
-        movies = await self.rerank(user_preferences, candidates, top_k, model)
+        movies = await self.rerank(user_preferences, candidates, top_k, model, conversation)
         return {"movies": movies}

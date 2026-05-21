@@ -60,7 +60,16 @@ class LLMReranker(BaseReranker):
         if not candidates:
             return []
 
-        # ── Stage 1: per-batch reranking ──────────────────────────────
+        # When all candidates fit in a single batch, skip Stage 1 entirely and
+        # go straight to the final reasoning pass — one LLM call is sufficient.
+        if len(candidates) <= self.batch_size:
+            logger.info(
+                f"[LLMReranker] {len(candidates)} candidates fit in one batch — "
+                f"single reasoning pass → top-{top_k}"
+            )
+            return await self._rerank_batch(query, candidates, top_k, conversation)
+
+        # ── Stage 1: per-batch reranking (only when multiple batches needed) ──
         batches = self._split_batches(candidates, self.batch_size)
         logger.info(
             f"[Stage 1] {len(candidates)} candidates → "
@@ -68,14 +77,12 @@ class LLMReranker(BaseReranker):
             f"shortlist_size={self.shortlist_size}"
         )
 
-        # Run all batches concurrently
         stage1_tasks = [
             self._rerank_batch(query, batch, self.shortlist_size, conversation)
             for batch in batches
         ]
         shortlists: List[List[Dict[str, Any]]] = await asyncio.gather(*stage1_tasks)
 
-        # Merge shortlists (preserve per-batch order, deduplicate)
         merged: List[Dict[str, Any]] = []
         seen_titles: set[str] = set()
         for shortlist in shortlists:
@@ -89,7 +96,6 @@ class LLMReranker(BaseReranker):
 
         # ── Stage 2: final reranking ──────────────────────────────────
         if len(merged) <= top_k:
-            # Already small enough; no second LLM call needed
             return merged[:top_k]
 
         return await self._rerank_batch(query, merged, top_k, conversation)

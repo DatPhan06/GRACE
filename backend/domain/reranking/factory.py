@@ -2,11 +2,12 @@ from typing import Literal
 from domain.reranking.base import BaseReranker
 from domain.reranking.llm_reranker import LLMReranker
 from domain.reranking.cohere_reranker import CohereReranker
+from domain.reranking.decoupled_reranker import DecoupledReranker
 from shared.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-RerankerType = Literal["llm", "cohere"]
+RerankerType = Literal["llm", "cohere", "decoupled"]
 
 
 class RerankerFactory:
@@ -15,6 +16,7 @@ class RerankerFactory:
     _registry: dict[str, type[BaseReranker]] = {
         "llm": LLMReranker,
         "cohere": CohereReranker,
+        "decoupled": DecoupledReranker,
     }
 
     _instances: dict[str, BaseReranker] = {}
