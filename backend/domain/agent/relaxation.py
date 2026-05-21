@@ -1,6 +1,6 @@
 import json
 from infra.llm import get_llm_client
-from domain.agent.models import UserPreference
+from domain.agent.models import UserPreference, HardConstraint
 from domain.generation.prompts import (
     RELAX_CONSTRAINTS_SYSTEM_PROMPT,
     RELAX_CONSTRAINTS_USER_PROMPT,
@@ -16,8 +16,7 @@ class RelaxationAgent:
 
     async def run(self, preferences: UserPreference, critic_reasoning: str) -> UserPreference:
         logger.info(f"Relaxation Agent: relaxing constraints based on critic feedback: {critic_reasoning}")
-        import json as _json
-        constraints_json = _json.dumps(
+        constraints_json = json.dumps(
             [c.model_dump() for c in preferences.hard_constraints], ensure_ascii=False
         )
         prompt = RELAX_CONSTRAINTS_USER_PROMPT.format(
@@ -37,7 +36,21 @@ class RelaxationAgent:
             end = cleaned.rfind("}") + 1
             if start != -1 and end > 0:
                 data = json.loads(cleaned[start:end])
-                return UserPreference(**data)
+                # Relaxation only updates hard_constraints + semantic_queries.
+                # All other Profiler fields (user_preferences, genres, liked_movies,
+                # dynamic_weights, profiler_reasoning) are preserved explicitly.
+                raw_constraints = data.get(
+                    "hard_constraints",
+                    [c.model_dump() for c in preferences.hard_constraints],
+                )
+                relaxed_constraints = [
+                    HardConstraint(**c) if isinstance(c, dict) else c
+                    for c in raw_constraints
+                ]
+                return preferences.model_copy(update={
+                    "hard_constraints": relaxed_constraints,
+                    "semantic_queries": data.get("semantic_queries", preferences.semantic_queries),
+                })
             return preferences
         except Exception as e:
             logger.error(f"Relaxation Agent error: {e}")
