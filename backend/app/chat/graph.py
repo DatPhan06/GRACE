@@ -68,6 +68,7 @@ async def relaxation_node(state: ARGOSState) -> dict:
     )
     return {
         "preferences": new_prefs,
+        "requires_relaxation": False,
         "agent_trace": ["Relaxation Agent: constraints relaxed based on critic feedback."],
     }
 
@@ -78,6 +79,7 @@ async def reranker_node(state: ARGOSState) -> dict:
         user_preferences=prefs.user_preferences,
         candidates=state["candidates"],
         top_k=5,
+        conversation=state["conversation_history"],
     )
     return {
         "final_movies": movies,
@@ -91,6 +93,7 @@ async def generator_node(state: ARGOSState) -> dict:
         state["preferences"].user_preferences,
         state["final_movies"],
         relaxation_note=relaxation_note,
+        conversation=state["conversation_history"],
     )
     return {"response": response}
 

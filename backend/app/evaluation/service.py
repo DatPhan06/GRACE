@@ -1,6 +1,5 @@
 """Evaluation application service."""
 import json
-import json
 import pandas as pd
 from pathlib import Path
 from typing import Literal, Dict, Any, List, Optional
@@ -559,7 +558,7 @@ class EvaluationService:
         await _do_retr()
         return {"run_id": run_id, "retrieval_batch_id": batch_id, "message": f"Retrieved candidates (v{batch_version}).", "status": "retrieved"}
 
-    async def run_reranking_step(self, run_id: int, top_k: int = 10, model: Literal["llm", "cohere"] = "llm", retrieval_batch_id: Optional[int] = None, name: Optional[str] = None, background_tasks: Optional[BackgroundTasks] = None) -> Dict[str, Any]:
+    async def run_reranking_step(self, run_id: int, top_k: int = 10, model: Literal["llm", "cohere", "decoupled"] = "decoupled", retrieval_batch_id: Optional[int] = None, name: Optional[str] = None, background_tasks: Optional[BackgroundTasks] = None) -> Dict[str, Any]:
         """
         Run Critic → Relaxation → Reranker step.
         Critic filters candidates; if too few remain, Relaxation Agent widens constraints
@@ -647,10 +646,15 @@ class EvaluationService:
                     current_prefs_str = user_preferences
                     filtered = candidates
 
+                    current_prefs = UserPreference(
+                        user_preferences=current_prefs_str,
+                        dynamic_weights=RetrievalWeights(**(step_summ.dynamic_weights or {})),
+                    )
                     for attempt in range(MAX_RELAXATION_ATTEMPTS + 1):
                         critic_result = await self.critic_agent.filter_candidates(
-                            user_preferences=current_prefs_str,
+                            user_preferences=current_prefs.user_preferences,
                             candidates=current_candidates,
+                            hard_constraints=current_prefs.hard_constraints,
                         )
                         filtered = critic_result.get("movies", current_candidates) or current_candidates
 
@@ -658,21 +662,20 @@ class EvaluationService:
                             break
 
                         # Relaxation: widen constraints, then re-retrieve (not re-profile)
-                        prefs_obj = UserPreference(
-                            user_preferences=current_prefs_str,
-                            dynamic_weights=RetrievalWeights(**(step_summ.dynamic_weights or {})),
-                        )
-                        relaxed = await self.relaxation_agent.run(prefs_obj, critic_result.get("reasoning", ""))
+                        relaxed = await self.relaxation_agent.run(current_prefs, critic_result.get("reasoning", ""))
                         re_retrieval = await self.retrieval_service.retrieve_movies(
                             user_preferences=relaxed.user_preferences,
                             liked_movies=log.liked_movies or [],
                             n=len(candidates),
                             dynamic_weights=relaxed.dynamic_weights.model_dump(),
+                            hard_constraints=relaxed.hard_constraints,
+                            semantic_queries=relaxed.semantic_queries,
+                            genres=relaxed.genres,
                         )
                         current_candidates = re_retrieval.get("combined", []) or current_candidates
-                        current_prefs_str = relaxed.user_preferences
+                        current_prefs = relaxed
 
-                    user_preferences = current_prefs_str
+                    user_preferences = current_prefs.user_preferences
 
                     # 4. Reranker — select top-K from filtered candidates
                     reranking_results = await self.reranking_service.rerank_movies(
@@ -816,21 +819,6 @@ class EvaluationService:
 
         return random.sample(all_conversations, sample_size), df_movie
 
-    async def evaluate(
-        self,
-        dataset: Literal["inspired", "redial"] = "redial",
-        sample_size: int = 40,
-        start_index: int = 0,
-        n_sample: int = 100,
-        top_k: int = 10,
-        model: Literal["llm", "cohere"] = "cohere"
-    ) -> Dict[str, Any]:
-        """
-        Run the full evaluation pipeline on a dataset sample.
-        """
-        conversations, df_movie = self.load_dataset_sample(
-            dataset, sample_size, start_index)
-
     async def process_single_conversation(
         self,
         conv: Dict,
@@ -873,7 +861,11 @@ class EvaluationService:
             retrieval_results = await self.retrieval_service.retrieve_movies(
                 user_preferences=user_preferences,
                 liked_movies=liked_movies,
-                n=n_sample
+                n=n_sample,
+                dynamic_weights=user_pref_obj.dynamic_weights.model_dump(),
+                semantic_queries=user_pref_obj.semantic_queries,
+                hard_constraints=user_pref_obj.hard_constraints,
+                genres=user_pref_obj.genres,
             )
 
             candidates = retrieval_results['combined']
@@ -887,13 +879,14 @@ class EvaluationService:
             # Relaxation only goes back to Retrieval — never to Profiler Agent.
             MAX_RELAXATION_ATTEMPTS = 1
             current_candidates = candidates
-            current_prefs_str = user_preferences
+            current_prefs = user_pref_obj
             filtered = candidates
 
             for attempt in range(MAX_RELAXATION_ATTEMPTS + 1):
                 critic_result = await self.critic_agent.filter_candidates(
-                    user_preferences=current_prefs_str,
+                    user_preferences=current_prefs.user_preferences,
                     candidates=current_candidates,
+                    hard_constraints=current_prefs.hard_constraints,
                 )
                 filtered = critic_result.get("movies", current_candidates) or current_candidates
 
@@ -901,18 +894,20 @@ class EvaluationService:
                     break
 
                 # Relaxation: widen constraints, then re-retrieve (not re-profile)
-                prefs_obj = UserPreference(user_preferences=current_prefs_str)
-                relaxed = await self.relaxation_agent.run(prefs_obj, critic_result.get("reasoning", ""))
+                relaxed = await self.relaxation_agent.run(current_prefs, critic_result.get("reasoning", ""))
                 re_retrieval = await self.retrieval_service.retrieve_movies(
                     user_preferences=relaxed.user_preferences,
                     liked_movies=liked_movies,
                     n=n_sample,
                     dynamic_weights=relaxed.dynamic_weights.model_dump(),
+                    hard_constraints=relaxed.hard_constraints,
+                    semantic_queries=relaxed.semantic_queries,
+                    genres=relaxed.genres,
                 )
                 current_candidates = re_retrieval.get("combined", []) or current_candidates
-                current_prefs_str = relaxed.user_preferences
+                current_prefs = relaxed
 
-            user_preferences = current_prefs_str
+            user_preferences = current_prefs.user_preferences
 
             # 4. Reranker — select top-K from filtered candidates
             reranking_results = await self.reranking_service.rerank_movies(
@@ -994,7 +989,7 @@ class EvaluationService:
         start_index: int = 0,
         n_sample: int = 100,
         top_k: int = 10,
-        model: Literal["llm", "cohere"] = "cohere"
+        model: Literal["llm", "cohere", "decoupled"] = "decoupled"
     ) -> Dict[str, Any]:
         """
         Run the full evaluation pipeline on a dataset sample.
