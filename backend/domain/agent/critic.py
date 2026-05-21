@@ -63,7 +63,13 @@ class CriticAgent:
                 f"| Year: {year} | IMDb: {rating} | Plot: {plot}...\n"
             )
 
-        constraints_str = "; ".join(hard_constraints) if hard_constraints else "None"
+        if hard_constraints:
+            constraints_str = "; ".join(
+                c.constraint if hasattr(c, "constraint") else str(c)
+                for c in hard_constraints
+            )
+        else:
+            constraints_str = "None"
         prompt = CRITIC_USER_PROMPT.format(
             user_preferences=user_preferences,
             hard_constraints=constraints_str,

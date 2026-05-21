@@ -16,9 +16,13 @@ class RelaxationAgent:
 
     async def run(self, preferences: UserPreference, critic_reasoning: str) -> UserPreference:
         logger.info(f"Relaxation Agent: relaxing constraints based on critic feedback: {critic_reasoning}")
+        import json as _json
+        constraints_json = _json.dumps(
+            [c.model_dump() for c in preferences.hard_constraints], ensure_ascii=False
+        )
         prompt = RELAX_CONSTRAINTS_USER_PROMPT.format(
             user_preferences=preferences.user_preferences,
-            hard_constraints=", ".join(preferences.hard_constraints),
+            hard_constraints=constraints_json,
             semantic_queries="; ".join(preferences.semantic_queries),
             critic_reasoning=critic_reasoning,
         )

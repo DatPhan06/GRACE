@@ -4,15 +4,21 @@ Read this conversation, find all the information about the seeker's preferences 
 content (Do not contain assistant preferences), and summarize them.
 
 Furthermore, you must:
-1. Extract `hard_constraints`: These are strict, non-negotiable filters expressed as natural language predicates
-   (e.g., "released before 2000", "only animation", "must have Tom Hanks", "IMDb rating >= 8.0").
+1. Extract `hard_constraints`: These are strict filters expressed as natural language predicates. For each constraint,
+   assign a priority label based on how strongly the user emphasizes it in the conversation:
+   - "core": genre restrictions, explicit content limits (e.g., "no violence for children"), or requirements
+     repeated multiple times — these are non-negotiable and must never be relaxed.
+   - "soft": precise time ranges, quantitative thresholds (IMDb score), or conjunctive entity conditions
+     mentioned once — these are reference points that can be widened if needed.
+   - "optional": production company, country, language, or cinematography style — directional preferences
+     that can be dropped entirely if the search space is too narrow.
    Apply knowledge normalization: cross-check entity names (directors, actors, studios) against the conversation
-   context to ensure consistency before encoding. Represent each constraint as a self-contained natural language string.
+   context to ensure consistency before encoding.
 2. Extract `genres`: List of genre names explicitly mentioned or strongly implied (e.g., ["horror", "comedy"]).
    Use only standard genre names. This list is used separately by the Content Retrieval stream for structured filtering.
    Empty list if none.
-3. Generate `semantic_queries`: Break down the user's abstract preferences into 2-3 independent search queries for a
-   vector database. Each query must target a distinct semantic dimension:
+3. Generate `semantic_queries`: Break down the user's abstract preferences into a set of independent search queries
+   for a vector database. Each query must target a distinct semantic dimension:
    - Plot & Theme: the core story content, narrative concept, or subject matter.
    - Vibe & Mood: the emotional tone, atmosphere, or feeling the user wants.
    - Setting & Cinematography: time period, location, visual style, or cinematic technique.
@@ -27,7 +33,11 @@ The output should be a formatted JSON object with the following schema:
 {
     "profiler_reasoning": "Explain your logic here. Analyzed the dialogue to discover explicit constraints (genres, actors, years) versus abstract themes.",
     "user_preferences": "Detailed summary of preferences...",
-    "hard_constraints": ["Released after 2010", "Duration > 120 mins", "Rating R"],
+    "hard_constraints": [
+        {"constraint": "Directed by Christopher Nolan", "priority": "core"},
+        {"constraint": "Released between 2010 and 2020", "priority": "soft"},
+        {"constraint": "IMDb rating >= 8.0", "priority": "soft"}
+    ],
     "genres": ["horror", "thriller"],
     "semantic_queries": ["dark atmospheric psychological thriller", "movies with complex plot twists", "gritty cinematography"],
     "liked_movies": ["Movie 1", "Movie 2"],
@@ -46,7 +56,7 @@ Here are some examples of summarization:
 
 Let's think step by step.
 Be concise and careful.
-ONLY return a valid JSON object that matches the schema. 
+ONLY return a valid JSON object that matches the schema.
 DO NOT add markdown, role names, or any extra text.
 """
 

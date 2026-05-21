@@ -38,7 +38,10 @@ class GraphReasoningAgent:
 
             prompt = GRAPH_REASONING_USER_PROMPT.format(
                 user_preferences=user_preferences,
-                hard_constraints=", ".join(hard_constraints) if hard_constraints else "None",
+                hard_constraints=", ".join(
+                    c.constraint if hasattr(c, "constraint") else str(c)
+                    for c in hard_constraints
+                ) if hard_constraints else "None",
                 liked_movies=", ".join(liked_movies) if liked_movies else "None",
                 history=history if history else "No previous attempts.",
             )
