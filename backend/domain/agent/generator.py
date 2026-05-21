@@ -18,12 +18,14 @@ class GeneratorAgent:
         user_preferences: str,
         recommendations: List[Dict[str, Any]],
         relaxation_note: str = "",
+        conversation: str = "",
     ) -> str:
         movies_str = ", ".join(
             [f"{m['title']} ({m.get('year', 'N/A')})" for m in recommendations]
         )
         note_block = f"Relaxation Note: {relaxation_note}" if relaxation_note else ""
         prompt = RECOMMENDATION_RESPONSE_USER_PROMPT.format(
+            conversation=conversation,
             user_preferences=user_preferences,
             movies_str=movies_str,
             relaxation_note=note_block,

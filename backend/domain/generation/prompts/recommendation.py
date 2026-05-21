@@ -4,6 +4,7 @@ If a relaxation note is provided, transparently mention the constraint that was 
 """
 
 RECOMMENDATION_RESPONSE_USER_PROMPT = """
+Conversation History: {conversation}
 User Preferences: {user_preferences}
 Recommended Movies: {movies_str}
 {relaxation_note}"""

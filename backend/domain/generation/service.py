@@ -22,8 +22,9 @@ class GenerationService:
         user_preferences: str,
         recommendations: List[Dict[str, Any]],
         relaxation_note: str = "",
+        conversation: str = "",
     ) -> str:
-        return await self._generator.run(user_preferences, recommendations, relaxation_note)
+        return await self._generator.run(user_preferences, recommendations, relaxation_note, conversation)
 
     async def relax_constraints(
         self, preferences: UserPreference, critic_reasoning: str
