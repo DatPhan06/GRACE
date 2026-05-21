@@ -50,7 +50,7 @@ RAG biến LLM từ "người học thuộc lòng" thành "người tra cứu t�
 
 Bảng \ref{tab:related_work_summary} hệ thống hóa các hướng tiếp cận CRS theo bốn chiều so sánh. Nhìn vào bức tranh tổng thể, một hạn chế cấu trúc xuyên suốt tất cả các thế hệ: \textbf{tất cả đều vận hành theo cơ chế đường ống tĩnh (Static Pipeline)}.
 
-\begin{table}[h!]
+\begin{table}[htbp]
     \centering
     \caption{Tổng hợp các nghiên cứu liên quan trong lĩnh vực Hệ thống gợi ý hội thoại.}
     \label{tab:related_work_summary}
@@ -117,12 +117,15 @@ Khóa luận đặt ra bốn mục tiêu nghiên cứu:
 
 \section{Đóng góp của khóa luận}
 
-Khóa luận mang lại ba đóng góp kỹ thuật mới cho lĩnh vực CRS:
+Khóa luận mang lại bốn đóng góp kỹ thuật mới cho lĩnh vực CRS:
 \begin{enumerate}
-    \item \textbf{Kiến trúc đa tác tử ARGOS:} Lần đầu tiên áp dụng mô hình Multi-Agent với vòng lặp suy luận-hành động vào hệ thống CRS kết hợp Đồ thị tri thức. ARGOS phân tách pipeline thành năm tác tử chuyên biệt (Profiler Agent, Orchestrator, Graph Agent, Critic Agent, Relaxation Agent) và sử dụng Dynamic Weighting để điều phối chiến lược truy xuất theo hình thái ngôn ngữ của truy vấn, cơ chế chưa xuất hiện trong các hệ thống CRS prior work.
-    \item \textbf{Cơ chế Critic-Relaxation:} Phương pháp tự kiểm định và thỏa hiệp ràng buộc tự động trong CRS. Critic Agent đối chiếu trực tiếp ứng viên với Đồ thị tri thức để loại bỏ hallucination; Relaxation Agent áp dụng thuật toán phân cấp ưu tiên (Sacrifice Hierarchy) để tái cấu trúc truy vấn khi gặp tập kết quả rỗng. Đây là đóng góp kỹ thuật độc lập, có thể tách rời và ứng dụng cho các hệ thống RAG khác ngoài CRS.
-    \item \textbf{Kết quả thực nghiệm và mã nguồn mở:} ARGOS cải thiện đáng kể so với kiến trúc tiền đề GRACE và đạt kết quả cạnh tranh với các hệ thống tiên tiến trên ReDial và INSPIRED về chỉ số Recall@K. Toàn bộ mã nguồn và dữ liệu thực nghiệm được công bố công khai tại \url{https://github.com/DatPhan06/GRACE}, tạo nền tảng cho các nghiên cứu tiếp theo trong lĩnh vực.
+    \item \textbf{Kiến trúc đa tác tử thích nghi ARGOS:} Lần đầu tiên áp dụng mô hình Multi-Agent với vòng lặp suy luận-hành động vào hệ thống CRS kết hợp Đồ thị tri thức. ARGOS phân tách pipeline thành năm tác tử chuyên biệt (Profiler Agent, Orchestrator, Graph Agent, Critic Agent, Relaxation Agent) và sử dụng Dynamic Weighting để điều phối chiến lược truy xuất theo hình thái ngôn ngữ của truy vấn — cơ chế chưa xuất hiện trong các hệ thống CRS prior work.
+    \item \textbf{Cơ chế kiểm định xuyên luồng (Critic Agent):} Phương pháp đối soát chéo độc lập, đảm bảo mọi ứng viên từ tất cả các luồng truy xuất đều được kiểm định theo ràng buộc tường minh trước khi xếp hạng. Critic Agent lập luận trên metadata thực tế từ Đồ thị tri thức, không dựa vào bộ nhớ tham số của LLM, triệt tiêu hallucination ở tầng kết quả.
+    \item \textbf{Cơ chế tự sửa lỗi và thỏa hiệp thông minh (Relaxation Agent):} Khi tập ứng viên hợp lệ không đủ ngưỡng, Relaxation Agent áp dụng thuật toán Phân cấp ưu tiên (Sacrifice Hierarchy) — dựa trên nhãn ưu tiên được Profiler gán sẵn — để nới lỏng tối thiểu ràng buộc gây tắc nghẽn và tái cấu trúc ý định mà không cần gọi thêm LLM. Đây là đóng góp kỹ thuật độc lập, có thể tách rời và ứng dụng cho các hệ thống RAG khác ngoài CRS.
+    \item \textbf{Tối ưu hóa độ trễ qua Xếp hạng hai giai đoạn tách rời (Decoupled Reranking):} Thay thế LLM ở giai đoạn lọc đầu bằng Cross-Encoder chuyên dụng (SLM), chỉ dùng Generative LLM ở giai đoạn suy luận cuối trên Top-20 ứng viên. Cơ chế này duy trì hiệu năng gợi ý cạnh tranh trong khi giảm đáng kể chi phí tính toán và độ trễ end-to-end.
 \end{enumerate}
+
+ARGOS cải thiện đáng kể so với kiến trúc tiền đề GRACE và đạt kết quả cạnh tranh với các hệ thống tiên tiến trên ReDial và INSPIRED về chỉ số Recall@K. Toàn bộ mã nguồn và dữ liệu thực nghiệm được công bố công khai tại \url{https://github.com/DatPhan06/GRACE}, tạo nền tảng cho các nghiên cứu tiếp theo trong lĩnh vực.
 
 \section*{Kết luận chương}
 
