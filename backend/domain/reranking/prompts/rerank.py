@@ -12,8 +12,8 @@ Your task is to re-rank a given list of candidate movies and select the top {top
 </instruction>
 
 <constraint>
-You must return ONLY a valid JSON list of movie titles in ranked order. DO NOT add markdown, role names, or any extra text.
-["Movie A", "Movie B", "Movie C"]
+You must return ONLY a valid JSON object with a single key "titles" containing the ranked list. DO NOT add markdown, role names, or any extra text.
+{{"titles": ["Movie A", "Movie B", "Movie C"]}}
 </constraint>"""
 
 RERANK_MOVIES_USER_PROMPT = """<input>
