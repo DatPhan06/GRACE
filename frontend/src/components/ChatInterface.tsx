@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { flushSync } from 'react-dom';
 import { Send, Bot, User, Film, Sparkles, Loader2, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,6 +6,7 @@ import {
     streamChatMessages,
     type MovieRecommendation,
     type AgentNode,
+    type StreamEvent,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -151,11 +151,47 @@ export default function ChatInterface() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [nodeStates, setNodeStates] = useState<Record<AgentNode, NodeState>>(initialNodeStates());
+    const [eventQueue, setEventQueue] = useState<StreamEvent[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading, nodeStates]);
+
+    // Process one stream event per render cycle so each node transition is visible
+    useEffect(() => {
+        if (eventQueue.length === 0) return;
+        const [event, ...rest] = eventQueue;
+        if (event.event === 'node') {
+            setNodeStates((prev) => ({
+                ...prev,
+                [event.node]: { status: event.status, message: event.message },
+            }));
+        } else if (event.event === 'result') {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: 'ai' as const,
+                    content: event.response,
+                    recommendations: event.recommendations,
+                    agentTrace: event.agent_trace,
+                },
+            ]);
+            setIsLoading(false);
+        } else if (event.event === 'error') {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: 'ai' as const,
+                    content: `Sorry, an error occurred: ${event.detail}`,
+                },
+            ]);
+            setIsLoading(false);
+        }
+        setEventQueue(rest);
+    }, [eventQueue]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -171,6 +207,7 @@ export default function ChatInterface() {
         setInput('');
         setIsLoading(true);
         setNodeStates(initialNodeStates());
+        setEventQueue([]);
 
         // Build full conversation history (skip the static initial greeting)
         const turns = messages.filter((m, i) => !(i === 0 && m.role === 'ai'));
@@ -183,35 +220,7 @@ export default function ChatInterface() {
 
         try {
             await streamChatMessages(fullConversation, (event) => {
-                if (event.event === 'node') {
-                    // flushSync forces an immediate render for each node transition
-                    // so the animation is visible even when events arrive in rapid succession
-                    flushSync(() => {
-                        setNodeStates((prev) => ({
-                            ...prev,
-                            [event.node]: {
-                                status: event.status,
-                                message: event.message,
-                            },
-                        }));
-                    });
-                } else if (event.event === 'result') {
-                    const aiMessage: Message = {
-                        id: (Date.now() + 1).toString(),
-                        role: 'ai',
-                        content: event.response,
-                        recommendations: event.recommendations,
-                        agentTrace: event.agent_trace,
-                    };
-                    setMessages((prev) => [...prev, aiMessage]);
-                } else if (event.event === 'error') {
-                    const errorMessage: Message = {
-                        id: (Date.now() + 1).toString(),
-                        role: 'ai',
-                        content: `Sorry, an error occurred: ${event.detail}`,
-                    };
-                    setMessages((prev) => [...prev, errorMessage]);
-                }
+                setEventQueue((prev) => [...prev, event]);
             });
         } catch (error) {
             console.error('Stream error', error);
@@ -223,10 +232,7 @@ export default function ChatInterface() {
                     content: "I'm sorry, I encountered an error. Please try again.",
                 },
             ]);
-        } finally {
             setIsLoading(false);
-            // nodeStates is intentionally NOT reset here — LiveNodeTracer is already
-            // hidden when isLoading=false. It will be reset on the next request.
         }
     };
 

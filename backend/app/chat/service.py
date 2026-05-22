@@ -101,7 +101,7 @@ class ChatService:
                     if name == "profiler" and acc.get("preferences"):
                         n = len(acc["preferences"].liked_movies)
                         msg = f"Profiler Agent: Done — extracted {n} liked movies."
-                    elif name == "orchestrator":
+                    elif name == "retrieval":
                         n = len(acc.get("candidates", []))
                         msg = f"Orchestrator: Done — fused {n} candidates via WRRF."
                     elif name == "reranker":
