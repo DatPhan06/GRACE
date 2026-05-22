@@ -14,29 +14,9 @@ router = APIRouter(prefix="/evaluate", tags=["evaluation"])
 
 
 @router.post("/", response_model=EvaluateResponse)
-async def evaluate_endpoint(request: EvaluateRequest):
-    """
-    Run evaluation on a sample of the dataset.
-    
-    This endpoint processes a sample of conversations through the full evaluation pipeline:
-    1. Summarize conversation to extract user preferences
-    2. Retrieve candidate movies from graph database
-    3. Re-rank movies using LLM
-    4. Evaluate results against ground truth
-    
-    The results are saved to output files and returned with aggregate metrics.
-    
-    Args:
-        request: Evaluation request parameters
-        
-    Returns:
-        Evaluation results with recall metrics and processing details
-        
-    Raises:
-        HTTPException: If evaluation fails
-    """
+async def evaluate_endpoint(request: EvaluateRequest, background_tasks: BackgroundTasks):
+    """Run evaluation on a dataset sample. Returns immediately; processing runs in background."""
     service = EvaluationService()
-    
     try:
         result = await service.evaluate(
             dataset=request.dataset,
@@ -44,32 +24,18 @@ async def evaluate_endpoint(request: EvaluateRequest):
             start_index=request.start_index,
             n_sample=request.n_sample,
             top_k=request.top_k,
-            model=request.model
+            model=request.model,
+            name=request.name,
+            sample_percent=request.sample_percent,
+            background_tasks=background_tasks,
         )
-        
-        # Add success message
-        result["message"] = (
-            f"Successfully evaluated {result['sample_size']} samples from {result['dataset']} dataset. "
-            f"Average Recall@{request.top_k}: {result['avg_recall']:.3f}"
-        )
-        
         return EvaluateResponse(**result)
-        
     except FileNotFoundError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Dataset file not found: {str(e)}"
-        )
+        raise HTTPException(status_code=404, detail=f"Dataset file not found: {str(e)}")
     except ValueError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid parameter: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid parameter: {str(e)}")
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Evaluation failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Evaluation failed: {str(e)}")
 
 
 @router.post("/init")
@@ -80,6 +46,7 @@ async def initialize_run(request: InitRunRequest, background_tasks: BackgroundTa
         return await service.initialize_run(
             dataset=request.dataset,
             sample_size=request.sample_size,
+            sample_percent=request.sample_percent,
             start_index=request.start_index,
             name=request.name,
             background_tasks=background_tasks
@@ -137,14 +104,40 @@ async def run_reranking_step(request: RerankingStepRequest, background_tasks: Ba
 
 @router.get("/info")
 async def get_evaluation_info():
-    """
-    Get information about available datasets and evaluation parameters.
-    
-    Returns:
-        Information about supported datasets and parameter ranges
-    """
+    """Get available datasets, parameter ranges, and dataset sizes."""
+    import json
+    from pathlib import Path
+    from shared.settings.config import settings
+
+    def _count(path_str: str) -> int:
+        try:
+            p = Path(path_str)
+            if not p.is_absolute():
+                p = Path(__file__).resolve().parents[4] / path_str
+            with open(p, encoding="utf-8") as f:
+                return len(json.load(f))
+        except Exception:
+            return 0
+
+    dataset_sizes = {
+        "redial": _count(settings.data.REDIAL_DIALOG_DATA),
+        "inspired": _count(settings.data.INSPIRED_DIALOG_DATA),
+    }
+
+    provider = settings.llm.LLM_PROVIDER.lower()
+    if provider == "gemini":
+        llm_model = "gemini-2.0-flash"
+    elif provider == "azure":
+        llm_model = settings.llm.AZURE_LLM_MODEL
+    elif provider == "openai":
+        llm_model = "gpt-4o-mini"
+    else:
+        llm_model = provider
+
     return {
         "datasets": ["inspired", "redial"],
+        "dataset_sizes": dataset_sizes,
+        "llm_model": llm_model,
         "parameters": {
             "sample_size": {
                 "description": "Number of samples to evaluate",

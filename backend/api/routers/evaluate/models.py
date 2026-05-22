@@ -3,20 +3,27 @@ from typing import Literal, List, Dict, Any
 
 class EvaluateRequest(BaseModel):
     """Request model for evaluation endpoint."""
+    name: str | None = None
     dataset: Literal["inspired", "redial"] = Field(
         default="redial",
         description="Dataset to evaluate (inspired or redial)"
     )
+    sample_percent: float | None = Field(
+        default=None,
+        ge=1,
+        le=100,
+        description="Percentage of dataset to sample (1-100). Overrides sample_size when provided."
+    )
     sample_size: int = Field(
         default=40,
         ge=1,
-        le=1000,
-        description="Number of samples to evaluate (1-1000)"
+        le=100000,
+        description="Number of samples to evaluate. Ignored when sample_percent is provided."
     )
     start_index: int = Field(
         default=0,
         ge=0,
-        description="Starting index for sampling"
+        description="Starting index (unused when sample_percent is set — sampling is random)"
     )
     n_sample: int = Field(
         default=100,
@@ -38,6 +45,8 @@ class EvaluateRequest(BaseModel):
 
 class EvaluateResponse(BaseModel):
     """Response model for evaluation endpoint."""
+    run_id: int | None = None
+    status: str | None = None
     dataset: str
     sample_size: int
     start_index: int
@@ -45,6 +54,10 @@ class EvaluateResponse(BaseModel):
     top_k: int
     model: str
     avg_recall: float
+    avg_recall_retrieval: float | None = None
+    avg_recall_semantic: float | None = None
+    avg_recall_content: float | None = None
+    avg_recall_collab: float | None = None
     results: List[Dict[str, Any]]
     output_dir: str
     message: str
@@ -57,7 +70,8 @@ class EvaluateResponse(BaseModel):
 class InitRunRequest(BaseModel):
     name: str | None = None
     dataset: Literal["inspired", "redial"] = Field(default="redial")
-    sample_size: int = Field(default=50, ge=1, le=1000)
+    sample_percent: float | None = Field(default=None, ge=1, le=100)
+    sample_size: int = Field(default=50, ge=1, le=100000)
     start_index: int = Field(default=0, ge=0)
 
 

@@ -17,13 +17,14 @@ class EvaluationRunModel(Base):
     __tablename__ = "evaluation_runs"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=True) 
+    name = Column(String, nullable=True)
     dataset = Column(String)
     sample_size = Column(Integer)
     start_index = Column(Integer)
     n_sample = Column(Integer)
     top_k = Column(Integer)
     model = Column(String)
+    llm_model = Column(String, nullable=True)
     avg_recall = Column(Float)
     avg_recall_retrieval = Column(Float, nullable=True)
     avg_recall_semantic = Column(Float, nullable=True)
@@ -113,6 +114,10 @@ class StepSummarizationModel(Base):
     summarization_batch_id = Column(Integer, ForeignKey("summarization_runs.id"))
     profiler_reasoning = Column(String, nullable=True)
     user_preferences = Column(String)
+    hard_constraints = Column(JSON, nullable=True)
+    genres = Column(JSON, nullable=True)
+    semantic_queries = Column(JSON, nullable=True)
+    liked_movies = Column(JSON, nullable=True)
     dynamic_weights = Column(JSON, nullable=True)
     
     conversation = relationship("ConversationLogModel", back_populates="summarization")

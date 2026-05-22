@@ -50,12 +50,16 @@ class EvaluationService:
         sample_size: int = 50,
         start_index: int = 0,
         name: Optional[str] = None,
-        background_tasks: Optional[BackgroundTasks] = None
+        background_tasks: Optional[BackgroundTasks] = None,
+        sample_percent: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Initialize a new evaluation run.
         Loads the dataset sample and creates ConversationLog entries in 'pending' status.
         """
+        if sample_percent is not None:
+            all_convs = self._load_all_dialogs(dataset)
+            sample_size = max(1, round(len(all_convs) * sample_percent / 100))
         conversations = self.load_dialogs_sample(dataset, sample_size)
 
         db = next(get_db())
@@ -252,12 +256,18 @@ class EvaluationService:
                              ConversationLogModel.conv_id)
                     .join(ConversationLogModel, StepSummarizationModel.conversation_id == ConversationLogModel.id)
                     .filter(StepSummarizationModel.summarization_batch_id == batch_id)
+                    .order_by(ConversationLogModel.index)
                     .all()
                 )
                 for row, conv_id in rows:
                     items.append({
                         "conv_id": conv_id,
                         "user_preferences": row.user_preferences,
+                        "hard_constraints": row.hard_constraints or [],
+                        "genres": row.genres or [],
+                        "semantic_queries": row.semantic_queries or [],
+                        "liked_movies": row.liked_movies or [],
+                        "dynamic_weights": row.dynamic_weights or {},
                     })
 
             elif step_type == "retrieval":
@@ -272,6 +282,7 @@ class EvaluationService:
                     db.query(StepRetrievalModel, ConversationLogModel.conv_id)
                     .join(ConversationLogModel, StepRetrievalModel.conversation_id == ConversationLogModel.id)
                     .filter(StepRetrievalModel.retrieval_batch_id == batch_id)
+                    .order_by(ConversationLogModel.index)
                     .all()
                 )
                 for row, conv_id in rows:
@@ -299,6 +310,7 @@ class EvaluationService:
                     db.query(StepRerankingModel, ConversationLogModel.conv_id)
                     .join(ConversationLogModel, StepRerankingModel.conversation_id == ConversationLogModel.id)
                     .filter(StepRerankingModel.reranking_batch_id == batch_id)
+                    .order_by(ConversationLogModel.index)
                     .all()
                 )
                 for row, conv_id in rows:
@@ -379,7 +391,16 @@ class EvaluationService:
                         user_pref_obj = await self.generation_service.summarize_conversation(
                             str(log.dialog)
                         )
-                        return log.id, user_pref_obj.user_preferences, user_pref_obj.dynamic_weights.model_dump(), user_pref_obj.profiler_reasoning
+                        return (
+                            log.id,
+                            user_pref_obj.user_preferences,
+                            user_pref_obj.dynamic_weights.model_dump(),
+                            user_pref_obj.profiler_reasoning,
+                            [hc.model_dump() for hc in (user_pref_obj.hard_constraints or [])],
+                            user_pref_obj.genres or [],
+                            user_pref_obj.semantic_queries or [],
+                            user_pref_obj.liked_movies or [],
+                        )
 
                 tasks = [_summarize_one(log) for log in local_logs]
                 results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -389,8 +410,7 @@ class EvaluationService:
                     if isinstance(outcome, Exception):
                         logger.error(f"Summarization task failed: {outcome}")
                         continue
-                    log_id, user_preferences, dynamic_weights, profiler_reasoning = outcome
-                    # 🔍 DEBUG: Log what LLM generated and what we are saving
+                    log_id, user_preferences, dynamic_weights, profiler_reasoning, hard_constraints, genres, semantic_queries, liked_movies = outcome
                     logger.info(
                         f"[Profiler] conv_id={log_id} | LLM weights={dynamic_weights} | reasoning={str(profiler_reasoning)[:150]}")
                     step = StepSummarizationModel(
@@ -398,6 +418,10 @@ class EvaluationService:
                         summarization_batch_id=batch_id,
                         profiler_reasoning=profiler_reasoning,
                         user_preferences=user_preferences,
+                        hard_constraints=hard_constraints,
+                        genres=genres,
+                        semantic_queries=semantic_queries,
+                        liked_movies=liked_movies,
                         dynamic_weights=dynamic_weights
                     )
                     local_db.add(step)
@@ -989,76 +1013,175 @@ class EvaluationService:
         start_index: int = 0,
         n_sample: int = 100,
         top_k: int = 10,
-        model: Literal["llm", "cohere", "decoupled"] = "decoupled"
+        model: Literal["llm", "cohere", "decoupled"] = "decoupled",
+        name: Optional[str] = None,
+        sample_percent: Optional[float] = None,
+        background_tasks: Optional[BackgroundTasks] = None,
     ) -> Dict[str, Any]:
         """
         Run the full evaluation pipeline on a dataset sample.
+        Creates the run record immediately with status="running", then processes in background.
         """
-        import asyncio
+        # Resolve sample_size from percentage if provided
+        if sample_percent is not None:
+            all_convs = self._load_all_dialogs(dataset)
+            sample_size = max(1, round(len(all_convs) * sample_percent / 100))
+            start_index = 0
 
-        conversations, df_movie = self.load_dataset_sample(
-            dataset, sample_size, start_index)
+        # Resolve actual LLM model name from settings
+        from shared.settings.config import settings as _settings
+        _provider = _settings.llm.LLM_PROVIDER.lower()
+        if model == "llm":
+            if _provider == "gemini":
+                llm_model = "gemini-2.0-flash"
+            elif _provider == "azure":
+                llm_model = _settings.llm.AZURE_LLM_MODEL
+            elif _provider == "openai":
+                llm_model = "gpt-4o-mini"
+            else:
+                llm_model = _provider
+        else:
+            llm_model = model  # "cohere" or "decoupled"
 
-        # Batch processing configuration
-        CONCURRENCY_LIMIT = 10
-        semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
-
-        async def sem_task(conv, idx):
-            async with semaphore:
-                return await self.process_single_conversation(
-                    conv, idx, dataset, n_sample, top_k, model
-                )
-
-        tasks = [
-            sem_task(conv, index)
-            for index, conv in enumerate(conversations, start=start_index)
-        ]
-
-        # Run all tasks
-        results = await asyncio.gather(*tasks)
-
-        # Collect Recalls excluding errors
-        recalls = [
-            res["recall_final"]
-            for res in results
-            if "recall_final" in res and "error" not in res
-        ]
-
-        # Calculate averages
-        avg_recall = sum(recalls) / len(recalls) if recalls else 0.0
-
-        # Calculate averages for detailed metrics
-        def safe_avg(key):
-            valid_entries = [r[key] for r in results if key in r]
-            return sum(valid_entries) / len(valid_entries) if valid_entries else 0.0
-
-        avg_recall_retrieval = safe_avg("recall_retrieval")
-        avg_recall_semantic = safe_avg("recall_semantic")
-        avg_recall_content = safe_avg("recall_content")
-        avg_recall_collab = safe_avg("recall_collab")
-
-        result_data = {
-            "dataset": dataset,
-            "sample_size": len(conversations),
-            "start_index": start_index,
-            "n_sample": n_sample,
-            "top_k": top_k,
-            "model": model,
-            # Placeholder or actual output dir
-            "output_dir": str(self.project_root / "output"),
-            "avg_recall": avg_recall,
-            "avg_recall_retrieval": avg_recall_retrieval,
-            "avg_recall_semantic": avg_recall_semantic,
-            "avg_recall_content": avg_recall_content,
-            "avg_recall_collab": avg_recall_collab,
-            "results": results,
-            "message": f"Evaluated {len(conversations)} samples. Avg Recall@{top_k}: {avg_recall:.4f}"
-        }
-
-        # Save to database
+        # Create run record immediately so the frontend can track it
+        db = next(get_db())
         try:
-            self.evaluation_storage_service.save_run(result_data)
+            run = EvaluationRunModel(
+                name=name,
+                dataset=dataset,
+                sample_size=sample_size,
+                start_index=start_index,
+                n_sample=n_sample,
+                top_k=top_k,
+                model=model,
+                llm_model=llm_model,
+                status="running",
+            )
+            db.add(run)
+            db.commit()
+            db.refresh(run)
+            run_id = run.id
         except Exception as e:
-            print(f"Failed to save evaluation results to DB: {e}")
+            db.rollback()
+            db.close()
+            raise e
+        finally:
+            db.close()
 
-        return result_data
+        async def _do_eval():
+            import asyncio as _asyncio
+            local_db = next(get_db())
+            try:
+                conversations = self.load_dialogs_sample(dataset, sample_size)
+
+                CONCURRENCY_LIMIT = 10
+                semaphore = _asyncio.Semaphore(CONCURRENCY_LIMIT)
+
+                async def sem_task(conv, idx):
+                    async with semaphore:
+                        return await self.process_single_conversation(
+                            conv, idx, dataset, n_sample, top_k, model
+                        )
+
+                tasks = [
+                    sem_task(conv, index)
+                    for index, conv in enumerate(conversations, start=start_index)
+                ]
+                results = await _asyncio.gather(*tasks)
+
+                recalls = [r["recall_final"] for r in results if "recall_final" in r and "error" not in r]
+                avg_recall = sum(recalls) / len(recalls) if recalls else 0.0
+
+                def safe_avg(key):
+                    valid = [r[key] for r in results if key in r]
+                    return sum(valid) / len(valid) if valid else 0.0
+
+                run_obj = local_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+                if run_obj:
+                    run_obj.avg_recall = round(avg_recall, 3)
+                    run_obj.avg_recall_retrieval = round(safe_avg("recall_retrieval"), 3)
+                    run_obj.avg_recall_semantic = round(safe_avg("recall_semantic"), 3)
+                    run_obj.avg_recall_content = round(safe_avg("recall_content"), 3)
+                    run_obj.avg_recall_collab = round(safe_avg("recall_collab"), 3)
+                    run_obj.sample_size = len(conversations)
+                    run_obj.status = "completed"
+
+                    for res in results:
+                        recall = res.get("recall_final") if res.get("recall_final") is not None else res.get("recall", 0.0)
+                        result_model = EvaluationResultModel(
+                            run_id=run_id,
+                            conv_id=str(res.get("conv_id")),
+                            recall=round(recall, 3),
+                            ground_truth=res.get("ground_truth"),
+                            recommendations=res.get("recommendations"),
+                            candidate_count=res.get("candidate_count"),
+                            recall_retrieval=round(res["recall_retrieval"], 3) if res.get("recall_retrieval") is not None else None,
+                            recall_semantic=round(res["recall_semantic"], 3) if res.get("recall_semantic") is not None else None,
+                            recall_content=round(res["recall_content"], 3) if res.get("recall_content") is not None else None,
+                            recall_collab=round(res["recall_collab"], 3) if res.get("recall_collab") is not None else None,
+                            semantic_count=res.get("semantic_count"),
+                            content_count=res.get("content_count"),
+                            collab_count=res.get("collab_count"),
+                            error=res.get("error"),
+                        )
+                        local_db.add(result_model)
+
+                    local_db.commit()
+                    logger.info(f"Evaluation run {run_id} completed. Avg Recall@{top_k}: {avg_recall:.4f}")
+
+            except Exception as e:
+                local_db.rollback()
+                try:
+                    run_obj = local_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+                    if run_obj:
+                        run_obj.status = "failed"
+                        local_db.commit()
+                except Exception:
+                    pass
+                logger.error(f"Evaluation run {run_id} failed: {e}")
+            finally:
+                local_db.close()
+
+        if background_tasks:
+            background_tasks.add_task(_do_eval)
+            return {
+                "run_id": run_id,
+                "status": "running",
+                "dataset": dataset,
+                "sample_size": sample_size,
+                "start_index": start_index,
+                "n_sample": n_sample,
+                "top_k": top_k,
+                "model": model,
+                "avg_recall": 0.0,
+                "results": [],
+                "output_dir": str(self.project_root / "output"),
+                "message": f"Evaluation started (run_id={run_id}). Processing {sample_size} conversations in background.",
+            }
+
+        await _do_eval()
+
+        final_db = next(get_db())
+        try:
+            run_obj = final_db.query(EvaluationRunModel).filter_by(id=run_id).first()
+            avg = run_obj.avg_recall or 0.0
+            return {
+                "run_id": run_id,
+                "status": run_obj.status if run_obj else "unknown",
+                "dataset": dataset,
+                "sample_size": sample_size,
+                "start_index": start_index,
+                "n_sample": n_sample,
+                "top_k": top_k,
+                "model": model,
+                "avg_recall": avg,
+                "avg_recall_retrieval": run_obj.avg_recall_retrieval if run_obj else None,
+                "avg_recall_semantic": run_obj.avg_recall_semantic if run_obj else None,
+                "avg_recall_content": run_obj.avg_recall_content if run_obj else None,
+                "avg_recall_collab": run_obj.avg_recall_collab if run_obj else None,
+                "results": [],
+                "output_dir": str(self.project_root / "output"),
+                "message": f"Evaluation complete (run_id={run_id}). Avg Recall@{top_k}: {avg:.4f}",
+            }
+        finally:
+            final_db.close()

@@ -34,6 +34,7 @@ class EvaluationRunResponse(BaseModel):
     n_sample: int | None = None
     top_k: int | None = None
     model: str | None = None
+    llm_model: str | None = None
     avg_recall: float | None = None
     
     # Granular aggregates
