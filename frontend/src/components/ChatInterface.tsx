@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { Send, Bot, User, Film, Sparkles, Loader2, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -171,8 +172,9 @@ export default function ChatInterface() {
         setIsLoading(true);
         setNodeStates(initialNodeStates());
 
-        // Build full conversation history including previous turns
-        const history = messages
+        // Build full conversation history (skip the static initial greeting)
+        const turns = messages.filter((m, i) => !(i === 0 && m.role === 'ai'));
+        const history = turns
             .map((m) => `${m.role === 'user' ? 'User' : 'GRACE'}: ${m.content}`)
             .join('\n');
         const fullConversation = history
@@ -182,13 +184,17 @@ export default function ChatInterface() {
         try {
             await streamChatMessages(fullConversation, (event) => {
                 if (event.event === 'node') {
-                    setNodeStates((prev) => ({
-                        ...prev,
-                        [event.node]: {
-                            status: event.status,
-                            message: event.message,
-                        },
-                    }));
+                    // flushSync forces an immediate render for each node transition
+                    // so the animation is visible even when events arrive in rapid succession
+                    flushSync(() => {
+                        setNodeStates((prev) => ({
+                            ...prev,
+                            [event.node]: {
+                                status: event.status,
+                                message: event.message,
+                            },
+                        }));
+                    });
                 } else if (event.event === 'result') {
                     const aiMessage: Message = {
                         id: (Date.now() + 1).toString(),
@@ -219,7 +225,8 @@ export default function ChatInterface() {
             ]);
         } finally {
             setIsLoading(false);
-            setNodeStates(initialNodeStates());
+            // nodeStates is intentionally NOT reset here — LiveNodeTracer is already
+            // hidden when isLoading=false. It will be reset on the next request.
         }
     };
 
