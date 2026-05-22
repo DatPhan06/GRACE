@@ -21,7 +21,8 @@ const stepColors: Record<string, { bg: string; border: string; text: string; bad
 };
 
 const nextStepInfo: Record<string, { label: string; icon: string; color: string; hoverColor: string }> = {
-    summarization: { label: 'Run Retrieval → Critic Loop → Reranker →', icon: '🔍', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
+    summarization: { label: 'Run Retrieval + Critic + Reflexion', icon: '🔍', color: 'bg-purple-600', hoverColor: 'hover:bg-purple-700' },
+    retrieval: { label: 'Run Reranker', icon: '🎯', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
 };
 
 const priorityColors: Record<string, string> = {
@@ -104,7 +105,15 @@ function RetrievalItem({ item }: { item: BatchDetailItem }) {
         <div className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
             <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded">{item.conv_id}</span>
-                <span className="text-xs text-gray-500">{item.candidate_count} candidates</span>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">{item.candidate_count} retrieved</span>
+                    {item.filtered_count != null && item.filtered_count !== item.candidate_count && (
+                        <span className="text-xs text-purple-600">→ {item.filtered_count} after Critic</span>
+                    )}
+                    {item.relaxation_applied && (
+                        <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Reflexion applied</span>
+                    )}
+                </div>
             </div>
             <div className="flex gap-3 text-xs text-gray-600">
                 {item.semantic_count != null && <span className="bg-blue-50 px-2 py-0.5 rounded">Semantic: {item.semantic_count}</span>}
@@ -234,16 +243,22 @@ export default function VersionDetailModal({ detail, onClose, onRunNextStep, nex
 
                     {nextStep && onRunNextStep && (
                         <div className="flex items-center gap-3">
-                            {/* Combined pipeline params when going from Profiler → Retrieval+Critic+Reranker */}
+                            {/* N Candidates param when going from Profiler → Retrieval+Critic+Reflexion */}
                             {detail.step_type === 'summarization' && nextStepConfig && (
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <label className="text-xs text-gray-500">N:</label>
+                                    <label className="text-xs text-gray-500">N Candidates:</label>
                                     <input
                                         type="number"
                                         value={nextStepConfig.nSample}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => nextStepConfig.setNSample(Number(e.target.value))}
-                                        className="w-16 text-sm border border-gray-300 rounded px-2 py-1"
+                                        className="w-20 text-sm border border-gray-300 rounded px-2 py-1"
                                     />
+                                </div>
+                            )}
+
+                            {/* Top K + Model params when going from Retrieval → Reranker */}
+                            {detail.step_type === 'retrieval' && nextStepConfig && (
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <label className="text-xs text-gray-500">Top K:</label>
                                     <input
                                         type="number"

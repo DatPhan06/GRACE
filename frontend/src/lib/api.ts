@@ -294,6 +294,10 @@ export interface BatchDetailItem {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     candidates?: any[];
     candidate_count?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filtered_candidates?: any[];
+    filtered_count?: number;
+    relaxation_applied?: boolean;
     semantic_count?: number;
     content_count?: number;
     collab_count?: number;

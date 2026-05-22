@@ -12,7 +12,7 @@ from domain.retrieval.service import RetrievalService
 from domain.reranking.service import RerankingService
 from domain.agent.critic import CriticAgent
 from domain.agent.relaxation import RelaxationAgent
-from domain.agent.models import UserPreference, RetrievalWeights
+from domain.agent.models import UserPreference, RetrievalWeights, HardConstraint
 from domain.evaluation import EvaluationDomainService
 from domain.evaluation_storage.service import EvaluationStorageService
 from shared.settings.config import settings
@@ -287,10 +287,14 @@ class EvaluationService:
                 )
                 for row, conv_id in rows:
                     candidates = row.candidates or []
+                    filtered = row.filtered_candidates or candidates
                     items.append({
                         "conv_id": conv_id,
                         "candidates": candidates,
                         "candidate_count": len(candidates) if isinstance(candidates, list) else 0,
+                        "filtered_candidates": filtered,
+                        "filtered_count": len(filtered) if isinstance(filtered, list) else 0,
+                        "relaxation_applied": row.relaxation_applied or False,
                         "semantic_count": row.semantic_count,
                         "content_count": row.content_count,
                         "collab_count": row.collab_count,
@@ -529,12 +533,15 @@ class EvaluationService:
                     dynamic_weights = step_summ.dynamic_weights
                     liked_movies = log.liked_movies
 
-                    # 2. Retrieve
+                    # 2. Retrieve (WRRF fusion)
                     retrieval_result = await self.retrieval_service.retrieve_movies(
                         user_preferences=user_preferences,
                         liked_movies=liked_movies,
                         n=n_sample,
-                        dynamic_weights=dynamic_weights
+                        dynamic_weights=dynamic_weights,
+                        hard_constraints=[HardConstraint(**hc) for hc in (step_summ.hard_constraints or [])],
+                        semantic_queries=step_summ.semantic_queries or [],
+                        genres=step_summ.genres or [],
                     )
 
                     candidates = retrieval_result["combined"]
@@ -544,11 +551,49 @@ class EvaluationService:
                         "collab": len(retrieval_result.get("collaborative", []))
                     }
 
+                    # 3. Critic → Relaxation → re-Retrieval loop (max 1 relaxation attempt)
+                    current_prefs = UserPreference(
+                        user_preferences=step_summ.user_preferences,
+                        dynamic_weights=RetrievalWeights(**(step_summ.dynamic_weights or {})),
+                        hard_constraints=[HardConstraint(**hc) for hc in (step_summ.hard_constraints or [])],
+                        genres=step_summ.genres or [],
+                        semantic_queries=step_summ.semantic_queries or [],
+                        liked_movies=step_summ.liked_movies or [],
+                    )
+                    current_candidates = candidates
+                    filtered = candidates
+                    relaxation_applied = False
+
+                    for attempt in range(2):  # max 1 relaxation attempt
+                        critic_result = await self.critic_agent.filter_candidates(
+                            user_preferences=current_prefs.user_preferences,
+                            candidates=current_candidates,
+                            hard_constraints=current_prefs.hard_constraints,
+                        )
+                        filtered = critic_result.get("movies", current_candidates) or current_candidates
+                        if not critic_result.get("requires_relaxation", False) or attempt >= 1:
+                            break
+                        relaxed = await self.relaxation_agent.run(current_prefs, critic_result.get("reasoning", ""))
+                        re_retrieval = await self.retrieval_service.retrieve_movies(
+                            user_preferences=relaxed.user_preferences,
+                            liked_movies=log.liked_movies or [],
+                            n=len(candidates),
+                            dynamic_weights=relaxed.dynamic_weights.model_dump(),
+                            hard_constraints=relaxed.hard_constraints,
+                            semantic_queries=relaxed.semantic_queries,
+                            genres=relaxed.genres,
+                        )
+                        current_candidates = re_retrieval.get("combined", []) or current_candidates
+                        current_prefs = relaxed
+                        relaxation_applied = True
+
                     # Upsert StepRetrieval linked to Batch
                     step = StepRetrievalModel(
                         conversation_id=log.id,
                         retrieval_batch_id=batch_id,
-                        candidates=candidates,
+                        candidates=candidates,            # raw WRRF candidates
+                        filtered_candidates=filtered,     # post-critic candidates
+                        relaxation_applied=relaxation_applied,
                         semantic_count=counts["semantic"],
                         content_count=counts["content"],
                         collab_count=counts["collab"]
@@ -646,8 +691,6 @@ class EvaluationService:
                     if not step_retrieval:
                         continue
 
-                    candidates = step_retrieval.candidates
-
                     # 2. Get User Preferences
                     retrieval_run = local_db.query(RetrievalRunModel).filter_by(
                         id=retrieval_batch_id).first()
@@ -659,52 +702,16 @@ class EvaluationService:
                     if not step_summ:
                         continue
 
-                    user_preferences = step_summ.user_preferences
                     context = log.dialog
 
-                    # 3. Critic → Relaxation → Retrieval loop (mirrors LangGraph, max 1 relaxation)
-                    # After MAX_RELAXATION_ATTEMPTS the loop always exits to Reranker.
-                    # Relaxation only goes back to Retrieval — never to Profiler Agent.
-                    MAX_RELAXATION_ATTEMPTS = 1
-                    current_candidates = candidates
-                    current_prefs_str = user_preferences
-                    filtered = candidates
-
-                    current_prefs = UserPreference(
-                        user_preferences=current_prefs_str,
-                        dynamic_weights=RetrievalWeights(**(step_summ.dynamic_weights or {})),
-                    )
-                    for attempt in range(MAX_RELAXATION_ATTEMPTS + 1):
-                        critic_result = await self.critic_agent.filter_candidates(
-                            user_preferences=current_prefs.user_preferences,
-                            candidates=current_candidates,
-                            hard_constraints=current_prefs.hard_constraints,
-                        )
-                        filtered = critic_result.get("movies", current_candidates) or current_candidates
-
-                        if not critic_result.get("requires_relaxation", False) or attempt >= MAX_RELAXATION_ATTEMPTS:
-                            break
-
-                        # Relaxation: widen constraints, then re-retrieve (not re-profile)
-                        relaxed = await self.relaxation_agent.run(current_prefs, critic_result.get("reasoning", ""))
-                        re_retrieval = await self.retrieval_service.retrieve_movies(
-                            user_preferences=relaxed.user_preferences,
-                            liked_movies=log.liked_movies or [],
-                            n=len(candidates),
-                            dynamic_weights=relaxed.dynamic_weights.model_dump(),
-                            hard_constraints=relaxed.hard_constraints,
-                            semantic_queries=relaxed.semantic_queries,
-                            genres=relaxed.genres,
-                        )
-                        current_candidates = re_retrieval.get("combined", []) or current_candidates
-                        current_prefs = relaxed
-
-                    user_preferences = current_prefs.user_preferences
+                    # 3. Use post-critic candidates from retrieval step (Step 3 already handled Critic+Relaxation)
+                    candidates_for_reranker = step_retrieval.filtered_candidates or step_retrieval.candidates
+                    user_preferences = step_summ.user_preferences
 
                     # 4. Reranker — select top-K from filtered candidates
                     reranking_results = await self.reranking_service.rerank_movies(
                         user_preferences=user_preferences,
-                        candidates=filtered,
+                        candidates=candidates_for_reranker,
                         conversation=str(context),
                         top_k=top_k,
                         model=model

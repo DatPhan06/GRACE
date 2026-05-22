@@ -130,9 +130,11 @@ class StepRetrievalModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(Integer, ForeignKey("conversation_logs.id"))
     retrieval_batch_id = Column(Integer, ForeignKey("retrieval_runs.id"))
-    
-    candidates = Column(JSON) 
-    
+
+    candidates = Column(JSON)
+    filtered_candidates = Column(JSON, nullable=True)   # post-critic/post-relaxation candidates
+    relaxation_applied = Column(Boolean, nullable=True, default=False)
+
     # Metadata
     semantic_count = Column(Integer)
     content_count = Column(Integer)
