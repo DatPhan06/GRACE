@@ -11,10 +11,15 @@ _NODE_CFG: Dict[str, Dict[str, str]] = {
         "start_msg": "Profiler Agent: Analyzing your movie preferences...",
         "end_msg":   "Profiler Agent: Done.",
     },
+    "orchestrator": {
+        "display": "orchestrator",
+        "start_msg": "Orchestrator: Planning retrieval strategy...",
+        "end_msg":   "Orchestrator: Done — streams activated.",
+    },
     "retrieval": {
         "display": "retrieval",
-        "start_msg": "Orchestrator: Launching Semantic, Content & Graph Agents...",
-        "end_msg":   "Orchestrator: Done.",
+        "start_msg": "Orchestrator: Launching Semantic, Content & Graph Agents in parallel...",
+        "end_msg":   "Orchestrator: Done — candidates fused via WRRF.",
     },
     "critic": {
         "display": "reranking",
@@ -96,7 +101,7 @@ class ChatService:
                     if name == "profiler" and acc.get("preferences"):
                         n = len(acc["preferences"].liked_movies)
                         msg = f"Profiler Agent: Done — extracted {n} liked movies."
-                    elif name == "retrieval":
+                    elif name == "orchestrator":
                         n = len(acc.get("candidates", []))
                         msg = f"Orchestrator: Done — fused {n} candidates via WRRF."
                     elif name == "reranker":

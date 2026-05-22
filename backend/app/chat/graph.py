@@ -20,6 +20,15 @@ async def profiler_node(state: ARGOSState) -> dict:
     return {"preferences": preferences, "agent_trace": trace}
 
 
+async def orchestrator_node(state: ARGOSState) -> dict:
+    prefs = state["preferences"]
+    w = prefs.dynamic_weights
+    trace = [
+        f"Orchestrator: activating Semantic (w={w.w_sem}), Content (w={w.w_con}), Graph (w={w.w_col}) streams."
+    ]
+    return {"agent_trace": trace}
+
+
 async def retrieval_node(state: ARGOSState) -> dict:
     prefs = state["preferences"]
     results = await _retrieval.retrieve_movies(
@@ -102,6 +111,7 @@ def build_graph():
     workflow = StateGraph(ARGOSState)
 
     workflow.add_node("profiler", profiler_node)
+    workflow.add_node("orchestrator", orchestrator_node)
     workflow.add_node("retrieval", retrieval_node)
     workflow.add_node("critic", critic_node)
     workflow.add_node("relaxation", relaxation_node)
@@ -109,14 +119,15 @@ def build_graph():
     workflow.add_node("generator", generator_node)
 
     workflow.add_edge(START, "profiler")
-    workflow.add_edge("profiler", "retrieval")
+    workflow.add_edge("profiler", "orchestrator")
+    workflow.add_edge("orchestrator", "retrieval")
     workflow.add_edge("retrieval", "critic")
     workflow.add_conditional_edges(
         "critic",
         _route_after_critic,
         {"relaxation": "relaxation", "reranker": "reranker"},
     )
-    workflow.add_edge("relaxation", "retrieval")
+    workflow.add_edge("relaxation", "orchestrator")
     workflow.add_edge("reranker", "generator")
     workflow.add_edge("generator", END)
 
