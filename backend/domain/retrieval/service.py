@@ -75,10 +75,10 @@ class RetrievalService:
                 try:
                     return await asyncio.wait_for(
                         self.collab_retriever.retrieve(user_preferences, liked_movies, n, hard_constraints=hard_constraints),
-                        timeout=3.0,
+                        timeout=10.0,
                     )
                 except asyncio.TimeoutError:
-                    agent_trace.append("Orchestrator: Graph Agent timed out after 3s — proceeding with Semantic + Content results.")
+                    agent_trace.append("Orchestrator: Graph Agent timed out after 10s — proceeding with Semantic + Content results.")
                     return {"movies": [], "thoughts": []}
             return {"movies": [], "thoughts": []}
 
