@@ -9,7 +9,8 @@ export interface MovieRecommendation {
     year?: any;
     plot?: string;
     poster?: string;
-    score?: number;
+    similarity?: number;
+    imdbRating?: number;
 }
 
 export interface ChatResponse {
@@ -32,7 +33,7 @@ export const sendMessage = async (conversation: string): Promise<ChatResponse> =
 };
 
 // ─── Streaming types ────────────────────────────────────────────────────────
-export type AgentNode = 'profiler' | 'retrieval' | 'reranking' | 'generation';
+export type AgentNode = 'profiler' | 'orchestrator' | 'retrieval' | 'reranking' | 'generation';
 export type NodeStatus = 'running' | 'done';
 
 export interface NodeEvent {

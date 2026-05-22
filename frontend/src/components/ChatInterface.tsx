@@ -33,10 +33,16 @@ const NODE_DEFS: NodeDef[] = [
         runningLabel: 'Analyzing your preferences...',
     },
     {
-        id: 'retrieval',
+        id: 'orchestrator',
         icon: <Bot size={15} />,
         label: 'Orchestrator',
-        runningLabel: 'Launching retrieval agents...',
+        runningLabel: 'Planning retrieval strategy...',
+    },
+    {
+        id: 'retrieval',
+        icon: <Bot size={15} />,
+        label: 'Retrieval Agents',
+        runningLabel: 'Launching parallel retrieval streams...',
     },
     {
         id: 'reranking',
@@ -118,6 +124,7 @@ function LiveNodeTracer({ nodeStates }: { nodeStates: Record<AgentNode, NodeStat
 // ─── Main Component ───────────────────────────────────────────────────────────
 const initialNodeStates = (): Record<AgentNode, NodeState> => ({
     profiler: { status: 'idle', message: '' },
+    orchestrator: { status: 'idle', message: '' },
     retrieval: { status: 'idle', message: '' },
     reranking: { status: 'idle', message: '' },
     generation: { status: 'idle', message: '' },
@@ -164,8 +171,16 @@ export default function ChatInterface() {
         setIsLoading(true);
         setNodeStates(initialNodeStates());
 
+        // Build full conversation history including previous turns
+        const history = messages
+            .map((m) => `${m.role === 'user' ? 'User' : 'GRACE'}: ${m.content}`)
+            .join('\n');
+        const fullConversation = history
+            ? `${history}\nUser: ${input}`
+            : `User: ${input}`;
+
         try {
-            await streamChatMessages(userMessage.content, (event) => {
+            await streamChatMessages(fullConversation, (event) => {
                 if (event.event === 'node') {
                     setNodeStates((prev) => ({
                         ...prev,
@@ -308,17 +323,24 @@ export default function ChatInterface() {
                                                     <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors text-sm">
                                                         {movie.title}
                                                     </h3>
-                                                    {movie.year && (
-                                                        <p className="text-xs text-gray-500 mt-0.5">{movie.year}</p>
-                                                    )}
-                                                    <div className="mt-2">
-                                                        <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                                                            <div
-                                                                className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full"
-                                                                style={{ width: `${(movie.score || 0) * 100}%` }}
-                                                            />
-                                                        </div>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        {movie.year && (
+                                                            <p className="text-xs text-gray-500">{movie.year}</p>
+                                                        )}
+                                                        {movie.imdbRating != null && (
+                                                            <p className="text-xs text-yellow-600 font-semibold">★ {movie.imdbRating.toFixed(1)}</p>
+                                                        )}
                                                     </div>
+                                                    {movie.similarity != null && (
+                                                        <div className="mt-2">
+                                                            <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full"
+                                                                    style={{ width: `${Math.min(movie.similarity * 500, 100)}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                             {movie.plot && (
