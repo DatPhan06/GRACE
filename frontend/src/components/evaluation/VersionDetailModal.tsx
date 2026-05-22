@@ -1,4 +1,4 @@
-import { BatchDetailResponse, BatchDetailItem } from '@/lib/api';
+import { BatchDetailResponse, BatchDetailItem, HardConstraint } from '@/lib/api';
 
 interface Props {
     detail: BatchDetailResponse;
@@ -21,19 +21,80 @@ const stepColors: Record<string, { bg: string; border: string; text: string; bad
 };
 
 const nextStepInfo: Record<string, { label: string; icon: string; color: string; hoverColor: string }> = {
-    summarization: { label: 'Run Retrieval →', icon: '🔍', color: 'bg-purple-600', hoverColor: 'hover:bg-purple-700' },
-    retrieval: { label: 'Run Critic → Relax → Reranker →', icon: '🏆', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
+    summarization: { label: 'Run Retrieval → Critic Loop → Reranker →', icon: '🔍', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
+};
+
+const priorityColors: Record<string, string> = {
+    core: 'bg-red-100 text-red-700 border-red-200',
+    soft: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    optional: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 
 function SummarizationItem({ item }: { item: BatchDetailItem }) {
+    const dw = item.dynamic_weights;
     return (
-        <div className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
-            <div className="flex items-center gap-2 mb-2">
+        <div className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow space-y-2.5">
+            {/* Header */}
+            <div className="flex items-center justify-between">
                 <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded">{item.conv_id}</span>
+                {dw && (
+                    <div className="flex gap-1.5 text-xs text-gray-500">
+                        <span className="bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">sem <strong className="text-blue-700">{dw.w_sem.toFixed(2)}</strong></span>
+                        <span className="bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">con <strong className="text-orange-700">{dw.w_con.toFixed(2)}</strong></span>
+                        <span className="bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">col <strong className="text-teal-700">{dw.w_col.toFixed(2)}</strong></span>
+                    </div>
+                )}
             </div>
-            <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto">
+
+            {/* User Preferences */}
+            <div className="text-sm text-gray-700 leading-relaxed">
                 {item.user_preferences || <span className="text-gray-400 italic">No preferences extracted</span>}
             </div>
+
+            {/* Hard Constraints */}
+            {item.hard_constraints && item.hard_constraints.length > 0 && (
+                <div>
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Hard Constraints</div>
+                    <div className="flex flex-wrap gap-1.5">
+                        {item.hard_constraints.map((hc: HardConstraint, i: number) => (
+                            <span key={i} className={`text-xs px-2 py-0.5 rounded border ${priorityColors[hc.priority] || priorityColors.soft}`}>
+                                {hc.constraint} <span className="opacity-60">({hc.priority})</span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Genres */}
+            {item.genres && item.genres.length > 0 && (
+                <div className="flex gap-1.5 flex-wrap">
+                    <span className="text-xs font-semibold text-gray-500 self-center">Genres:</span>
+                    {item.genres.map((g: string, i: number) => (
+                        <span key={i} className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100">{g}</span>
+                    ))}
+                </div>
+            )}
+
+            {/* Semantic Queries */}
+            {item.semantic_queries && item.semantic_queries.length > 0 && (
+                <details>
+                    <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                        Semantic queries ({item.semantic_queries.length})
+                    </summary>
+                    <ul className="mt-1 space-y-0.5 pl-3">
+                        {item.semantic_queries.map((q: string, i: number) => (
+                            <li key={i} className="text-xs text-gray-600 list-disc">{q}</li>
+                        ))}
+                    </ul>
+                </details>
+            )}
+
+            {/* Liked Movies */}
+            {item.liked_movies && item.liked_movies.length > 0 && (
+                <div className="text-xs text-blue-600">
+                    ❤️ {item.liked_movies.join(', ')}
+                </div>
+            )}
         </div>
     );
 }
@@ -173,28 +234,22 @@ export default function VersionDetailModal({ detail, onClose, onRunNextStep, nex
 
                     {nextStep && onRunNextStep && (
                         <div className="flex items-center gap-3">
-                            {/* Retrieval params when going from Summarization → Retrieval */}
+                            {/* Combined pipeline params when going from Profiler → Retrieval+Critic+Reranker */}
                             {detail.step_type === 'summarization' && nextStepConfig && (
-                                <div className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-500">N Candidates:</label>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <label className="text-xs text-gray-500">N:</label>
                                     <input
                                         type="number"
                                         value={nextStepConfig.nSample}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => nextStepConfig.setNSample(Number(e.target.value))}
-                                        className="w-20 text-sm border border-gray-300 rounded px-2 py-1"
+                                        className="w-16 text-sm border border-gray-300 rounded px-2 py-1"
                                     />
-                                </div>
-                            )}
-
-                            {/* Reranking params when going from Retrieval → Reranking */}
-                            {detail.step_type === 'retrieval' && nextStepConfig && (
-                                <div className="flex items-center gap-2">
                                     <label className="text-xs text-gray-500">Top K:</label>
                                     <input
                                         type="number"
                                         value={nextStepConfig.topK}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => nextStepConfig.setTopK(Number(e.target.value))}
-                                        className="w-16 text-sm border border-gray-300 rounded px-2 py-1"
+                                        className="w-14 text-sm border border-gray-300 rounded px-2 py-1"
                                     />
                                     <label className="text-xs text-gray-500">Model:</label>
                                     <select

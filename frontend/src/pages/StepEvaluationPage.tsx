@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { initializeRun, runProfilerStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, getRunConversations, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse, ConversationLogItem } from '@/lib/api';
+import { initializeRun, runProfilerStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, getEvaluationInfo, getRunConversations, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse, ConversationLogItem } from '@/lib/api';
 import VersionDetailModal from '@/components/evaluation/VersionDetailModal';
 
 // ─── Shared UI components (defined OUTSIDE the page to keep stable references) ───
@@ -106,32 +106,25 @@ function PipelineFlowDiagram() {
                 </div>
                 <Arrow />
 
-                {/* Step 3: Retrieval */}
+                {/* Step 3: Retrieval → Critic Loop → Reranker (combined, inseparable due to relaxation loop) */}
                 <div className="flex flex-col items-center shrink-0">
-                    <div className="w-28 p-3 bg-purple-50 border-2 border-purple-200 rounded-xl text-center">
-                        <div className="text-xl mb-1">🔍</div>
-                        <div className="text-xs font-bold text-purple-800">Retrieval</div>
-                        <div className="text-[10px] text-purple-500 mt-0.5">WRRF fusion</div>
-                    </div>
-                </div>
-                <Arrow />
-
-                {/* Step 4: Critic → Relax → Reranker */}
-                <div className="flex flex-col items-center shrink-0">
-                    <div className="border-2 border-green-200 bg-green-50 rounded-xl p-3 w-52">
+                    <div className="border-2 border-green-200 bg-green-50 rounded-xl p-3 w-64">
                         <div className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-2 text-center">
-                            Critic → Relax → Reranker
+                            Retrieval → Critic Loop → Reranker
                         </div>
                         <div className="flex flex-col items-center gap-1">
+                            <div className="bg-white border border-purple-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-purple-700 w-full text-center">
+                                Retrieval (WRRF fusion)
+                            </div>
+                            <div className="text-[10px] text-gray-400">↓</div>
                             <div className="bg-white border border-orange-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-orange-700 w-full text-center">
                                 Critic Agent
                             </div>
                             <div className="text-[10px] text-gray-400">↓</div>
-                            {/* Optional loop — dashed border signals conditional */}
+                            {/* Relaxation loop — dashed signals conditional re-retrieval */}
                             <div className="w-full border border-dashed border-amber-300 bg-amber-50/60 rounded-lg px-2.5 py-1.5 text-center">
                                 <div className="text-[9px] font-semibold text-amber-600 mb-0.5">if |M| &lt; τ · max 1×</div>
-                                <div className="text-[10px] text-amber-700">Relaxation</div>
-                                <div className="text-[9px] text-amber-600">→ re-retrieve → Critic</div>
+                                <div className="text-[10px] text-amber-700">Relaxation → re-retrieve → Critic</div>
                             </div>
                             <div className="text-[10px] text-gray-400 italic">↓ always</div>
                             <div className="bg-white border border-green-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-green-700 w-full text-center">
@@ -182,7 +175,8 @@ export default function StepEvaluationPage() {
 
     // Params
     const [dataset, setDataset] = useState<"inspired" | "redial">("redial");
-    const [sampleSize, setSampleSize] = useState(5);
+    const [samplePercent, setSamplePercent] = useState(20);
+    const [datasetSizes, setDatasetSizes] = useState<Record<string, number>>({});
     const [nSample, setNSample] = useState(100);
     const [topK, setTopK] = useState(10);
     const [model, setModel] = useState<"llm" | "cohere">("cohere");
@@ -190,7 +184,6 @@ export default function StepEvaluationPage() {
     // Data
     const [allRuns, setAllRuns] = useState<EvaluationRunResponse[]>([]);
     const [summBatches, setSummBatches] = useState<BatchStepExecutionResponse[]>([]);
-    const [retrBatches, setRetrBatches] = useState<BatchStepExecutionResponse[]>([]);
     const [rerankBatches, setRerankBatches] = useState<BatchStepExecutionResponse[]>([]);
 
     // Detail Modal
@@ -199,11 +192,10 @@ export default function StepEvaluationPage() {
     const [detailLoading, setDetailLoading] = useState(false);
 
     // New Version Modal
-    const [showNewVersionModal, setShowNewVersionModal] = useState<"summ" | "retr" | "rerank" | null>(null);
+    const [showNewVersionModal, setShowNewVersionModal] = useState<"summ" | "pipeline" | null>(null);
     const [newVersionName, setNewVersionName] = useState('');
     const [selectedRunId, setSelectedRunId] = useState<number | undefined>(undefined);
     const [selectedSummBatch, setSelectedSummBatch] = useState<number | undefined>(undefined);
-    const [selectedRetrBatch, setSelectedRetrBatch] = useState<number | undefined>(undefined);
 
     // Init Run Modal
     const [showRunModal, setShowRunModal] = useState(false);
@@ -223,10 +215,6 @@ export default function StepEvaluationPage() {
         try { setSummBatches(await getStepsByType('summarization')); } catch (e) { console.error(e); }
     }, []);
 
-    const loadRetrBatches = useCallback(async () => {
-        try { setRetrBatches(await getStepsByType('retrieval')); } catch (e) { console.error(e); }
-    }, []);
-
     const loadRerankBatches = useCallback(async () => {
         try { setRerankBatches(await getStepsByType('reranking')); } catch (e) { console.error(e); }
     }, []);
@@ -235,16 +223,24 @@ export default function StepEvaluationPage() {
     useEffect(() => {
         loadRuns();
         loadSummBatches();
-        loadRetrBatches();
         loadRerankBatches();
-    }, [loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
+        getEvaluationInfo().then(info => setDatasetSizes(info.dataset_sizes)).catch(() => {});
+    }, [loadRuns, loadSummBatches, loadRerankBatches]);
 
-    // Polling: watch any running batch across all sections
+    // Step-based runs only: 'initialized' (created via initializeRun, no steps yet)
+    // or referenced in any batch step. This keeps Step-by-Step independent from
+    // the System Evaluation page which shows full-pipeline and imported runs.
+    const stepRunIds = new Set([
+        ...summBatches.map(b => b.run_id),
+        ...rerankBatches.map(b => b.run_id),
+    ]);
+    const stepRuns = allRuns.filter(r => r.status === 'initialized' || stepRunIds.has(r.id));
+
+    // Polling: watch any running batch
     useEffect(() => {
         const hasRunning =
             allRuns.some(r => r.status === 'initialized' || r.status === 'running') ||
             summBatches.some(b => b.status === 'running') ||
-            retrBatches.some(b => b.status === 'running') ||
             rerankBatches.some(b => b.status === 'running');
 
         if (!hasRunning) return;
@@ -252,22 +248,19 @@ export default function StepEvaluationPage() {
         const interval = setInterval(() => {
             if (allRuns.some(r => r.status === 'initialized' || r.status === 'running')) loadRuns();
             if (summBatches.some(b => b.status === 'running')) loadSummBatches();
-            if (retrBatches.some(b => b.status === 'running')) loadRetrBatches();
             if (rerankBatches.some(b => b.status === 'running')) loadRerankBatches();
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [allRuns, summBatches, retrBatches, rerankBatches, loadRuns, loadSummBatches, loadRetrBatches, loadRerankBatches]);
+    }, [allRuns, summBatches, rerankBatches, loadRuns, loadSummBatches, loadRerankBatches]);
 
-    // --- Open New Version Modal (preload prev step data) ---
-    const openNewVersionModal = async (step: "summ" | "retr" | "rerank") => {
+    // --- Open New Version Modal ---
+    const openNewVersionModal = async (step: "summ" | "pipeline") => {
         setNewVersionName('');
         setSelectedRunId(undefined);
         setSelectedSummBatch(undefined);
-        setSelectedRetrBatch(undefined);
         if (step === 'summ') await loadRuns();
-        if (step === 'retr') await loadSummBatches();
-        if (step === 'rerank') await loadRetrBatches();
+        if (step === 'pipeline') await loadSummBatches();
         setShowNewVersionModal(step);
     };
 
@@ -289,7 +282,7 @@ export default function StepEvaluationPage() {
     const handleInit = async () => {
         setLoading(true);
         try {
-            await initializeRun(dataset, sampleSize, 0, newVersionName);
+            await initializeRun(dataset, samplePercent, newVersionName);
             setShowRunModal(false);
             setNewVersionName('');
             loadRuns();
@@ -316,57 +309,51 @@ export default function StepEvaluationPage() {
         }
     };
 
-    const handleCreateRetrieval = async (runIdOverride?: number | unknown) => {
-        const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
-        if (!runId) return;
-        setLoading(true);
-        try {
-            await runRetrievalStep(runId, nSample, selectedSummBatch, newVersionName);
-            setShowNewVersionModal(null);
-            setNewVersionName('');
-            loadRetrBatches();
-        } catch (error) {
-            console.error('Retrieval failed:', error);
-        } finally {
-            setLoading(false);
+    // Poll until a retrieval batch reaches a terminal status.
+    const pollRetrievalBatch = async (batchId: number, timeoutMs = 600000): Promise<void> => {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+            await new Promise(r => setTimeout(r, 3000));
+            const batches = await getStepsByType('retrieval');
+            const batch = batches.find(b => b.id === batchId);
+            if (batch?.status === 'completed') return;
+            if (batch?.status === 'failed') throw new Error('Retrieval step failed');
         }
+        throw new Error('Timeout waiting for retrieval to complete');
     };
 
-    const handleCreateReranking = async (runIdOverride?: number | unknown) => {
-        const runId = typeof runIdOverride === 'number' ? runIdOverride : selectedRunId;
-        if (!runId) return;
+    // Combined handler: retrieval → (poll) → critic+relax+reranker
+    const handleCreatePipeline = async (runIdOverride?: number | unknown, summBatchOverride?: number) => {
+        const summBatchId = typeof summBatchOverride === 'number' ? summBatchOverride : selectedSummBatch;
+        const runId = typeof runIdOverride === 'number'
+            ? runIdOverride
+            : (summBatches.find(b => b.id === summBatchId)?.run_id ?? selectedRunId);
+        if (!runId || !summBatchId) return;
+
         setLoading(true);
         try {
-            await runRerankingStep(runId, topK, model, selectedRetrBatch, newVersionName);
+            const retrResult = await runRetrievalStep(runId, nSample, summBatchId, newVersionName);
+            const retriBatchId = retrResult.retrieval_batch_id;
+            if (!retriBatchId) throw new Error('No retrieval_batch_id returned');
+
+            await pollRetrievalBatch(retriBatchId);
+
+            await runRerankingStep(runId, topK, model, retriBatchId, newVersionName);
             setShowNewVersionModal(null);
             setNewVersionName('');
             loadRerankBatches();
         } catch (error) {
-            console.error('Reranking failed:', error);
+            console.error('Pipeline step failed:', error);
         } finally {
             setLoading(false);
         }
     };
 
     const handleRunNextFromDetail = async (runId: number, batchId: number, stepType: string) => {
-        setLoading(true);
-        try {
-            if (stepType === 'summarization') {
-                await runRetrievalStep(runId, nSample, batchId);
-                setShowDetailModal(false);
-                setBatchDetail(null);
-                loadRetrBatches();
-            } else if (stepType === 'retrieval') {
-                await runRerankingStep(runId, topK, model, batchId);
-                setShowDetailModal(false);
-                setBatchDetail(null);
-                loadRerankBatches();
-            }
-        } catch (error) {
-            console.error('Next step failed:', error);
-        } finally {
-            setLoading(false);
-        }
+        if (stepType !== 'summarization') return;
+        setShowDetailModal(false);
+        setBatchDetail(null);
+        await handleCreatePipeline(runId, batchId);
     };
 
     const handleViewDetail = async (batch: BatchStepExecutionResponse) => {
@@ -386,15 +373,14 @@ export default function StepEvaluationPage() {
         if (!batchId) return undefined;
         return summBatches.find(b => b.id === batchId)?.run_id;
     };
-    const getRunIdFromRetrBatch = (batchId: number | undefined) => {
-        if (!batchId) return undefined;
-        return retrBatches.find(b => b.id === batchId)?.run_id;
-    };
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
             <h1 className="text-3xl font-bold mb-2">Step-by-Step Optimization</h1>
-            <p className="text-gray-500 text-sm mb-8">Run each pipeline stage independently and compare versions.</p>
+            <p className="text-gray-500 text-sm mb-8">
+                Run Profiler Agent independently to tune preference extraction, then run the full
+                Retrieval → Critic Loop → Reranker as one inseparable stage (the relaxation loop may re-retrieve internally).
+            </p>
 
             {/* Pipeline Diagram */}
             <PipelineFlowDiagram />
@@ -417,8 +403,8 @@ export default function StepEvaluationPage() {
                 }
             >
                 <div className="space-y-3">
-                    {allRuns.length === 0 && <EmptyState icon="🚀" message="No runs yet. Click '+ New Run' to create one." />}
-                    {allRuns.map(run => (
+                    {stepRuns.length === 0 && <EmptyState icon="🚀" message="No runs yet. Click '+ New Run' to create one." />}
+                    {stepRuns.map(run => (
                         <div
                             key={run.id}
                             onClick={() => handleViewRun(run)}
@@ -439,12 +425,9 @@ export default function StepEvaluationPage() {
                                     <span className="text-xs text-blue-400">👁 View</span>
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
                                 <span className="bg-white px-2 py-0.5 rounded border border-gray-200 text-xs">Dataset: <strong className="capitalize">{run.dataset}</strong></span>
                                 <span className="bg-white px-2 py-0.5 rounded border border-gray-200 text-xs">Samples: <strong>{run.sample_size}</strong></span>
-                                {run.avg_recall != null && run.avg_recall > 0 && (
-                                    <span className="bg-green-50 px-2 py-0.5 rounded border border-green-200 text-xs">Recall: <strong>{run.avg_recall.toFixed(4)}</strong></span>
-                                )}
                             </div>
                         </div>
                     ))}
@@ -468,39 +451,17 @@ export default function StepEvaluationPage() {
                 </div>
             </PipelineSection>
 
-            {/* ─── Section 3: Retrieval ─── */}
+            {/* ─── Section 3: Retrieval → Critic Loop → Reranker (combined) ─── */}
             <PipelineSection
-                id="section-retrieval"
+                id="section-pipeline"
                 stepNumber="Step 3"
-                title="Retrieval"
-                subtitle="Semantic, content, and graph retrieval streams fused via WRRF into candidate pool."
-                accentColor="bg-purple-50/50"
-                headerRight={<NewVersionButton onClick={() => openNewVersionModal('retr')} color="bg-purple-600 hover:bg-purple-700" />}
-            >
-                <div className="space-y-3">
-                    {retrBatches.length === 0 && <EmptyState icon="🔍" message="No retrieval versions yet. Click '+ New Version' to create one." />}
-                    {retrBatches.map(b => (
-                        <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
-                            <div className="flex gap-3 text-xs text-gray-600">
-                                <span>N={(b.config as Record<string, unknown>).n_sample as number}</span>
-                                {!!(b.config as Record<string, unknown>).input_batch && <span className="text-gray-400">(Input: Batch #{String((b.config as Record<string, unknown>).input_batch)})</span>}
-                            </div>
-                        </VersionCard>
-                    ))}
-                </div>
-            </PipelineSection>
-
-            {/* ─── Section 4: Critic → Relax → Reranker ─── */}
-            <PipelineSection
-                id="section-reranking"
-                stepNumber="Step 4"
-                title="Critic → Relax → Reranker"
-                subtitle="Critic filters candidates; if too few pass, Relaxation widens constraints and re-retrieves (max 1×); Reranker selects top-K."
+                title="Retrieval → Critic Loop → Reranker"
+                subtitle="Retrieval feeds the Critic; if too few candidates pass constraints, Relaxation widens them and re-retrieves (max 1×) before Reranker selects top-K."
                 accentColor="bg-green-50/50"
-                headerRight={<NewVersionButton onClick={() => openNewVersionModal('rerank')} color="bg-green-600 hover:bg-green-700" />}
+                headerRight={<NewVersionButton onClick={() => openNewVersionModal('pipeline')} color="bg-green-600 hover:bg-green-700" />}
             >
                 <div className="space-y-3">
-                    {rerankBatches.length === 0 && <EmptyState icon="🏆" message="No versions yet. Click '+ New Version' to create one." />}
+                    {rerankBatches.length === 0 && <EmptyState icon="🔍" message="No versions yet. Click '+ New Version' to create one." />}
                     {rerankBatches.map(b => (
                         <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
                             <div className="flex gap-3 text-xs text-gray-600">
@@ -537,9 +498,9 @@ export default function StepEvaluationPage() {
                         handleRunNextFromDetail(runId, batchId, batchDetail.step_type);
                     } : undefined}
                     nextStepConfig={
-                        batchDetail.step_type === 'retrieval' ? { topK, setTopK, model, setModel } :
-                            batchDetail.step_type === 'summarization' ? { nSample, setNSample } :
-                                undefined
+                        batchDetail.step_type === 'summarization'
+                            ? { nSample, setNSample, topK, setTopK, model, setModel }
+                            : undefined
                     }
                     loading={loading}
                 />
@@ -642,13 +603,28 @@ export default function StepEvaluationPage() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Sample Size</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Sample Size
+                                <span className="ml-2 font-semibold text-blue-600">{samplePercent}%</span>
+                                {datasetSizes[dataset] ? (
+                                    <span className="ml-1 text-gray-400 font-normal">
+                                        (~{Math.max(1, Math.round(datasetSizes[dataset] * samplePercent / 100))} conversations)
+                                    </span>
+                                ) : null}
+                            </label>
                             <input
-                                type="number"
-                                value={sampleSize}
-                                onChange={(e) => setSampleSize(Number(e.target.value))}
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                                type="range"
+                                min={1}
+                                max={100}
+                                value={samplePercent}
+                                onChange={(e) => setSamplePercent(Number(e.target.value))}
+                                className="w-full accent-blue-600"
                             />
+                            <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+                                <span>1%</span>
+                                <span>50%</span>
+                                <span>100%</span>
+                            </div>
                         </div>
                     </div>
                 </ModalBackdrop>
@@ -682,7 +658,7 @@ export default function StepEvaluationPage() {
                             className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
                         >
                             <option value="">— Select a run —</option>
-                            {allRuns.map(r => (
+                            {stepRuns.map(r => (
                                 <option key={r.id} value={r.id}>
                                     {r.name ? r.name : `Run #${r.id}`} — {r.dataset} ({r.sample_size} samples) [{r.status}]
                                 </option>
@@ -697,19 +673,19 @@ export default function StepEvaluationPage() {
                 </ModalBackdrop>
             )}
 
-            {/* New Retrieval Version Modal */}
-            {showNewVersionModal === 'retr' && (
+            {/* New Pipeline Version Modal (Retrieval → Critic Loop → Reranker) */}
+            {showNewVersionModal === 'pipeline' && (
                 <ModalBackdrop
-                    title="🔍 New Retrieval Version"
+                    title="🔍 New Retrieval → Critic Loop → Reranker Version"
                     onClose={() => setShowNewVersionModal(null)}
                     onSubmit={() => {
                         const runId = getRunIdFromSummBatch(selectedSummBatch) || selectedRunId;
                         if (!runId) return;
                         setSelectedRunId(runId);
-                        handleCreateRetrieval(runId);
+                        handleCreatePipeline(runId, selectedSummBatch);
                     }}
-                    submitLabel={loading ? 'Running...' : 'Run Retrieval'}
-                    submitColor="bg-purple-600 hover:bg-purple-700"
+                    submitLabel={loading ? 'Running...' : 'Run Pipeline'}
+                    submitColor="bg-green-600 hover:bg-green-700"
                     submitDisabled={loading || !selectedSummBatch}
                 >
                     <div>
@@ -718,8 +694,8 @@ export default function StepEvaluationPage() {
                             type="text"
                             value={newVersionName}
                             onChange={(e) => setNewVersionName(e.target.value)}
-                            placeholder="e.g. n100-baseline..."
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
+                            placeholder="e.g. n100-cohere-top10..."
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
                         />
                     </div>
                     <div>
@@ -734,7 +710,7 @@ export default function StepEvaluationPage() {
                                     if (batch) setSelectedRunId(batch.run_id);
                                 }
                             }}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
                         >
                             <option value="">— Select a profiler version —</option>
                             {summBatches.map(b => (
@@ -743,7 +719,6 @@ export default function StepEvaluationPage() {
                                 </option>
                             ))}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">Select which Profiler Agent version to use as input for retrieval.</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">N Candidates</label>
@@ -751,60 +726,9 @@ export default function StepEvaluationPage() {
                             type="number"
                             value={nSample}
                             onChange={(e) => setNSample(Number(e.target.value))}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2"
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Number of candidate movies to retrieve (10-600).</p>
-                    </div>
-                </ModalBackdrop>
-            )}
-
-            {/* New Critic → Relax → Reranker Version Modal */}
-            {showNewVersionModal === 'rerank' && (
-                <ModalBackdrop
-                    title="🏆 New Critic → Relax → Reranker Version"
-                    onClose={() => setShowNewVersionModal(null)}
-                    onSubmit={() => {
-                        const runId = getRunIdFromRetrBatch(selectedRetrBatch) || selectedRunId;
-                        if (!runId) return;
-                        setSelectedRunId(runId);
-                        handleCreateReranking(runId);
-                    }}
-                    submitLabel={loading ? 'Running...' : 'Run Critic → Relax → Reranker'}
-                    submitColor="bg-green-600 hover:bg-green-700"
-                    submitDisabled={loading || !selectedRetrBatch}
-                >
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Version Name <span className="text-gray-400">(optional)</span></label>
-                        <input
-                            type="text"
-                            value={newVersionName}
-                            onChange={(e) => setNewVersionName(e.target.value)}
-                            placeholder="e.g. cohere-top10..."
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Input Retrieval Version <span className="text-red-500">*</span></label>
-                        <select
-                            value={selectedRetrBatch || ''}
-                            onChange={(e) => {
-                                const batchId = e.target.value ? Number(e.target.value) : undefined;
-                                setSelectedRetrBatch(batchId);
-                                if (batchId) {
-                                    const batch = retrBatches.find(b => b.id === batchId);
-                                    if (batch) setSelectedRunId(batch.run_id);
-                                }
-                            }}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
-                        >
-                            <option value="">— Select a retrieval version —</option>
-                            {retrBatches.map(b => (
-                                <option key={b.id} value={b.id}>
-                                    {b.name ? b.name : `v${b.version}`} (Run #{b.run_id}) — N={(b.config as Record<string, unknown>).n_sample as number} — {b.status}
-                                </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Select which retrieval version to use as input for reranking.</p>
+                        <p className="text-xs text-gray-500 mt-1">Number of candidates to retrieve (10–600).</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -827,6 +751,9 @@ export default function StepEvaluationPage() {
                                 <option value="llm">LLM</option>
                             </select>
                         </div>
+                    </div>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                        Retrieval runs first. Once complete, the Critic checks constraints — if relaxation is needed, it re-retrieves before the final Reranker pass.
                     </div>
                 </ModalBackdrop>
             )}
