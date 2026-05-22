@@ -2,6 +2,12 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class CriticResponse(BaseModel):
+    approved_movie_ids: list[str] = Field(description="IDs of candidates that pass constraint verification")
+    requires_relaxation: bool = Field(description="True if fewer than 3 valid candidates remain")
+    critic_reasoning: str = Field(description="Explanation of which candidates were removed and why")
+
+
 class RetrievalWeights(BaseModel):
     w_sem: float = Field(default=0.4, ge=0, le=1)
     w_con: float = Field(default=0.3, ge=0, le=1)
@@ -14,6 +20,11 @@ class HardConstraint(BaseModel):
         default="soft",
         description="Priority tier for Sacrifice Hierarchy: core=never relax, soft=relax first, optional=can remove"
     )
+
+
+class RelaxationResponse(BaseModel):
+    hard_constraints: list[HardConstraint] = Field(description="Updated constraints after minimal relaxation")
+    semantic_queries: list[str] = Field(description="Updated semantic queries reflecting the widened search space")
 
 
 class UserPreference(BaseModel):

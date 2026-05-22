@@ -1,6 +1,6 @@
 import asyncio
-import json
 from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
 from infra.llm import get_llm_client
 from infra.neo4j import get_neo4j_client
 from domain.retrieval.prompts.graph import (
@@ -12,6 +12,11 @@ from domain.retrieval.prompts.graph import (
 from shared.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
+
+
+class GraphReActStep(BaseModel):
+    thought: str = Field(description="Reasoning about what Cypher query to write")
+    cypher: str = Field(description="The Cypher query to execute against Neo4j")
 
 
 class GraphReasoningAgent:
@@ -137,27 +142,19 @@ class GraphReasoningAgent:
                 response = await self.llm_client.agenerate(
                     prompt=prompt,
                     system_instruction=self._system_prompt,
+                    response_schema=GraphReActStep,
                 )
-                cleaned = response.replace("```json", "").replace("```", "").strip()
-                start = cleaned.find("{")
-                end = cleaned.rfind("}") + 1
-                if start == -1 or end <= 0:
-                    logger.error(f"[Graph Agent/{label}] Invalid LLM output: {cleaned[:100]}")
-                    break
+                step = GraphReActStep.model_validate_json(response)
 
-                data = json.loads(cleaned[start:end])
-                thought = data.get("thought", "")
-                cypher = data.get("cypher", "")
-
-                if not cypher:
+                if not step.cypher:
                     logger.error(f"[Graph Agent/{label}] No Cypher generated.")
                     break
 
-                logger.info(f"[Graph Agent/{label}] Thought: {thought}")
-                thoughts.append(f"[{label}] {thought}")
-                logger.info(f"[Graph Agent/{label}] Executing Cypher: {cypher}")
+                logger.info(f"[Graph Agent/{label}] Thought: {step.thought}")
+                thoughts.append(f"[{label}] {step.thought}")
+                logger.info(f"[Graph Agent/{label}] Executing Cypher: {step.cypher}")
 
-                movies = await self._execute_cypher(cypher, n)
+                movies = await self._execute_cypher(step.cypher, n)
 
                 if movies:
                     logger.info(f"[Graph Agent/{label}] Retrieved {len(movies)} movies.")
@@ -165,8 +162,8 @@ class GraphReasoningAgent:
 
                 logger.info(f"[Graph Agent/{label}] 0 results — will reflect and retry.")
                 history += (
-                    f"Attempt {iteration + 1}:\nThought: {thought}\n"
-                    f"Cypher: {cypher}\nResult: 0 records. The constraint was too strict.\n\n"
+                    f"Attempt {iteration + 1}:\nThought: {step.thought}\n"
+                    f"Cypher: {step.cypher}\nResult: 0 records. The constraint was too strict.\n\n"
                 )
 
             except Exception as e:

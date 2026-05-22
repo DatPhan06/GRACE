@@ -1,12 +1,17 @@
+from typing import List, Dict, Any
+from pydantic import BaseModel, Field
+import asyncio
 from infra.llm import get_llm_client
 from domain.reranking.base import BaseReranker
 from domain.reranking.prompts import RERANK_MOVIES_SYSTEM_PROMPT, RERANK_MOVIES_USER_PROMPT
-from typing import List, Dict, Any
-import json
-import asyncio
 from shared.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
+
+
+class RankedMovies(BaseModel):
+    titles: List[str] = Field(description="Movie titles in ranked order, best match first")
+
 
 # Two-stage batching hyperparameters (as described in the paper)
 DEFAULT_BATCH_SIZE = 100   # B: number of candidates per batch
@@ -123,16 +128,6 @@ class LLMReranker(BaseReranker):
         return "\n".join(lines)
 
     @staticmethod
-    def _parse_ranked_titles(response: str) -> List[str]:
-        """Extract a JSON list of movie titles from raw LLM output."""
-        cleaned = response.replace("```json", "").replace("```", "").strip()
-        start = cleaned.find("[")
-        end = cleaned.rfind("]") + 1
-        if start == -1 or end == 0:
-            return []
-        return json.loads(cleaned[start:end])
-
-    @staticmethod
     def _map_titles_to_movies(
         ranked_titles: List[str],
         candidates: List[Dict[str, Any]],
@@ -181,10 +176,11 @@ class LLMReranker(BaseReranker):
             response = await self.llm_client.agenerate(
                 prompt=prompt,
                 system_instruction=formatted_system_prompt,
+                response_schema=RankedMovies,
             )
-            ranked_titles = self._parse_ranked_titles(response)
+            ranked_titles = RankedMovies.model_validate_json(response).titles
             if not ranked_titles:
-                logger.warning("LLM returned no parseable titles; using original order.")
+                logger.warning("[LLMReranker] No titles in response; using original order.")
                 return candidates[:top_k]
 
             return self._map_titles_to_movies(ranked_titles, candidates, top_k)

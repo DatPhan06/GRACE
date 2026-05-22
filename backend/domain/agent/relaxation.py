@@ -1,6 +1,6 @@
 import json
 from infra.llm import get_llm_client
-from domain.agent.models import UserPreference, HardConstraint
+from domain.agent.models import UserPreference, HardConstraint, RelaxationResponse
 from domain.generation.prompts import (
     RELAX_CONSTRAINTS_SYSTEM_PROMPT,
     RELAX_CONSTRAINTS_USER_PROMPT,
@@ -30,28 +30,13 @@ class RelaxationAgent:
             response = await self.llm_client.agenerate(
                 prompt=prompt,
                 system_instruction=RELAX_CONSTRAINTS_SYSTEM_PROMPT,
+                response_schema=RelaxationResponse,
             )
-            cleaned = response.replace("```json", "").replace("```", "").strip()
-            start = cleaned.find("{")
-            end = cleaned.rfind("}") + 1
-            if start != -1 and end > 0:
-                data = json.loads(cleaned[start:end])
-                # Relaxation only updates hard_constraints + semantic_queries.
-                # All other Profiler fields (user_preferences, genres, liked_movies,
-                # dynamic_weights, profiler_reasoning) are preserved explicitly.
-                raw_constraints = data.get(
-                    "hard_constraints",
-                    [c.model_dump() for c in preferences.hard_constraints],
-                )
-                relaxed_constraints = [
-                    HardConstraint(**c) if isinstance(c, dict) else c
-                    for c in raw_constraints
-                ]
-                return preferences.model_copy(update={
-                    "hard_constraints": relaxed_constraints,
-                    "semantic_queries": data.get("semantic_queries", preferences.semantic_queries),
-                })
-            return preferences
+            parsed = RelaxationResponse.model_validate_json(response)
+            return preferences.model_copy(update={
+                "hard_constraints": parsed.hard_constraints,
+                "semantic_queries": parsed.semantic_queries,
+            })
         except Exception as e:
             logger.error(f"Relaxation Agent error: {e}")
             return preferences

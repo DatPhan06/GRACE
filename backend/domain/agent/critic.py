@@ -1,7 +1,6 @@
-import json
 from typing import List, Dict, Any
 from infra.llm import get_llm_client
-from domain.agent.models import HardConstraint
+from domain.agent.models import HardConstraint, CriticResponse
 from domain.generation.prompts import CRITIC_SYSTEM_PROMPT, CRITIC_USER_PROMPT
 from shared.utils.logger import setup_logger
 
@@ -51,27 +50,19 @@ class CriticAgent:
             response = await self.llm_client.agenerate(
                 prompt=prompt,
                 system_instruction=CRITIC_SYSTEM_PROMPT,
+                response_schema=CriticResponse,
             )
-            cleaned = response.replace("```json", "").replace("```", "").strip()
-            start = cleaned.find("{")
-            end = cleaned.rfind("}") + 1
-            if start == -1 or end <= 0:
-                logger.error("[Critic Agent] Invalid LLM output format. Passing through all candidates.")
-                return {"movies": candidates, "reasoning": "Could not parse Critic Agent response."}
+            parsed = CriticResponse.model_validate_json(response)
+            logger.info(f"[Critic Agent] Thought: {parsed.critic_reasoning}")
 
-            data = json.loads(cleaned[start:end])
-            approved_ids = data.get("approved_movie_ids", [])
-            reasoning = data.get("critic_reasoning", "No specific reasoning provided.")
-            logger.info(f"[Critic Agent] Thought: {reasoning}")
-
-            approved_ids_set = {str(i) for i in approved_ids}
+            approved_ids_set = {str(i) for i in parsed.approved_movie_ids}
             filtered = [m for m in candidates if str(m.get("movieId")) in approved_ids_set]
 
             logger.info(f"[Critic Agent] Approved {len(filtered)} / {len(candidates)} candidates.")
             return {
                 "movies": filtered,
-                "reasoning": reasoning,
-                "requires_relaxation": data.get("requires_relaxation", False) or len(filtered) < 3,
+                "reasoning": parsed.critic_reasoning,
+                "requires_relaxation": parsed.requires_relaxation or len(filtered) < 3,
             }
         except Exception as e:
             logger.error(f"[Critic Agent] Error during reflection loop: {e}")
