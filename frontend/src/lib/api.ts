@@ -115,9 +115,9 @@ export async function streamChatMessages(
 // Evaluation Interfaces
 
 export interface EvaluateRequest {
+    name?: string;
     dataset: "inspired" | "redial";
-    sample_size: number;
-    start_index: number;
+    sample_percent: number;
     n_sample: number;
     top_k: number;
     model: "llm" | "cohere";
@@ -149,6 +149,7 @@ export interface EvaluationRunResponse {
     n_sample: number;
     top_k: number;
     model: string;
+    llm_model?: string;
     avg_recall: number;
     name?: string;
 
@@ -166,6 +167,16 @@ export interface EvaluateResponse extends EvaluationRunResponse {
     output_dir: string;
     message: string;
 }
+
+export interface EvaluationInfo {
+    dataset_sizes: Record<string, number>;
+    llm_model: string;
+}
+
+export const getEvaluationInfo = async (): Promise<EvaluationInfo> => {
+    const response = await axios.get<EvaluationInfo>(`${API_URL}/evaluate/info`);
+    return response.data;
+};
 
 // Evaluation API Functions
 
@@ -212,6 +223,8 @@ export interface InitRunResponse {
 export interface StepResponse {
     run_id: number;
     batch_id?: number;
+    retrieval_batch_id?: number;
+    summarization_batch_id?: number;
     message: string;
     status: string;
     count?: number;
@@ -228,8 +241,8 @@ export interface BatchStepExecutionResponse {
     created_at: string;
 }
 
-export const initializeRun = async (dataset: "inspired" | "redial", sample_size: number, start_index: number = 0, name?: string): Promise<InitRunResponse> => {
-    const response = await axios.post<InitRunResponse>(`${API_URL}/evaluate/init`, { dataset, sample_size, start_index, name });
+export const initializeRun = async (dataset: "inspired" | "redial", sample_percent: number, name?: string): Promise<InitRunResponse> => {
+    const response = await axios.post<InitRunResponse>(`${API_URL}/evaluate/init`, { dataset, sample_percent, name });
     return response.data;
 };
 
@@ -263,10 +276,20 @@ export const getStepsByType = async (stepType?: string): Promise<BatchStepExecut
 // Batch Detail APIs
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface HardConstraint {
+    constraint: string;
+    priority: 'core' | 'soft' | 'optional';
+}
+
 export interface BatchDetailItem {
     conv_id: string;
     // Summarization
     user_preferences?: string;
+    hard_constraints?: HardConstraint[];
+    genres?: string[];
+    semantic_queries?: string[];
+    liked_movies?: string[];
+    dynamic_weights?: { w_sem: number; w_con: number; w_col: number };
     // Retrieval
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     candidates?: any[];
@@ -310,8 +333,28 @@ export interface ConversationLogItem {
     dialog_preview: string;
 }
 
+export const deleteEvaluationRun = async (runId: number): Promise<void> => {
+    await axios.delete(`${API_URL}/tracing/runs/${runId}`);
+};
+
 export const getRunConversations = async (run_id: number): Promise<ConversationLogItem[]> => {
     const response = await axios.get<ConversationLogItem[]>(`${API_URL}/tracing/runs/${run_id}/conversations`);
     return response.data;
+};
+
+export const exportEvaluationRun = async (run: EvaluationRunResponse): Promise<void> => {
+    const response = await fetch(`${API_URL}/tracing/runs/${run.id}/export`);
+    if (!response.ok) throw new Error(`Export failed: ${response.status}`);
+    const blob = await response.blob();
+    // Use filename from Content-Disposition (backend resolves real LLM name)
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : `run${run.id}_export.tsv`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 };
 

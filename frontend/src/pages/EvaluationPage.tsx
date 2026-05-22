@@ -15,11 +15,13 @@ export default function EvaluationPage() {
     const [loadingRuns, setLoadingRuns] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
 
+    const STEP_STATUSES = new Set(['initialized', 'summarized', 'retrieved']);
+
     const fetchRuns = useCallback(async () => {
         setLoadingRuns(true);
         try {
             const data = await getEvaluationRuns();
-            setRuns(data);
+            setRuns(data.filter(r => !STEP_STATUSES.has(r.status ?? '')));
         } catch (error) {
             console.error("Failed to fetch runs", error);
         } finally {
@@ -30,6 +32,21 @@ export default function EvaluationPage() {
     useEffect(() => {
         fetchRuns();
     }, [fetchRuns]);
+
+    // Poll while any run is still processing
+    useEffect(() => {
+        const hasRunning = runs.some(r => r.status === 'running');
+        if (!hasRunning) return;
+        const interval = setInterval(async () => {
+            try {
+                const data = await getEvaluationRuns();
+                setRuns(data);
+            } catch {
+                // silent — don't disrupt UX on polling failure
+            }
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [runs]);
 
     const handleSelectRun = async (runId: number) => {
         setLoadingDetail(true);
@@ -47,6 +64,11 @@ export default function EvaluationPage() {
     const handleRunComplete = () => {
         setIsStartModalOpen(false);
         fetchRuns();
+    };
+
+    const handleDeleteRun = (runId: number) => {
+        setRuns(prev => prev.filter(r => r.id !== runId));
+        if (selectedRun?.id === runId) setSelectedRun(null);
     };
 
     return (
@@ -83,6 +105,7 @@ export default function EvaluationPage() {
                     <RunHistoryList
                         runs={runs}
                         onSelectRun={handleSelectRun}
+                        onDeleteRun={handleDeleteRun}
                         activeRunId={selectedRun?.id || null}
                     />
                 )}
@@ -102,7 +125,7 @@ export default function EvaluationPage() {
                         Configure the parameters below to launch a new evaluation pipeline run.
                         Results will be saved automatically.
                     </p>
-                    <RunEvaluationForm onRunComplete={handleRunComplete} />
+                    <RunEvaluationForm onRunComplete={handleRunComplete} existingRuns={runs} />
                 </div>
             </Modal>
 
