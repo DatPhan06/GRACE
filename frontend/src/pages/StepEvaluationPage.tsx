@@ -2,30 +2,30 @@ import { useState, useEffect, useCallback } from 'react';
 import { initializeRun, runProfilerStep, runRetrievalStep, runRerankingStep, getStepsByType, getBatchDetail, getEvaluationRuns, getEvaluationInfo, getRunConversations, BatchStepExecutionResponse, BatchDetailResponse, EvaluationRunResponse, ConversationLogItem } from '@/lib/api';
 import VersionDetailModal from '@/components/evaluation/VersionDetailModal';
 
-// ─── Shared UI components (defined OUTSIDE the page to keep stable references) ───
+// ─── Shared UI components ────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const VersionCard = ({ batch, color, onClick, children }: { batch: BatchStepExecutionResponse; color: { bg: string; border: string; text: string }; onClick: () => void; children?: any }) => (
     <div
         onClick={onClick}
-        className={`p-4 ${color.bg} border ${color.border} rounded-lg cursor-pointer hover:shadow-md transition-all`}
+        className={`p-4 ${color.bg} border ${color.border} rounded-xl cursor-pointer hover:shadow-md transition-all group`}
     >
         <div className="flex justify-between items-start mb-2">
-            <div className="flex items-center gap-3">
-                <span className={`text-base font-bold ${color.text}`}>
+            <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${color.text}`}>
                     {batch.name ? batch.name : `v${batch.version}`}
                 </span>
                 {batch.name && <span className="text-xs text-gray-400">v{batch.version}</span>}
             </div>
-            <span className="text-xs text-gray-500">{new Date(batch.created_at).toLocaleString()}</span>
+            <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">{new Date(batch.created_at).toLocaleString()}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Run #{batch.run_id}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-white/80 border border-gray-200 text-gray-600">Run #{batch.run_id}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
                 {batch.status}
             </span>
         </div>
-        {children && <div className="mt-2">{children}</div>}
+        {children && <div className="mt-2 pt-2 border-t border-white/60">{children}</div>}
     </div>
 );
 
@@ -34,17 +34,17 @@ const ModalBackdrop = ({ title, onClose, children, onSubmit, submitLabel, submit
     onSubmit: () => void; submitLabel: string; submitColor: string; submitDisabled?: boolean;
 }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white rounded-xl shadow-2xl w-[90vw] max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="bg-white rounded-2xl shadow-2xl w-[90vw] max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">&times;</button>
             </div>
             <div className="px-6 py-5 space-y-4">
                 {children}
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-                <button onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-                <button onClick={(e) => { e.preventDefault(); onSubmit(); }} disabled={submitDisabled} className={`px-6 py-2 text-sm text-white rounded-lg ${submitColor} disabled:opacity-50 transition-colors`}>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 rounded-b-2xl">
+                <button onClick={onClose} className="px-4 py-2 text-sm bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors text-gray-600">Cancel</button>
+                <button onClick={(e) => { e.preventDefault(); onSubmit(); }} disabled={submitDisabled} className={`px-6 py-2 text-sm text-white rounded-lg font-medium shadow-sm ${submitColor} disabled:opacity-40 transition-colors`}>
                     {submitLabel}
                 </button>
             </div>
@@ -53,140 +53,111 @@ const ModalBackdrop = ({ title, onClose, children, onSubmit, submitLabel, submit
 );
 
 const EmptyState = ({ icon, message }: { icon: string; message: string }) => (
-    <div className="text-center py-12">
-        <div className="text-4xl mb-3">{icon}</div>
-        <p className="text-gray-500 text-sm">{message}</p>
+    <div className="text-center py-16">
+        <div className="text-5xl mb-3 opacity-40">{icon}</div>
+        <p className="text-gray-400 text-sm">{message}</p>
     </div>
 );
 
-const NewVersionButton = ({ onClick, color }: { onClick: () => void; color: string }) => (
-    <button
-        onClick={onClick}
-        className={`flex items-center gap-2 ${color} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
-    >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-        New Version
-    </button>
-);
+// ─── Vertical Pipeline Diagram (right sidebar) ────────────────────────────────
 
-// ─── Pipeline Flow Diagram ─────────────────────────────────────────────────────
-
-function Arrow() {
-    return (
-        <div className="flex items-center self-start mt-8 shrink-0">
-            <div className="w-5 h-0.5 bg-gray-300" />
-            <div className="w-0 h-0" style={{ borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '7px solid #d1d5db' }} />
-        </div>
-    );
-}
-
-function PipelineFlowDiagram() {
-    return (
-        <div className="bg-white border border-gray-200 rounded-xl px-6 py-5 mb-8 shadow-sm">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">ARGOS Evaluation Pipeline</p>
-            <div className="flex items-start gap-0 overflow-x-auto pb-2">
-
-                {/* Step 1: Initialize */}
-                <div className="flex flex-col items-center shrink-0">
-                    <div className="w-28 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-center">
-                        <div className="text-xl mb-1">🚀</div>
-                        <div className="text-xs font-bold text-blue-800">Initialize</div>
-                        <div className="text-[10px] text-blue-500 mt-0.5">Dataset sample</div>
-                    </div>
-                </div>
-                <Arrow />
-
-                {/* Step 2: Profiler Agent */}
-                <div className="flex flex-col items-center shrink-0">
-                    <div className="w-28 p-3 bg-indigo-50 border-2 border-indigo-200 rounded-xl text-center">
-                        <div className="text-xl mb-1">🤖</div>
-                        <div className="text-xs font-bold text-indigo-800">Profiler Agent</div>
-                        <div className="text-[10px] text-indigo-500 mt-0.5">Extract prefs</div>
-                    </div>
-                </div>
-                <Arrow />
-
-                {/* Step 3: Orchestrator Agent */}
-                <div className="flex flex-col items-center shrink-0">
-                    <div className="border-2 border-purple-200 bg-purple-50 rounded-xl p-3 w-64">
-                        <div className="text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-2 text-center">
-                            Orchestrator Agent
-                        </div>
-                        <div className="flex flex-col items-center gap-1">
-                            {/* 3 parallel streams */}
-                            <div className="w-full bg-white border border-purple-100 rounded-lg px-2 py-1.5">
-                                <div className="text-[9px] font-semibold text-purple-500 text-center mb-1">Kích hoạt đồng thời</div>
-                                <div className="flex gap-1 justify-center">
-                                    <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">Semantic</span>
-                                    <span className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100">Content</span>
-                                    <span className="text-[9px] bg-teal-50 text-teal-600 px-1.5 py-0.5 rounded border border-teal-100">Graph</span>
-                                </div>
-                            </div>
-                            <div className="text-[10px] text-gray-400">↓ WRRF(w_sem, w_con, w_col)</div>
-                            <div className="bg-white border border-orange-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-orange-700 w-full text-center">
-                                Critic Agent
-                            </div>
-                            <div className="text-[10px] text-gray-400">↓</div>
-                            {/* Reflexion loop */}
-                            <div className="w-full border border-dashed border-amber-300 bg-amber-50/60 rounded-lg px-2.5 py-1.5 text-center">
-                                <div className="text-[9px] font-semibold text-amber-600 mb-0.5">if |M| &lt; τ · max 1×</div>
-                                <div className="text-[10px] text-amber-700">Relaxation Agent → re-retrieve</div>
-                            </div>
-                            <div className="text-[10px] text-gray-400 italic">↓ always</div>
-                            <div className="bg-white border border-purple-100 rounded-lg px-3 py-1.5 text-[11px] text-purple-600 w-full text-center">
-                                Top-N candidates
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <Arrow />
-
-                {/* Step 4: Reranker */}
-                <div className="flex flex-col items-center shrink-0">
-                    <div className="w-32 p-3 bg-green-50 border-2 border-green-200 rounded-xl text-center">
-                        <div className="text-xl mb-1">🎯</div>
-                        <div className="text-xs font-bold text-green-800">Reranker</div>
-                        <div className="text-[10px] text-green-500 mt-0.5">Recall@K</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─── Section wrapper ───────────────────────────────────────────────────────────
-
-function PipelineSection({ id, stepNumber, title, subtitle, accentColor, headerRight, children }: {
-    id: string;
-    stepNumber: string;
-    title: string;
-    subtitle: string;
-    accentColor: string;
-    headerRight?: React.ReactNode;
-    children: React.ReactNode;
+function VerticalPipelineStep({
+    step, icon, title, subtitle, color, active, onClick,
+}: {
+    step: string; icon: string; title: string; subtitle: string;
+    color: { ring: string; bg: string; text: string; badge: string };
+    active: boolean; onClick: () => void;
 }) {
     return (
-        <section id={id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-            <div className={`px-6 py-4 border-b border-gray-100 flex justify-between items-start ${accentColor}`}>
-                <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{stepNumber}</span>
-                        <h2 className="text-lg font-bold text-gray-800">{title}</h2>
-                    </div>
-                    <p className="text-sm text-gray-500">{subtitle}</p>
+        <button
+            onClick={onClick}
+            className={`w-full text-left rounded-xl px-3 py-3 border-2 transition-all ${active ? `${color.ring} ${color.bg} shadow-sm` : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'}`}
+        >
+            <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0 ${active ? color.badge : 'bg-gray-100'}`}>
+                    {icon}
                 </div>
-                {headerRight}
+                <div className="min-w-0">
+                    <div className={`text-xs font-bold uppercase tracking-wider mb-0.5 ${active ? color.text : 'text-gray-400'}`}>{step}</div>
+                    <div className={`text-sm font-semibold leading-tight ${active ? color.text : 'text-gray-700'}`}>{title}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{subtitle}</div>
+                </div>
             </div>
-            <div className="px-6 py-5">
-                {children}
-            </div>
-        </section>
+        </button>
     );
 }
+
+function PipelineConnector({ active }: { active: boolean }) {
+    return (
+        <div className="flex justify-center py-1">
+            <div className={`w-0.5 h-5 rounded-full transition-colors ${active ? 'bg-gray-400' : 'bg-gray-200'}`} />
+        </div>
+    );
+}
+
+function OrchestratorDetail() {
+    return (
+        <div className="mt-2 ml-11 mr-1 border border-purple-100 bg-purple-50/50 rounded-lg px-3 py-2.5 space-y-1.5">
+            <div className="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Parallel streams</div>
+            <div className="flex gap-1">
+                <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">Semantic</span>
+                <span className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100">Content</span>
+                <span className="text-[9px] bg-teal-50 text-teal-600 px-1.5 py-0.5 rounded border border-teal-100">Graph</span>
+            </div>
+            <div className="text-[9px] text-gray-400 pl-0.5">↓ WRRF(w_sem, w_con, w_col)</div>
+            <div className="text-[10px] bg-white border border-orange-100 rounded px-2 py-1 text-orange-700 font-medium">Critic Agent</div>
+            <div className="border border-dashed border-amber-200 bg-amber-50/60 rounded px-2 py-1">
+                <div className="text-[9px] text-amber-600 font-semibold">if |M| &lt; τ</div>
+                <div className="text-[9px] text-amber-700">Relaxation → re-retrieve</div>
+            </div>
+            <div className="text-[9px] text-gray-400 pl-0.5">↓ Top-N candidates</div>
+        </div>
+    );
+}
+
+// ─── Tab definitions ──────────────────────────────────────────────────────────
+
+type TabId = 'init' | 'profiler' | 'orchestrator' | 'reranker';
+
+const TABS: { id: TabId; step: string; icon: string; title: string; subtitle: string; color: { ring: string; bg: string; text: string; badge: string; accent: string; btn: string; btnHover: string } }[] = [
+    {
+        id: 'init',
+        step: 'Step 1',
+        icon: '🚀',
+        title: 'Evaluation Runs',
+        subtitle: 'Dataset samples',
+        color: { ring: 'border-blue-400', bg: 'bg-blue-50/60', text: 'text-blue-700', badge: 'bg-blue-100', accent: 'bg-blue-50', btn: 'bg-blue-600', btnHover: 'hover:bg-blue-700' },
+    },
+    {
+        id: 'profiler',
+        step: 'Step 2',
+        icon: '🤖',
+        title: 'Profiler Agent',
+        subtitle: 'Extract preferences',
+        color: { ring: 'border-indigo-400', bg: 'bg-indigo-50/60', text: 'text-indigo-700', badge: 'bg-indigo-100', accent: 'bg-indigo-50', btn: 'bg-indigo-600', btnHover: 'hover:bg-indigo-700' },
+    },
+    {
+        id: 'orchestrator',
+        step: 'Step 3',
+        icon: '🎛️',
+        title: 'Orchestrator Agent',
+        subtitle: 'Retrieve & filter',
+        color: { ring: 'border-purple-400', bg: 'bg-purple-50/60', text: 'text-purple-700', badge: 'bg-purple-100', accent: 'bg-purple-50', btn: 'bg-purple-600', btnHover: 'hover:bg-purple-700' },
+    },
+    {
+        id: 'reranker',
+        step: 'Step 4',
+        icon: '🎯',
+        title: 'Reranker',
+        subtitle: 'Recall@K',
+        color: { ring: 'border-green-400', bg: 'bg-green-50/60', text: 'text-green-700', badge: 'bg-green-100', accent: 'bg-green-50', btn: 'bg-green-600', btnHover: 'hover:bg-green-700' },
+    },
+];
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function StepEvaluationPage() {
+    const [activeTab, setActiveTab] = useState<TabId>('init');
     const [loading, setLoading] = useState(false);
 
     // Params
@@ -211,7 +182,7 @@ export default function StepEvaluationPage() {
     const [batchDetail, setBatchDetail] = useState<BatchDetailResponse | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
-    // New Version Modal — 'summ' | 'retrieval' | 'rerank' | null
+    // New Version Modal
     const [showNewVersionModal, setShowNewVersionModal] = useState<"summ" | "retrieval" | "rerank" | null>(null);
     const [newVersionName, setNewVersionName] = useState('');
     const [selectedRunId, setSelectedRunId] = useState<number | undefined>(undefined);
@@ -243,7 +214,6 @@ export default function StepEvaluationPage() {
         try { setRerankBatches(await getStepsByType('reranking')); } catch (e) { console.error(e); }
     }, []);
 
-    // Load all on mount
     useEffect(() => {
         loadRuns();
         loadSummBatches();
@@ -252,8 +222,6 @@ export default function StepEvaluationPage() {
         getEvaluationInfo().then(info => setDatasetSizes(info.dataset_sizes)).catch(() => {});
     }, [loadRuns, loadSummBatches, loadRetrievalBatches, loadRerankBatches]);
 
-    // Step-based runs only: 'initialized' (created via initializeRun, no steps yet)
-    // or referenced in any batch step.
     const stepRunIds = new Set([
         ...summBatches.map(b => b.run_id),
         ...retrievalBatches.map(b => b.run_id),
@@ -261,7 +229,7 @@ export default function StepEvaluationPage() {
     ]);
     const stepRuns = allRuns.filter(r => r.status === 'initialized' || stepRunIds.has(r.id));
 
-    // Polling: watch any running batch
+    // Polling
     useEffect(() => {
         const hasRunning =
             allRuns.some(r => r.status === 'initialized' || r.status === 'running') ||
@@ -281,7 +249,6 @@ export default function StepEvaluationPage() {
         return () => clearInterval(interval);
     }, [allRuns, summBatches, retrievalBatches, rerankBatches, loadRuns, loadSummBatches, loadRetrievalBatches, loadRerankBatches]);
 
-    // --- Open New Version Modal ---
     const openNewVersionModal = async (step: "summ" | "retrieval" | "rerank") => {
         setNewVersionName('');
         setSelectedRunId(undefined);
@@ -293,7 +260,6 @@ export default function StepEvaluationPage() {
         setShowNewVersionModal(step);
     };
 
-    // --- Handlers ---
     const handleViewRun = async (run: EvaluationRunResponse) => {
         setSelectedRun(run);
         setRunDetailLoading(true);
@@ -338,7 +304,6 @@ export default function StepEvaluationPage() {
         }
     };
 
-    // Step 3: Run Orchestrator Agent (Retrieval + Critic + Relaxation)
     const handleRunRetrieval = async (summBatchOverride?: number) => {
         const summBatchId = summBatchOverride ?? selectedSummBatch;
         const runId = summBatches.find(b => b.id === summBatchId)?.run_id ?? selectedRunId;
@@ -356,7 +321,6 @@ export default function StepEvaluationPage() {
         }
     };
 
-    // Step 4: Run Reranker (pure reranking, using filtered_candidates from Step 3)
     const handleRunReranking = async () => {
         const retriBatchId = selectedRetrievalBatch;
         const runId = retrievalBatches.find(b => b.id === retriBatchId)?.run_id ?? selectedRunId;
@@ -374,7 +338,6 @@ export default function StepEvaluationPage() {
         }
     };
 
-    // "Run Next Step" from detail modal: summarization → run retrieval; retrieval → handled by modal directly
     const handleRunNextFromDetail = async (runId: number, batchId: number, stepType: string) => {
         if (stepType === 'summarization') {
             setShowDetailModal(false);
@@ -421,137 +384,243 @@ export default function StepEvaluationPage() {
         return summBatches.find(b => b.id === batchId)?.run_id;
     };
 
+    // Count badges for tabs
+    const counts: Record<TabId, number> = {
+        init: stepRuns.length,
+        profiler: summBatches.length,
+        orchestrator: retrievalBatches.length,
+        reranker: rerankBatches.length,
+    };
+
+    const activeTabData = TABS.find(t => t.id === activeTab)!;
+
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <h1 className="text-3xl font-bold mb-2">Step-by-Step Optimization</h1>
-            <p className="text-gray-500 text-sm mb-8">
-                Run each pipeline stage independently: Profiler Agent extracts preferences, then
-                Orchestrator Agent retrieves and filters candidates, then Reranker selects top-K.
-            </p>
+        <div className="min-h-screen bg-gray-50/50">
+            <div className="container mx-auto px-4 py-8 max-w-7xl">
 
-            {/* Pipeline Diagram */}
-            <PipelineFlowDiagram />
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-1">Step-by-Step Optimization</h1>
+                    <p className="text-gray-500 text-sm">
+                        Run each pipeline stage independently and compare results across versions.
+                    </p>
+                </div>
 
-            {/* ─── Section 1: Evaluation Runs ─── */}
-            <PipelineSection
-                id="section-init"
-                stepNumber="Step 1"
-                title="Evaluation Runs"
-                subtitle="Create runs with dataset samples to use across all pipeline steps."
-                accentColor="bg-blue-50/50"
-                headerRight={
-                    <button
-                        onClick={() => { setNewVersionName(''); setShowRunModal(true); }}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        New Run
-                    </button>
-                }
-            >
-                <div className="space-y-3">
-                    {stepRuns.length === 0 && <EmptyState icon="🚀" message="No runs yet. Click '+ New Run' to create one." />}
-                    {stepRuns.map(run => (
-                        <div
-                            key={run.id}
-                            onClick={() => handleViewRun(run)}
-                            className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
-                        >
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center gap-3">
-                                    <span className="font-semibold text-blue-900">
-                                        {run.name ? run.name : `Run #${run.id}`}
-                                    </span>
-                                    {run.name && <span className="text-xs text-gray-400">Run #{run.id}</span>}
-                                    <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${run.status === 'completed' ? 'bg-green-100 text-green-700' : run.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
-                                        {run.status}
-                                    </span>
+                {/* Main layout: left (tabs + content) + right (pipeline diagram) */}
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 items-start">
+
+                    {/* ── Left column ── */}
+                    <div>
+                        {/* Tab bar */}
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-1.5 flex gap-1 mb-4">
+                            {TABS.map(tab => {
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex-1 flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-center transition-all ${isActive ? `${tab.color.bg} ${tab.color.ring} border-2 shadow-sm` : 'border-2 border-transparent hover:bg-gray-50'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg ${isActive ? tab.color.badge : 'bg-gray-100'}`}>
+                                            {tab.icon}
+                                        </div>
+                                        <div>
+                                            <div className={`text-[10px] font-bold uppercase tracking-wider ${isActive ? tab.color.text : 'text-gray-400'}`}>{tab.step}</div>
+                                            <div className={`text-xs font-semibold leading-tight ${isActive ? tab.color.text : 'text-gray-600'}`}>{tab.title}</div>
+                                        </div>
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isActive ? `${tab.color.badge} ${tab.color.text}` : 'bg-gray-100 text-gray-500'}`}>
+                                            {counts[tab.id]}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Tab content */}
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                            {/* Content header */}
+                            <div className={`px-6 py-4 border-b border-gray-100 flex justify-between items-center ${activeTabData.color.accent}`}>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs font-bold uppercase tracking-wider ${activeTabData.color.text}`}>{activeTabData.step}</span>
+                                        <h2 className="text-base font-bold text-gray-800">{activeTabData.title}</h2>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-0.5">{activeTabData.subtitle}</p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-500">{run.timestamp ? new Date(run.timestamp).toLocaleString() : ''}</span>
-                                    <span className="text-xs text-blue-400">👁 View</span>
-                                </div>
+
+                                {/* Action button per tab */}
+                                {activeTab === 'init' && (
+                                    <button
+                                        onClick={() => { setNewVersionName(''); setShowRunModal(true); }}
+                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        New Run
+                                    </button>
+                                )}
+                                {activeTab === 'profiler' && (
+                                    <button
+                                        onClick={() => openNewVersionModal('summ')}
+                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        New Version
+                                    </button>
+                                )}
+                                {activeTab === 'orchestrator' && (
+                                    <button
+                                        onClick={() => openNewVersionModal('retrieval')}
+                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        New Version
+                                    </button>
+                                )}
+                                {activeTab === 'reranker' && (
+                                    <button
+                                        onClick={() => openNewVersionModal('rerank')}
+                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        New Version
+                                    </button>
+                                )}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="bg-white px-2 py-0.5 rounded border border-gray-200 text-xs">Dataset: <strong className="capitalize">{run.dataset}</strong></span>
-                                <span className="bg-white px-2 py-0.5 rounded border border-gray-200 text-xs">Samples: <strong>{run.sample_size}</strong></span>
+
+                            {/* Content body */}
+                            <div className="px-6 py-5">
+
+                                {/* Step 1: Evaluation Runs */}
+                                {activeTab === 'init' && (
+                                    <div className="space-y-3">
+                                        {stepRuns.length === 0 && <EmptyState icon="🚀" message="No runs yet. Click '+ New Run' to create one." />}
+                                        {stepRuns.map(run => (
+                                            <div
+                                                key={run.id}
+                                                onClick={() => handleViewRun(run)}
+                                                className="p-4 bg-blue-50/40 border border-blue-100 rounded-xl hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+                                            >
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-gray-800">
+                                                            {run.name ? run.name : `Run #${run.id}`}
+                                                        </span>
+                                                        {run.name && <span className="text-xs text-gray-400">#{run.id}</span>}
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${run.status === 'completed' ? 'bg-green-100 text-green-700' : run.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
+                                                            {run.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-gray-400">{run.timestamp ? new Date(run.timestamp).toLocaleString() : ''}</span>
+                                                        <span className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">View →</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="bg-white px-2 py-0.5 rounded-lg border border-gray-200 text-xs">Dataset: <strong className="capitalize">{run.dataset}</strong></span>
+                                                    <span className="bg-white px-2 py-0.5 rounded-lg border border-gray-200 text-xs">Samples: <strong>{run.sample_size}</strong></span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Step 2: Profiler Agent */}
+                                {activeTab === 'profiler' && (
+                                    <div className="space-y-3">
+                                        {summBatches.length === 0 && <EmptyState icon="🤖" message="No Profiler Agent versions yet. Click '+ New Version' to create one." />}
+                                        {summBatches.map(b => (
+                                            <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50/50', border: 'border-indigo-100', text: 'text-indigo-800' }} onClick={() => handleViewDetail(b)} />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Step 3: Orchestrator Agent */}
+                                {activeTab === 'orchestrator' && (
+                                    <div className="space-y-3">
+                                        {retrievalBatches.length === 0 && <EmptyState icon="🎛️" message="No Orchestrator Agent versions yet. Click '+ New Version' to create one." />}
+                                        {retrievalBatches.map(b => (
+                                            <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50/50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
+                                                <div className="flex gap-3 text-xs text-gray-600">
+                                                    <span className="bg-white px-2 py-0.5 rounded border border-gray-200">N = <strong>{(b.config as Record<string, unknown>).n_sample as number}</strong> candidates</span>
+                                                </div>
+                                            </VersionCard>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Step 4: Reranker */}
+                                {activeTab === 'reranker' && (
+                                    <div className="space-y-3">
+                                        {rerankBatches.length === 0 && <EmptyState icon="🎯" message="No Reranker versions yet. Click '+ New Version' to create one." />}
+                                        {rerankBatches.map(b => (
+                                            <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50/50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
+                                                <div className="flex gap-2 text-xs text-gray-600">
+                                                    <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Top-K = <strong>{(b.config as Record<string, unknown>).top_k as number}</strong></span>
+                                                    <span className="bg-white px-2 py-0.5 rounded border border-gray-200 capitalize">{String((b.config as Record<string, unknown>).model)}</span>
+                                                </div>
+                                            </VersionCard>
+                                        ))}
+                                    </div>
+                                )}
+
                             </div>
                         </div>
-                    ))}
-                </div>
-            </PipelineSection>
+                    </div>
 
-            {/* ─── Section 2: Profiler Agent ─── */}
-            <PipelineSection
-                id="section-profiler"
-                stepNumber="Step 2"
-                title="Profiler Agent"
-                subtitle="Extracts user preferences, genres, hard constraints, and WRRF weights from conversation history."
-                accentColor="bg-indigo-50/50"
-                headerRight={<NewVersionButton onClick={() => openNewVersionModal('summ')} color="bg-indigo-600 hover:bg-indigo-700" />}
-            >
-                <div className="space-y-3">
-                    {summBatches.length === 0 && <EmptyState icon="🤖" message="No Profiler Agent versions yet. Click '+ New Version' to create one." />}
-                    {summBatches.map(b => (
-                        <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-800' }} onClick={() => handleViewDetail(b)} />
-                    ))}
-                </div>
-            </PipelineSection>
+                    {/* ── Right column: Pipeline diagram (sticky) ── */}
+                    <div className="sticky top-6">
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-4">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">ARGOS Pipeline</p>
 
-            {/* ─── Section 3: Orchestrator Agent ─── */}
-            <PipelineSection
-                id="section-retrieval"
-                stepNumber="Step 3"
-                title="Orchestrator Agent"
-                subtitle="Kích hoạt đồng thời 3 luồng truy xuất (Semantic / Content / Graph), hợp nhất kết quả qua WRRF với trọng số động từ Profiler, sau đó qua Critic Agent → Relaxation Agent nếu cần."
-                accentColor="bg-purple-50/50"
-                headerRight={<NewVersionButton onClick={() => openNewVersionModal('retrieval')} color="bg-purple-600 hover:bg-purple-700" />}
-            >
-                <div className="space-y-3">
-                    {retrievalBatches.length === 0 && <EmptyState icon="🎛️" message="No Orchestrator versions yet. Click '+ New Version' to create one." />}
-                    {retrievalBatches.map(b => (
-                        <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
-                            <div className="flex gap-3 text-xs text-gray-600">
-                                <span>N={(b.config as Record<string, unknown>).n_sample as number} candidates</span>
-                            </div>
-                        </VersionCard>
-                    ))}
-                </div>
-            </PipelineSection>
+                            <VerticalPipelineStep
+                                step="Step 1" icon="🚀" title="Initialize" subtitle="Dataset sample"
+                                color={TABS[0].color}
+                                active={activeTab === 'init'}
+                                onClick={() => setActiveTab('init')}
+                            />
+                            <PipelineConnector active={activeTab === 'profiler' || activeTab === 'orchestrator' || activeTab === 'reranker'} />
 
-            {/* ─── Section 4: Reranker → Recall@K ─── */}
-            <PipelineSection
-                id="section-reranker"
-                stepNumber="Step 4"
-                title="Reranker → Recall@K"
-                subtitle="Reranker chọn Top-K từ danh sách candidates đã qua Critic (Step 3). Tính Recall@K."
-                accentColor="bg-green-50/50"
-                headerRight={<NewVersionButton onClick={() => openNewVersionModal('rerank')} color="bg-green-600 hover:bg-green-700" />}
-            >
-                <div className="space-y-3">
-                    {rerankBatches.length === 0 && <EmptyState icon="🎯" message="No Reranker versions yet. Click '+ New Version' to create one." />}
-                    {rerankBatches.map(b => (
-                        <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
-                            <div className="flex gap-3 text-xs text-gray-600">
-                                <span>TopK={(b.config as Record<string, unknown>).top_k as number}</span>
-                                <span>{String((b.config as Record<string, unknown>).model)}</span>
-                            </div>
-                        </VersionCard>
-                    ))}
+                            <VerticalPipelineStep
+                                step="Step 2" icon="🤖" title="Profiler Agent" subtitle="Extract preferences"
+                                color={TABS[1].color}
+                                active={activeTab === 'profiler'}
+                                onClick={() => setActiveTab('profiler')}
+                            />
+                            <PipelineConnector active={activeTab === 'orchestrator' || activeTab === 'reranker'} />
+
+                            <VerticalPipelineStep
+                                step="Step 3" icon="🎛️" title="Orchestrator Agent" subtitle="Retrieve & filter"
+                                color={TABS[2].color}
+                                active={activeTab === 'orchestrator'}
+                                onClick={() => setActiveTab('orchestrator')}
+                            />
+                            {activeTab === 'orchestrator' && <OrchestratorDetail />}
+                            <PipelineConnector active={activeTab === 'reranker'} />
+
+                            <VerticalPipelineStep
+                                step="Step 4" icon="🎯" title="Reranker" subtitle="Recall@K"
+                                color={TABS[3].color}
+                                active={activeTab === 'reranker'}
+                                onClick={() => setActiveTab('reranker')}
+                            />
+                        </div>
+
+                    </div>
+
                 </div>
-            </PipelineSection>
+            </div>
 
             {/* === MODALS === */}
 
             {/* Loading overlay */}
             {(detailLoading || loading) && (
-                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
-                    <div className="bg-white rounded-lg px-6 py-4 shadow-lg flex items-center gap-3">
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl px-8 py-5 shadow-xl flex items-center gap-4">
                         <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
-                        <span className="text-gray-700">{detailLoading ? 'Loading details...' : 'Running step...'}</span>
+                        <span className="text-gray-700 font-medium">{detailLoading ? 'Loading details...' : 'Running step...'}</span>
                     </div>
                 </div>
             )}
@@ -578,8 +647,8 @@ export default function StepEvaluationPage() {
             {/* Run Detail Modal */}
             {showRunDetailModal && selectedRun && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }}>
-                    <div className="bg-white rounded-xl shadow-2xl w-[92vw] max-w-3xl flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
-                        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0">
+                    <div className="bg-white rounded-2xl shadow-2xl w-[92vw] max-w-3xl flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-800">
                                     {selectedRun.name ? selectedRun.name : `Run #${selectedRun.id}`}
@@ -589,7 +658,7 @@ export default function StepEvaluationPage() {
                                     {selectedRun.dataset} · {selectedRun.sample_size} conversations
                                 </p>
                             </div>
-                            <button onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                            <button onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }} className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">&times;</button>
                         </div>
                         <div className="overflow-y-auto flex-1 px-6 py-4">
                             {runDetailLoading ? (
@@ -605,7 +674,7 @@ export default function StepEvaluationPage() {
                             ) : (
                                 <div className="space-y-3">
                                     {runConversations.map((conv, idx) => (
-                                        <div key={conv.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <div key={conv.id} className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
                                             <div className="flex justify-between items-center mb-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs font-mono text-gray-400">#{idx + 1}</span>
@@ -629,10 +698,10 @@ export default function StepEvaluationPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="px-6 py-3 border-t border-gray-200 flex justify-end shrink-0">
+                        <div className="px-6 py-3 border-t border-gray-100 flex justify-end shrink-0 bg-gray-50/50 rounded-b-2xl">
                             <button
                                 onClick={() => { setShowRunDetailModal(false); setRunConversations([]); }}
-                                className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                className="px-4 py-2 text-sm bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors text-gray-600"
                             >Close</button>
                         </div>
                     </div>
@@ -657,7 +726,7 @@ export default function StepEvaluationPage() {
                                 value={newVersionName}
                                 onChange={(e) => setNewVersionName(e.target.value)}
                                 placeholder="e.g. initial-run..."
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
                             />
                         </div>
                         <div>
@@ -665,7 +734,7 @@ export default function StepEvaluationPage() {
                             <select
                                 value={dataset}
                                 onChange={(e) => setDataset(e.target.value as "redial" | "inspired")}
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
                             >
                                 <option value="redial">Redial</option>
                                 <option value="inspired">Inspired</option>
@@ -674,7 +743,7 @@ export default function StepEvaluationPage() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Sample Size
-                                <span className="ml-2 font-semibold text-blue-600">{samplePercent}%</span>
+                                <span className="ml-2 font-bold text-blue-600">{samplePercent}%</span>
                                 {datasetSizes[dataset] ? (
                                     <span className="ml-1 text-gray-400 font-normal">
                                         (~{Math.max(1, Math.round(datasetSizes[dataset] * samplePercent / 100))} conversations)
@@ -690,9 +759,7 @@ export default function StepEvaluationPage() {
                                 className="w-full accent-blue-600"
                             />
                             <div className="flex justify-between text-xs text-gray-400 mt-0.5">
-                                <span>1%</span>
-                                <span>50%</span>
-                                <span>100%</span>
+                                <span>1%</span><span>50%</span><span>100%</span>
                             </div>
                         </div>
                     </div>
@@ -716,7 +783,7 @@ export default function StepEvaluationPage() {
                             value={newVersionName}
                             onChange={(e) => setNewVersionName(e.target.value)}
                             placeholder="e.g. baseline, experiment-1..."
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
                         />
                     </div>
                     <div>
@@ -724,7 +791,7 @@ export default function StepEvaluationPage() {
                         <select
                             value={selectedRunId || ''}
                             onChange={(e) => setSelectedRunId(e.target.value ? Number(e.target.value) : undefined)}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
                         >
                             <option value="">— Select a run —</option>
                             {stepRuns.map(r => (
@@ -764,7 +831,7 @@ export default function StepEvaluationPage() {
                             value={newVersionName}
                             onChange={(e) => setNewVersionName(e.target.value)}
                             placeholder="e.g. n100-critic-v1..."
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
                         />
                     </div>
                     <div>
@@ -779,7 +846,7 @@ export default function StepEvaluationPage() {
                                     if (batch) setSelectedRunId(batch.run_id);
                                 }
                             }}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
                         >
                             <option value="">— Select a profiler version —</option>
                             {summBatches.map(b => (
@@ -795,7 +862,7 @@ export default function StepEvaluationPage() {
                             type="number"
                             value={nSample}
                             onChange={(e) => setNSample(Number(e.target.value))}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2"
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2"
                         />
                         <p className="text-xs text-gray-500 mt-1">Number of candidates to retrieve (10–600).</p>
                     </div>
@@ -822,7 +889,7 @@ export default function StepEvaluationPage() {
                             value={newVersionName}
                             onChange={(e) => setNewVersionName(e.target.value)}
                             placeholder="e.g. cohere-top10..."
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
                         />
                     </div>
                     <div>
@@ -837,16 +904,16 @@ export default function StepEvaluationPage() {
                                     if (batch) setSelectedRunId(batch.run_id);
                                 }
                             }}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
+                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
                         >
-                            <option value="">— Select a retrieval version —</option>
+                            <option value="">— Select an orchestrator version —</option>
                             {retrievalBatches.filter(b => b.status === 'completed').map(b => (
                                 <option key={b.id} value={b.id}>
                                     {b.name ? b.name : `v${b.version}`} (Run #{b.run_id}) — {new Date(b.created_at).toLocaleString()}
                                 </option>
                             ))}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">Only completed retrieval versions are shown.</p>
+                        <p className="text-xs text-gray-500 mt-1">Only completed Orchestrator Agent versions are shown.</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -855,7 +922,7 @@ export default function StepEvaluationPage() {
                                 type="number"
                                 value={topK}
                                 onChange={(e) => setTopK(Number(e.target.value))}
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
+                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
                             />
                         </div>
                         <div>
@@ -863,7 +930,7 @@ export default function StepEvaluationPage() {
                             <select
                                 value={model}
                                 onChange={(e) => setModel(e.target.value as "llm" | "cohere")}
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
+                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
                             >
                                 <option value="cohere">Cohere</option>
                                 <option value="llm">LLM</option>

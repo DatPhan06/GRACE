@@ -1,84 +1,125 @@
 import { useState } from 'react';
-import { MessageSquare, BarChart2, Menu, Layers } from 'lucide-react';
+import { MessageSquare, BarChart2, Layers, Film, ChevronLeft } from 'lucide-react';
 import ChatInterface from '@/components/ChatInterface';
 import EvaluationPage from '@/pages/EvaluationPage';
 import StepEvaluationPage from '@/pages/StepEvaluationPage';
 
-export default function LandingPage() {
-    const [activeTab, setActiveTab] = useState<'chat' | 'evaluation' | 'step-evaluation'>('chat');
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+type TabId = 'chat' | 'evaluation' | 'step-evaluation';
 
-    const NavItem = ({ id, label, icon: Icon }: { id: 'chat' | 'evaluation' | 'step-evaluation', label: string, icon: any }) => (
-        <button
-            onClick={() => setActiveTab(id)}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors mb-1 ${activeTab === id
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-        >
-            <Icon size={20} />
-            {isSidebarOpen && <span>{label}</span>}
-        </button>
-    );
+const NAV_ITEMS: { id: TabId; label: string; icon: typeof MessageSquare; description: string }[] = [
+    { id: 'chat',            label: 'Assistant',         icon: MessageSquare, description: 'Chat with GRACE' },
+    { id: 'evaluation',      label: 'Evaluation',         icon: BarChart2,     description: 'System metrics' },
+    { id: 'step-evaluation', label: 'Step Optimization',  icon: Layers,        description: 'Pipeline stages' },
+];
+
+export default function LandingPage() {
+    const [activeTab, setActiveTab] = useState<TabId>('chat');
+    const [collapsed, setCollapsed] = useState(false);
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
-            {/* Sidebar */}
-            <aside
-                className={`${isSidebarOpen ? 'w-64' : 'w-20'
-                    } bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-sm z-10`}
-            >
-                {/* Logo / Header */}
-                <div className="h-16 flex items-center px-6 border-b border-gray-100">
-                    <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                            G
+
+            {/* ── Sidebar ── */}
+            <aside className={`${collapsed ? 'w-16' : 'w-56'} shrink-0 bg-white border-r border-gray-200 flex flex-col transition-all duration-200`}>
+
+                {/* Logo */}
+                <div className="h-14 flex items-center justify-between px-3 border-b border-gray-100">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center shrink-0">
+                            <Film size={15} className="text-white" />
                         </div>
-                        {isSidebarOpen && <span className="font-bold text-xl text-gray-800">GRACE</span>}
-                    </div>
-                </div>
-
-                {/* Navigation */}
-                <nav className="flex-1 p-4 py-6">
-                    <NavItem id="chat" label="Assistant" icon={MessageSquare} />
-                    <NavItem id="evaluation" label="Evaluation" icon={BarChart2} />
-                    <NavItem id="step-evaluation" label="Step Optimization" icon={Layers} />
-                </nav>
-
-                {/* Footer User Profile (Optional placeholder) */}
-                <div className="p-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-3 px-2 py-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0"></div>
-                        {isSidebarOpen && (
-                            <div className="overflow-hidden">
-                                <p className="text-sm font-medium text-gray-700 truncate">Admin User</p>
-                                <p className="text-xs text-gray-500 truncate">admin@grace.ai</p>
+                        {!collapsed && (
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-gray-900 tracking-tight leading-none">GRACE</p>
+                                <p className="text-[10px] text-gray-400 leading-none mt-0.5">Movie Recommender</p>
                             </div>
                         )}
                     </div>
+                    {!collapsed && (
+                        <button
+                            onClick={() => setCollapsed(true)}
+                            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        >
+                            <ChevronLeft size={15} />
+                        </button>
+                    )}
                 </div>
+
+                {/* Nav */}
+                <nav className="flex-1 p-2 space-y-0.5 pt-3">
+                    {NAV_ITEMS.map(item => {
+                        const isActive = activeTab === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => {
+                                    setActiveTab(item.id);
+                                    if (collapsed) setCollapsed(false);
+                                }}
+                                title={collapsed ? item.label : undefined}
+                                className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl transition-all text-sm group ${
+                                    isActive
+                                        ? 'bg-gray-900 text-white'
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                            >
+                                <item.icon size={17} className="shrink-0" />
+                                {!collapsed && (
+                                    <div className="text-left min-w-0">
+                                        <p className="font-medium leading-tight text-[13px]">{item.label}</p>
+                                        <p className={`text-[10px] leading-tight mt-0.5 ${isActive ? 'text-gray-300' : 'text-gray-400'}`}>
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                )}
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* Expand button when collapsed */}
+                {collapsed && (
+                    <div className="p-2 border-t border-gray-100">
+                        <button
+                            onClick={() => setCollapsed(false)}
+                            className="w-full p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex items-center justify-center"
+                        >
+                            <ChevronLeft size={15} className="rotate-180" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Footer */}
+                {!collapsed && (
+                    <div className="p-3 border-t border-gray-100">
+                        <p className="text-[10px] text-gray-400 text-center">ARGOS Pipeline · v1.0</p>
+                    </div>
+                )}
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6 lg:hidden">
-                    <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 -ml-2 text-gray-600">
-                        <Menu size={24} />
-                    </button>
-                    <span className="ml-4 font-semibold text-gray-800">
-                        {activeTab === 'chat' ? 'Chat Assistant' : activeTab === 'evaluation' ? 'Evaluation Dashboard' : 'Step Optimization'}
-                    </span>
-                </header>
+            {/* ── Main content ── */}
+            <main className="flex-1 flex flex-col overflow-hidden min-w-0">
 
-                <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto h-full">
-                        {activeTab === 'chat' && <ChatInterface />}
-                        {activeTab === 'evaluation' && <EvaluationPage />}
-                        {activeTab === 'step-evaluation' && <StepEvaluationPage />}
-                    </div>
+                {/* Content area — no padding for chat, scrollable for other pages */}
+                <div className="flex-1 overflow-hidden">
+                    {activeTab === 'chat' && (
+                        <div className="h-full">
+                            <ChatInterface />
+                        </div>
+                    )}
+                    {activeTab === 'evaluation' && (
+                        <div className="h-full overflow-auto">
+                            <EvaluationPage />
+                        </div>
+                    )}
+                    {activeTab === 'step-evaluation' && (
+                        <div className="h-full overflow-auto">
+                            <StepEvaluationPage />
+                        </div>
+                    )}
                 </div>
+
             </main>
         </div>
     );
 }
-
