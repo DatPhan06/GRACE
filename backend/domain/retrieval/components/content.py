@@ -22,7 +22,8 @@ class ContentRetriever:
                     MATCH (f:Film)-[:IN_GENRE]->(g:Genre)
                     WHERE toLower(g.name) IN $genres
                     OPTIONAL MATCH (f)-[:HAS_RATING]->(r:ImdbRating)
-                    RETURN f.movieId AS movieId, f.title AS title, f.plot AS plot, f.year AS year, r.value AS imdbRating
+                    WITH f, r, collect(g.name) AS genres
+                    RETURN f.movieId AS movieId, f.title AS title, f.plot AS plot, f.year AS year, r.value AS imdbRating, genres
                     ORDER BY r.value DESC
                     LIMIT $limit
                 """, genres=genres, limit=n)
@@ -34,7 +35,8 @@ class ContentRetriever:
                         'title': record['title'],
                         'plot': record['plot'],
                         'year': record['year'],
-                        'imdbRating': record['imdbRating']
+                        'imdbRating': record['imdbRating'],
+                        'genres': record['genres'],
                     })
                 return movies
         except Exception as e:

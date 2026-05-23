@@ -6,6 +6,31 @@ from infra.llm import get_llm_client
 
 logger = setup_logger(__name__)
 
+# Maps non-standard / compound genre terms to valid DB genres
+GENRE_SYNONYMS: dict[str, list[str]] = {
+    'superhero': ['action', 'adventure', 'sci-fi'],
+    'super hero': ['action', 'adventure'],
+    'super-hero': ['action', 'adventure'],
+    'comic book': ['action', 'adventure'],
+    'romantic comedy': ['romance', 'comedy'],
+    'rom-com': ['romance', 'comedy'],
+    'romantic': ['romance'],
+    'animated': ['animation'],
+    'cartoon': ['animation'],
+    'science fiction': ['sci-fi'],
+    'suspense': ['thriller'],
+    'psychological thriller': ['thriller', 'psychological'],
+    'scary': ['horror'],
+    'comedic': ['comedy'],
+    'biographical': ['biography'],
+    'biopic': ['biography'],
+    'martial art': ['martial arts'],
+    'historic': ['historical'],
+    'historical drama': ['historical', 'drama'],
+    'crime thriller': ['crime', 'thriller'],
+    'spy': ['action', 'thriller'],
+}
+
 class GenreExtractor:
     """
     Component for extracting and matching genres from user preferences.
@@ -72,10 +97,17 @@ class GenreExtractor:
         db_genres = await self._get_available_genres_from_db()
         if not db_genres:
             return llm_genres
+        db_genres_lower = [g.lower() for g in db_genres]
         matched_genres = []
         for llm_genre in llm_genres:
-            for db_genre in db_genres:
-                if llm_genre.lower() == db_genre.lower():
-                    matched_genres.append(db_genre.lower())
-                    break
+            key = llm_genre.lower()
+            # Synonym expansion first
+            if key in GENRE_SYNONYMS:
+                for mapped in GENRE_SYNONYMS[key]:
+                    if mapped in db_genres_lower:
+                        matched_genres.append(mapped)
+                continue
+            # Exact match
+            if key in db_genres_lower:
+                matched_genres.append(key)
         return list(set(matched_genres))

@@ -3,8 +3,21 @@ from shared.utils.logger import setup_logger
 from domain.retrieval.components.semantic import SemanticRetriever
 from domain.retrieval.components.content import ContentRetriever
 from domain.retrieval.components.graph_agent import GraphReasoningAgent
+from domain.retrieval.components.genre_extractor import GENRE_SYNONYMS
 
 logger = setup_logger(__name__)
+
+
+def _normalize_genres(genres: List[str]) -> List[str]:
+    """Map non-standard genre terms to canonical DB genre names."""
+    result = []
+    for g in genres:
+        key = g.lower()
+        if key in GENRE_SYNONYMS:
+            result.extend(GENRE_SYNONYMS[key])
+        else:
+            result.append(key)
+    return list(set(result))
 
 
 class RetrievalService:
@@ -35,7 +48,10 @@ class RetrievalService:
             genres = []
 
         agent_trace = []
-        
+
+        # Normalize genres from profiler before content filtering
+        genres = _normalize_genres(genres)
+
         # Weighted Reciprocal Rank Fusion (WRRF) Setup early
         w_sem = dynamic_weights.get("w_sem", 0.4)
         w_con = dynamic_weights.get("w_con", 0.3)

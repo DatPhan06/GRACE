@@ -33,17 +33,20 @@ class SemanticRetriever:
                         MATCH (f:Film)
                         WHERE f.plot_embedding IS NOT NULL
                         WITH f,
-                             reduce(dot = 0.0, i IN range(0, size(f.plot_embedding)-1) | 
+                             reduce(dot = 0.0, i IN range(0, size(f.plot_embedding)-1) |
                               dot + f.plot_embedding[i] * $queryEmbedding[i]) AS similarity
                         ORDER BY similarity DESC
                         LIMIT $limit
                         OPTIONAL MATCH (f)-[:HAS_RATING]->(r:ImdbRating)
-                        RETURN f.movieId AS movieId, 
+                        OPTIONAL MATCH (f)-[:IN_GENRE]->(g:Genre)
+                        WITH f, r, similarity, collect(g.name) AS genres
+                        RETURN f.movieId AS movieId,
                                f.title AS title,
                                f.plot AS plot,
                                f.year AS year,
                                r.value AS imdbRating,
-                               similarity
+                               similarity,
+                               genres
                     """, queryEmbedding=embedding, limit=n)
 
                     movies = []
@@ -54,7 +57,8 @@ class SemanticRetriever:
                             'plot': record['plot'],
                             'year': record['year'],
                             'imdbRating': record['imdbRating'],
-                            'similarity': record['similarity']
+                            'similarity': record['similarity'],
+                            'genres': record['genres'],
                         })
                     return movies
             except Exception as e:

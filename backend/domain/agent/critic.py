@@ -27,9 +27,13 @@ class CriticAgent:
             year = m.get("year", "N/A")
             rating = m.get("imdbRating", "N/A")
             plot = str(m.get("plot", ""))[:150]
+            genres = m.get("genres") or m.get("genre", "")
+            if isinstance(genres, list):
+                genres = ", ".join(genres)
+            genre_part = f" | Genres: {genres}" if genres else ""
             candidates_str += (
                 f"- ID: {m.get('movieId')} | Title: {m.get('title')} "
-                f"| Year: {year} | IMDb: {rating} | Plot: {plot}...\n"
+                f"| Year: {year} | IMDb: {rating}{genre_part} | Plot: {plot}...\n"
             )
 
         if hard_constraints:

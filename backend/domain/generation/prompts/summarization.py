@@ -14,8 +14,11 @@ Furthermore, you must:
      that can be dropped entirely if the search space is too narrow.
    Apply knowledge normalization: cross-check entity names (directors, actors, studios) against the conversation
    context to ensure consistency before encoding.
+   IMPORTANT: When the user explicitly names a genre in the latest turn (e.g., "action", "horror", "comedy"), you MUST also add it as a "core" hard constraint (e.g., {"constraint": "Must be an action movie", "priority": "core"}). This ensures the Critic Agent enforces the genre filter.
 2. Extract `genres`: List of genre names explicitly mentioned or strongly implied (e.g., ["horror", "comedy"]).
-   Use only standard genre names. This list is used separately by the Content Retrieval stream for structured filtering.
+   ONLY use genres from this list: {available_genres}.
+   Map non-standard genres to the closest match(es) from the list above (e.g., "superhero" → ["action", "adventure"], "romantic comedy" → ["romance", "comedy"], "sci-fi thriller" → ["sci-fi", "thriller"]).
+   This list is used directly by the Content Retrieval stream for structured database filtering.
    Empty list if none.
 3. Generate `semantic_queries`: Break down the user's abstract preferences into a set of independent search queries
    for a vector database. Each query must target a distinct semantic dimension:
@@ -23,9 +26,16 @@ Furthermore, you must:
    - Vibe & Mood: the emotional tone, atmosphere, or feeling the user wants.
    - Setting & Cinematography: time period, location, visual style, or cinematic technique.
 4. Predict a dynamic weight distribution (w_sem, w_con, w_col) for three retrieval strategies:
-- w_sem (Semantic/Thematic Intent): Weight for plot, abstract concepts, or themes (e.g., "movies about time travel").
-- w_con (Content/Categorical Intent): Weight for strict explicit constraints like genres or release years (e.g., "90s action movies").
-- w_col (Collaborative/Entity-Centric Intent): Weight for specific entities like actors, directors, or creators (e.g., "films by Nolan").
+- w_sem (Semantic/Thematic Intent): Weight for abstract plot concepts, mood, or themes the user describes (e.g., "movies about time travel", "something feel-good").
+- w_con (Content/Categorical Intent): Weight for explicit categorical constraints like genres or release years (e.g., "90s action movies", "horror only").
+- w_col (Collaborative/Entity-Centric Intent): Weight for named entities — specific movies the user liked, actors, directors, or franchises (e.g., "films like The Dark Knight", "movies with Tom Hanks", "I love Iron Man").
+Calibration principle — focus on the USER'S LATEST utterance to determine the dominant signal (ignore genre words that appear only in the assistant's previous responses):
+  - Named entity in the latest user turn: a specific movie title, actor, director, studio or franchise (Marvel, DC, Pixar, Disney...) → w_col MUST be highest (e.g. w_col ≥ 0.50). Studio/franchise names like "Marvel" count as entities, not genres.
+  - Genre or categorical preference stated by the user (e.g. "I like action movies", "horror only", "90s films") with no named entity → w_con MUST be highest (e.g. w_con ≥ 0.45).
+  - Abstract content/plot description stated by the user (e.g. "something about time travel", "feel-good vibes", "dark psychological story") with no named entity or genre → w_sem MUST be highest (e.g. w_sem ≥ 0.50).
+  - Genre + content description (e.g. "action movie with sad ending") → w_con MUST still be highest because genre is a hard categorical filter; w_sem second for the content nuance. (e.g. w_con=0.50, w_sem=0.30, w_col=0.20).
+  - Mixed signals → the signal type appearing in the latest user turn takes priority; blend proportionally.
+All three values must sum to exactly 1.0.
 These weights must sum to exactly 1.0 (w_sem + w_con + w_col = 1.0).
 
 Your response must follow the instruction below:
