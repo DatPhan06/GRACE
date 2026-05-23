@@ -16,12 +16,12 @@ function RecommendationsList({ recommendations }: { recommendations: EvaluationR
     const hidden = items.length - PREVIEW_COUNT;
 
     return (
-        <div className="mt-1">
-            <ol className="font-mono text-xs bg-white p-2 border rounded space-y-0.5">
+        <div className="mt-1.5">
+            <ol className="font-mono text-xs bg-gray-50 border border-gray-200 rounded-xl p-2.5 space-y-0.5">
                 {shown.map((title, i) => (
-                    <li key={i} className="flex gap-1.5">
-                        <span className="text-gray-400 w-5 shrink-0 text-right">{i + 1}.</span>
-                        <span className="break-words">{title}</span>
+                    <li key={i} className="flex gap-2">
+                        <span className="text-gray-300 w-5 shrink-0 text-right">{i + 1}.</span>
+                        <span className="break-words text-gray-700">{title}</span>
                     </li>
                 ))}
             </ol>
@@ -29,7 +29,7 @@ function RecommendationsList({ recommendations }: { recommendations: EvaluationR
                 <button
                     type="button"
                     onClick={() => setExpanded(v => !v)}
-                    className="text-xs text-blue-500 hover:text-blue-700 mt-1"
+                    className="text-xs text-gray-500 hover:text-gray-700 mt-1.5 font-medium"
                 >
                     {expanded ? 'Show less' : `+ ${hidden} more`}
                 </button>
@@ -67,54 +67,50 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
     const results = run.results || [];
 
     return (
-        <div className="mt-4">
-            {/* Export button */}
-            <div className="flex justify-end mb-3">
+        <div>
+            {/* Metrics strip */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+                    <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1">Recall@{run.top_k}</div>
+                    <div className="text-2xl font-bold text-blue-600">{run.avg_recall?.toFixed(4) ?? '—'}</div>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+                    <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1">Model</div>
+                    <div className="text-lg font-bold text-gray-800 uppercase">{run.model ?? '—'}</div>
+                    {run.llm_model && <div className="text-[10px] text-gray-400 mt-0.5">{run.llm_model}</div>}
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+                    <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1">Config</div>
+                    <div className="text-base font-bold text-gray-800">Top-{run.top_k} / N={run.n_sample}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">{run.sample_size} conversations</div>
+                </div>
+            </div>
+
+            {/* Export + table header */}
+            <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Per-conversation results ({results.length})
+                </p>
                 <button
                     onClick={handleExport}
                     disabled={exporting || results.length === 0}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        exporting || results.length === 0
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                    <Download size={15} />
+                    <Download size={13} />
                     {exporting ? 'Exporting…' : 'Export TSV'}
                 </button>
             </div>
 
-            {/* Run config + primary metrics */}
-            <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                    <div className="bg-white p-3 rounded border">
-                        <span className="text-gray-500 block text-xs">Recall@K (Final)</span>
-                        <span className="font-bold text-lg text-blue-600">{run.avg_recall?.toFixed(3) ?? '—'}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border">
-                        <span className="text-gray-500 block text-xs">Model</span>
-                        <span className="font-bold text-base text-gray-700 uppercase">{run.model ?? '—'}</span>
-                    </div>
-                    <div className="bg-white p-3 rounded border">
-                        <span className="text-gray-500 block text-xs">Config</span>
-                        <span className="font-bold text-sm text-gray-700">
-                            Top-{run.top_k} / N={run.n_sample}
-                        </span>
-                    </div>
-                </div>
-
-            </div>
-
             {/* Per-conversation table */}
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <div className="rounded-2xl border border-gray-200 overflow-hidden">
                 <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th className="px-4 py-3 w-4"></th>
-                            <th className="px-4 py-3">Conv ID</th>
-                            <th className="px-4 py-3">Recall@K</th>
-                            <th className="px-4 py-3">Candidates</th>
-                            <th className="px-4 py-3">Status</th>
+                            <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Conv ID</th>
+                            <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Recall@K</th>
+                            <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Candidates</th>
+                            <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -123,15 +119,15 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
                                 <tr
                                     key={res.conv_id}
                                     onClick={() => toggleRow(res.conv_id)}
-                                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                                    className="hover:bg-gray-50/80 cursor-pointer transition-colors"
                                 >
-                                    <td className="px-4 py-3 text-gray-400 text-xs">
+                                    <td className="px-4 py-3 text-gray-300 text-xs">
                                         {expandedRows.has(res.conv_id) ? '▼' : '▶'}
                                     </td>
-                                    <td className="px-4 py-3 font-medium text-gray-800 text-xs max-w-[180px] truncate">
+                                    <td className="px-4 py-3 font-mono text-xs text-gray-700 max-w-[180px] truncate">
                                         {res.conv_id}
                                     </td>
-                                    <td className="px-4 py-3 font-semibold text-blue-600">
+                                    <td className="px-4 py-3 font-semibold text-blue-600 text-sm">
                                         {typeof res.recall === 'number' ? res.recall.toFixed(3) : '—'}
                                     </td>
                                     <td className="px-4 py-3 text-gray-500 text-xs">
@@ -139,48 +135,40 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
                                     </td>
                                     <td className="px-4 py-3">
                                         {res.error ? (
-                                            <span className="text-red-500 text-xs font-bold">ERROR</span>
+                                            <span className="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-medium">Error</span>
                                         ) : (
-                                            <span className="text-green-500 text-xs font-bold">OK</span>
+                                            <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-medium">OK</span>
                                         )}
                                     </td>
                                 </tr>
                                 {expandedRows.has(res.conv_id) && (
-                                    <tr className="bg-gray-50">
-                                        <td colSpan={5} className="px-6 py-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                                                {/* Left: pipeline metrics */}
+                                    <tr className="bg-gray-50/50">
+                                        <td colSpan={5} className="px-5 py-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                                 <div>
-                                                    <h4 className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">
-                                                        Pipeline Metrics
-                                                    </h4>
-                                                    <ul className="space-y-1 text-gray-600 text-xs">
-                                                        <li>Recall@K (Final): <span className="font-medium text-blue-600">{typeof res.recall === 'number' ? res.recall.toFixed(3) : '—'}</span></li>
-                                                        <li>Candidates (into Critic): <span className="font-medium">{res.candidate_count ?? '—'}</span></li>
+                                                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Pipeline Metrics</p>
+                                                    <ul className="space-y-1 text-xs text-gray-600">
+                                                        <li>Recall@K: <span className="font-semibold text-blue-600">{typeof res.recall === 'number' ? res.recall.toFixed(3) : '—'}</span></li>
+                                                        <li>Candidates: <span className="font-medium">{res.candidate_count ?? '—'}</span></li>
                                                     </ul>
                                                 </div>
-
-                                                {/* Right: ground truth + recommendations */}
                                                 <div>
-                                                    <h4 className="font-semibold text-gray-700 mb-2 text-xs uppercase tracking-wide">
-                                                        Results
-                                                    </h4>
+                                                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Results</p>
                                                     <div className="mb-3">
-                                                        <span className="font-medium text-xs text-gray-500 uppercase">Ground Truth</span>
-                                                        <p className="font-mono text-xs bg-white p-2 border rounded mt-1 break-words">
+                                                        <span className="text-[11px] text-gray-400 font-medium">Ground Truth</span>
+                                                        <p className="font-mono text-xs bg-white border border-gray-200 rounded-xl p-2.5 mt-1 break-words text-gray-700">
                                                             {Array.isArray(res.ground_truth)
                                                                 ? res.ground_truth.join(', ')
                                                                 : String(res.ground_truth ?? '—')}
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <span className="font-medium text-xs text-gray-500 uppercase">Recommendations</span>
+                                                        <span className="text-[11px] text-gray-400 font-medium">Recommendations</span>
                                                         <RecommendationsList recommendations={res.recommendations} />
                                                     </div>
                                                 </div>
-
                                                 {res.error && (
-                                                    <div className="col-span-2 bg-red-50 text-red-700 p-3 rounded border border-red-200 text-xs">
+                                                    <div className="col-span-2 bg-red-50 text-red-700 p-3 rounded-xl border border-red-200 text-xs">
                                                         Error: {res.error}
                                                     </div>
                                                 )}
@@ -193,7 +181,7 @@ export default function RunDetailView({ run }: RunDetailViewProps) {
                     </tbody>
                 </table>
                 {results.length === 0 && (
-                    <div className="text-center text-gray-400 py-8 text-sm">No results recorded for this run.</div>
+                    <div className="text-center text-gray-400 py-10 text-sm">No results recorded for this run.</div>
                 )}
             </div>
         </div>

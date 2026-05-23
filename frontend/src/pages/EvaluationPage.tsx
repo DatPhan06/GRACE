@@ -10,8 +10,6 @@ export default function EvaluationPage() {
     const [runs, setRuns] = useState<EvaluationRunResponse[]>([]);
     const [selectedRun, setSelectedRun] = useState<EvaluationRunResponse | null>(null);
     const [isStartModalOpen, setIsStartModalOpen] = useState(false);
-
-    // Loading states
     const [loadingRuns, setLoadingRuns] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -23,39 +21,33 @@ export default function EvaluationPage() {
             const data = await getEvaluationRuns();
             setRuns(data.filter(r => !STEP_STATUSES.has(r.status ?? '')));
         } catch (error) {
-            console.error("Failed to fetch runs", error);
+            console.error('Failed to fetch runs', error);
         } finally {
             setLoadingRuns(false);
         }
     }, []);
 
-    useEffect(() => {
-        fetchRuns();
-    }, [fetchRuns]);
+    useEffect(() => { fetchRuns(); }, [fetchRuns]);
 
-    // Poll while any run is still processing
     useEffect(() => {
         const hasRunning = runs.some(r => r.status === 'running');
         if (!hasRunning) return;
         const interval = setInterval(async () => {
             try {
                 const data = await getEvaluationRuns();
-                setRuns(data);
-            } catch {
-                // silent — don't disrupt UX on polling failure
-            }
+                setRuns(data.filter(r => !STEP_STATUSES.has(r.status ?? '')));
+            } catch { /* silent */ }
         }, 3000);
         return () => clearInterval(interval);
     }, [runs]);
 
     const handleSelectRun = async (runId: number) => {
         setLoadingDetail(true);
-        // Show modal immediately, loading state inside if needed or manage here
         try {
             const detail = await getEvaluationRun(runId);
             setSelectedRun(detail);
         } catch (error) {
-            console.error("Failed to fetch run details", error);
+            console.error('Failed to fetch run details', error);
         } finally {
             setLoadingDetail(false);
         }
@@ -72,84 +64,84 @@ export default function EvaluationPage() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <header className="mb-8 flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">System Evaluation</h1>
-                    <p className="text-gray-500 mt-2">Manage and analyze model performance experiments.</p>
-                </div>
-                <button
-                    onClick={() => setIsStartModalOpen(true)}
-                    className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
-                >
-                    <Plus size={20} />
-                    <span>New Evaluation</span>
-                </button>
-            </header>
+        <div className="min-h-full bg-gray-50">
+            <div className="max-w-5xl mx-auto px-6 py-8">
 
-            {/* Main Content: Full-width History */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                    <h3 className="font-semibold text-gray-800">Run History</h3>
+                {/* Header */}
+                <div className="mb-8 flex items-start justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-1">System Evaluation</h1>
+                        <p className="text-sm text-gray-500">Run end-to-end evaluations and compare model performance.</p>
+                    </div>
                     <button
-                        onClick={fetchRuns}
-                        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        onClick={() => setIsStartModalOpen(true)}
+                        className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-xl hover:bg-gray-800 transition-colors text-sm font-medium shadow-sm shrink-0"
                     >
-                        Refresh List
+                        <Plus size={16} />
+                        New Evaluation
                     </button>
                 </div>
 
-                {loadingRuns ? (
-                    <div className="p-8 text-center text-gray-500">Loading history...</div>
-                ) : (
-                    <RunHistoryList
-                        runs={runs}
-                        onSelectRun={handleSelectRun}
-                        onDeleteRun={handleDeleteRun}
-                        activeRunId={selectedRun?.id || null}
-                    />
-                )}
+                {/* Run history card */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                            <h2 className="text-sm font-semibold text-gray-800">Run History</h2>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                                {runs.length} evaluation{runs.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                        <button
+                            onClick={fetchRuns}
+                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-50 font-medium"
+                        >
+                            Refresh
+                        </button>
+                    </div>
+
+                    {loadingRuns ? (
+                        <div className="flex justify-center py-16">
+                            <div className="animate-spin h-6 w-6 rounded-full border-2 border-gray-200 border-t-gray-600" />
+                        </div>
+                    ) : (
+                        <RunHistoryList
+                            runs={runs}
+                            onSelectRun={handleSelectRun}
+                            onDeleteRun={handleDeleteRun}
+                            activeRunId={selectedRun?.id || null}
+                        />
+                    )}
+                </div>
+
             </div>
 
-            {/* Modals */}
-
-            {/* 1. Start Evaluation Modal */}
+            {/* New Evaluation Modal */}
             <Modal
                 isOpen={isStartModalOpen}
                 onClose={() => setIsStartModalOpen(false)}
-                title="Start New Evaluation"
-                maxWidth="max-w-2xl"
+                title="New Evaluation"
+                maxWidth="max-w-xl"
             >
-                <div className="pb-2">
-                    <p className="text-gray-500 mb-6 font-light">
-                        Configure the parameters below to launch a new evaluation pipeline run.
-                        Results will be saved automatically.
-                    </p>
-                    <RunEvaluationForm onRunComplete={handleRunComplete} existingRuns={runs} />
-                </div>
+                <p className="text-sm text-gray-500 mb-5">
+                    Configure the parameters below to launch a new end-to-end evaluation run.
+                </p>
+                <RunEvaluationForm onRunComplete={handleRunComplete} existingRuns={runs} />
             </Modal>
 
-            {/* 2. Run Details Modal */}
+            {/* Run Detail Modal */}
             <Modal
                 isOpen={!!selectedRun}
                 onClose={() => setSelectedRun(null)}
-                title={selectedRun ? `Evaluation Details #${selectedRun.id}` : 'Details'}
-                maxWidth="max-w-6xl"
+                title={selectedRun ? (selectedRun.name || `Run #${selectedRun.id}`) : 'Details'}
+                maxWidth="max-w-5xl"
             >
-                {/* 
-                   We check !!selectedRun for the modal open state, 
-                   so selectedRun is guaranteed to be present here render-wise due to React batching,
-                   but for strict TS, conditional rendering inside content
-                */}
                 {selectedRun ? (
                     loadingDetail ? (
-                        <div className="flex justify-center p-12">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div className="flex justify-center py-16">
+                            <div className="animate-spin h-6 w-6 rounded-full border-2 border-gray-200 border-t-gray-600" />
                         </div>
                     ) : (
-                        <div className="-mt-8"> {/* Negative margin to offset inner component spacing if needed */}
-                            <RunDetailView run={selectedRun} />
-                        </div>
+                        <RunDetailView run={selectedRun} />
                     )
                 ) : null}
             </Modal>
