@@ -99,22 +99,22 @@ export default function RunHistoryList({ runs, onSelectRun, onDeleteRun, activeR
                             </div>
                         </div>
 
-                        {/* Row 2: tags */}
-                        <div className="flex flex-wrap gap-1.5 items-center">
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg capitalize">{run.dataset}</span>
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg uppercase font-mono">{run.model}</span>
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">{run.sample_size} samples</span>
-                            {run.top_k != null && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">Top-{run.top_k}</span>}
-                            {run.avg_recall != null && !isRunning && (
-                                <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-lg font-semibold">
-                                    Recall@{run.top_k}: {run.avg_recall.toFixed(4)}
-                                </span>
-                            )}
-                            {!isRunning && (
-                                <span className="ml-auto text-[11px] text-gray-400 group-hover:text-gray-600 transition-colors">
-                                    View details →
-                                </span>
-                            )}
+                        {/* Row 2: tags left, recall right */}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex flex-wrap gap-1.5 items-center min-w-0">
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg capitalize">{run.dataset}</span>
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg uppercase font-mono">{run.model}</span>
+                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">{run.sample_size} samples</span>
+                                {run.top_k != null && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">Top-{run.top_k}</span>}
+                            </div>
+                            {run.avg_recall != null && !isRunning ? (
+                                <div className="shrink-0 text-right">
+                                    <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wider leading-none mb-0.5">Recall@{run.top_k}</div>
+                                    <div className="text-lg font-bold text-blue-600 leading-none">{run.avg_recall.toFixed(4)}</div>
+                                </div>
+                            ) : isRunning ? (
+                                <div className="shrink-0 text-[11px] text-gray-400 italic">computing…</div>
+                            ) : null}
                         </div>
                     </div>
                 );
