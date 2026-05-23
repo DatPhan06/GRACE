@@ -351,7 +351,7 @@ The Orchestrator fires all three retrieval streams concurrently via `asyncio.gat
 
 Results are merged with **Weighted Reciprocal Rank Fusion**:
 
-$$\text{WRRF\_Score}(i) = \sum_{m \in \{\text{sem, con, col}\}} \frac{w_m}{k + R_m(i)}$$
+$$\operatorname{WRRF}(i) = \sum_{m \in \{\text{sem, con, col}\}} \frac{w_m}{k + R_m(i)}$$
 
 The dynamic weights $w_m$ (from Profiler) replace the fixed $(0.40, 0.35, 0.25)$ used in GRACE, amplifying whichever stream best matches the current query type.
 
@@ -460,12 +460,20 @@ docker-compose logs -f retrieval_service
 Required environment variables (`.env`):
 
 ```bash
-# LLM provider — pick one
-LLM_PROVIDER=azure            # azure | openai | gemini
+# LLM provider — pick one: azure | openai | gemini
+LLM_PROVIDER=azure
+
+# Azure OpenAI
 AZURE_OPENAI_API_KEY=...
 AZURE_OPENAI_ENDPOINT=...
 AZURE_LLM_MODEL=...
 AZURE_EMBEDDING_MODEL=...
+
+# OpenAI (if LLM_PROVIDER=openai)
+# OPENAI_API_KEY=...
+
+# Gemini (if LLM_PROVIDER=gemini)
+# GEMINI_API_KEY=...
 
 # Neo4j
 NEO4J_URI=bolt://localhost
