@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from infra.db.database import engine, Base
-from api.routers import items, chat, evaluate, tracing
+from api.routers import chat, evaluate, tracing
 
 # Create tables (for simplicity in this example)
 Base.metadata.create_all(bind=engine)
@@ -22,7 +22,6 @@ app.add_middleware(
     expose_headers=["Content-Disposition"],
 )
 
-app.include_router(items.router)
 app.include_router(chat.router)
 app.include_router(evaluate.router)
 app.include_router(tracing.router)
