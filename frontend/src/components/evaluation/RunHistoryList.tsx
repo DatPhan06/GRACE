@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Trash2, BarChart2 } from 'lucide-react';
+import { Trash2, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 5;
 import { EvaluationRunResponse, deleteEvaluationRun } from '@/lib/api';
 
 interface RunHistoryListProps {
@@ -32,6 +34,11 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function RunHistoryList({ runs, onSelectRun, onDeleteRun, activeRunId }: RunHistoryListProps) {
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [page, setPage] = useState(1);
+
+    const totalPages = Math.max(1, Math.ceil(runs.length / PAGE_SIZE));
+    const safePage = Math.min(page, totalPages);
+    const paged = runs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
     const handleDelete = async (e: React.MouseEvent, run: EvaluationRunResponse) => {
         e.stopPropagation();
@@ -59,8 +66,9 @@ export default function RunHistoryList({ runs, onSelectRun, onDeleteRun, activeR
     }
 
     return (
+        <div>
         <div className="px-4 py-3 space-y-2.5">
-            {runs.map(run => {
+            {paged.map(run => {
                 const isActive = activeRunId === run.id;
                 const isRunning = run.status === 'running';
                 return (
@@ -119,6 +127,45 @@ export default function RunHistoryList({ runs, onSelectRun, onDeleteRun, activeR
                     </div>
                 );
             })}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+                <span className="text-xs text-gray-400">
+                    {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, runs.length)} of {runs.length}
+                </span>
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={safePage === 1}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronLeft size={15} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                        <button
+                            key={p}
+                            onClick={() => setPage(p)}
+                            className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                                p === safePage
+                                    ? 'bg-gray-900 text-white'
+                                    : 'text-gray-500 hover:bg-gray-100'
+                            }`}
+                        >
+                            {p}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={safePage === totalPages}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronRight size={15} />
+                    </button>
+                </div>
+            </div>
+        )}
         </div>
     );
 }
