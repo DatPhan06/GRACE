@@ -5,14 +5,14 @@ import VersionDetailModal from '@/components/evaluation/VersionDetailModal';
 // ─── Shared UI components ────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const VersionCard = ({ batch, color, onClick, children }: { batch: BatchStepExecutionResponse; color: { bg: string; border: string; text: string }; onClick: () => void; children?: any }) => (
+const VersionCard = ({ batch, onClick, children }: { batch: BatchStepExecutionResponse; onClick: () => void; children?: any }) => (
     <div
         onClick={onClick}
-        className={`p-4 ${color.bg} border ${color.border} rounded-xl cursor-pointer hover:shadow-md transition-all group`}
+        className="p-4 bg-white border border-gray-200 rounded-2xl cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all group"
     >
         <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-2">
-                <span className={`text-sm font-bold ${color.text}`}>
+                <span className="text-sm font-bold text-gray-900">
                     {batch.name ? batch.name : `v${batch.version}`}
                 </span>
                 {batch.name && <span className="text-xs text-gray-400">v{batch.version}</span>}
@@ -20,31 +20,31 @@ const VersionCard = ({ batch, color, onClick, children }: { batch: BatchStepExec
             <span className="text-xs text-gray-400 group-hover:text-gray-600 transition-colors">{new Date(batch.created_at).toLocaleString()}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/80 border border-gray-200 text-gray-600">Run #{batch.run_id}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600">Run #{batch.run_id}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>
                 {batch.status}
             </span>
         </div>
-        {children && <div className="mt-2 pt-2 border-t border-white/60">{children}</div>}
+        {children && <div className="mt-2 pt-2 border-t border-gray-100">{children}</div>}
     </div>
 );
 
-const ModalBackdrop = ({ title, onClose, children, onSubmit, submitLabel, submitColor, submitDisabled }: {
+const ModalBackdrop = ({ title, onClose, children, onSubmit, submitLabel, submitDisabled }: {
     title: string; onClose: () => void; children: React.ReactNode;
-    onSubmit: () => void; submitLabel: string; submitColor: string; submitDisabled?: boolean;
+    onSubmit: () => void; submitLabel: string; submitDisabled?: boolean;
 }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl w-[90vw] max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="bg-white rounded-2xl shadow-xl w-[90vw] max-w-lg flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">&times;</button>
+                <h3 className="text-base font-semibold text-gray-800">{title}</h3>
+                <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">&times;</button>
             </div>
             <div className="px-6 py-5 space-y-4">
                 {children}
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 rounded-b-2xl">
-                <button onClick={onClose} className="px-4 py-2 text-sm bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors text-gray-600">Cancel</button>
-                <button onClick={(e) => { e.preventDefault(); onSubmit(); }} disabled={submitDisabled} className={`px-6 py-2 text-sm text-white rounded-lg font-medium shadow-sm ${submitColor} disabled:opacity-40 transition-colors`}>
+                <button onClick={onClose} className="px-4 py-2 text-sm bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors text-gray-600">Cancel</button>
+                <button onClick={(e) => { e.preventDefault(); onSubmit(); }} disabled={submitDisabled} className="px-6 py-2 text-sm text-white rounded-xl font-medium bg-gray-900 hover:bg-gray-800 disabled:opacity-40 transition-colors shadow-sm">
                     {submitLabel}
                 </button>
             </div>
@@ -97,18 +97,18 @@ function PipelineConnector({ active }: { active: boolean }) {
 
 function OrchestratorDetail() {
     return (
-        <div className="mt-2 ml-11 mr-1 border border-purple-100 bg-purple-50/50 rounded-lg px-3 py-2.5 space-y-1.5">
-            <div className="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">Parallel streams</div>
+        <div className="mt-2 ml-11 mr-1 border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 space-y-1.5">
+            <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Parallel streams</div>
             <div className="flex gap-1">
-                <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">Semantic</span>
-                <span className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100">Content</span>
-                <span className="text-[9px] bg-teal-50 text-teal-600 px-1.5 py-0.5 rounded border border-teal-100">Graph</span>
+                <span className="text-[9px] bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">Semantic</span>
+                <span className="text-[9px] bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">Content</span>
+                <span className="text-[9px] bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">Graph</span>
             </div>
             <div className="text-[9px] text-gray-400 pl-0.5">↓ WRRF(w_sem, w_con, w_col)</div>
-            <div className="text-[10px] bg-white border border-orange-100 rounded px-2 py-1 text-orange-700 font-medium">Critic Agent</div>
-            <div className="border border-dashed border-amber-200 bg-amber-50/60 rounded px-2 py-1">
-                <div className="text-[9px] text-amber-600 font-semibold">if |M| &lt; τ</div>
-                <div className="text-[9px] text-amber-700">Relaxation → re-retrieve</div>
+            <div className="text-[10px] bg-white border border-gray-200 rounded px-2 py-1 text-gray-700 font-medium">Critic Agent</div>
+            <div className="border border-dashed border-gray-300 bg-white rounded px-2 py-1">
+                <div className="text-[9px] text-gray-500 font-semibold">if |M| &lt; τ</div>
+                <div className="text-[9px] text-gray-600">Relaxation → re-retrieve</div>
             </div>
             <div className="text-[9px] text-gray-400 pl-0.5">↓ Top-N candidates</div>
         </div>
@@ -119,14 +119,14 @@ function OrchestratorDetail() {
 
 type TabId = 'init' | 'profiler' | 'orchestrator' | 'reranker';
 
-const TABS: { id: TabId; step: string; icon: string; title: string; subtitle: string; color: { ring: string; bg: string; text: string; badge: string; accent: string; btn: string; btnHover: string } }[] = [
+const TABS: { id: TabId; step: string; icon: string; title: string; subtitle: string; color: { ring: string; bg: string; text: string; badge: string } }[] = [
     {
         id: 'init',
         step: 'Step 1',
         icon: '🚀',
         title: 'Evaluation Runs',
         subtitle: 'Dataset samples',
-        color: { ring: 'border-blue-400', bg: 'bg-blue-50/60', text: 'text-blue-700', badge: 'bg-blue-100', accent: 'bg-blue-50', btn: 'bg-blue-600', btnHover: 'hover:bg-blue-700' },
+        color: { ring: 'border-blue-400', bg: 'bg-blue-50/60', text: 'text-blue-700', badge: 'bg-blue-100' },
     },
     {
         id: 'profiler',
@@ -134,7 +134,7 @@ const TABS: { id: TabId; step: string; icon: string; title: string; subtitle: st
         icon: '🤖',
         title: 'Profiler Agent',
         subtitle: 'Extract preferences',
-        color: { ring: 'border-indigo-400', bg: 'bg-indigo-50/60', text: 'text-indigo-700', badge: 'bg-indigo-100', accent: 'bg-indigo-50', btn: 'bg-indigo-600', btnHover: 'hover:bg-indigo-700' },
+        color: { ring: 'border-indigo-400', bg: 'bg-indigo-50/60', text: 'text-indigo-700', badge: 'bg-indigo-100' },
     },
     {
         id: 'orchestrator',
@@ -142,7 +142,7 @@ const TABS: { id: TabId; step: string; icon: string; title: string; subtitle: st
         icon: '🎛️',
         title: 'Orchestrator Agent',
         subtitle: 'Retrieve & filter',
-        color: { ring: 'border-purple-400', bg: 'bg-purple-50/60', text: 'text-purple-700', badge: 'bg-purple-100', accent: 'bg-purple-50', btn: 'bg-purple-600', btnHover: 'hover:bg-purple-700' },
+        color: { ring: 'border-purple-400', bg: 'bg-purple-50/60', text: 'text-purple-700', badge: 'bg-purple-100' },
     },
     {
         id: 'reranker',
@@ -150,7 +150,7 @@ const TABS: { id: TabId; step: string; icon: string; title: string; subtitle: st
         icon: '🎯',
         title: 'Reranker',
         subtitle: 'Recall@K',
-        color: { ring: 'border-green-400', bg: 'bg-green-50/60', text: 'text-green-700', badge: 'bg-green-100', accent: 'bg-green-50', btn: 'bg-green-600', btnHover: 'hover:bg-green-700' },
+        color: { ring: 'border-green-400', bg: 'bg-green-50/60', text: 'text-green-700', badge: 'bg-green-100' },
     },
 ];
 
@@ -439,10 +439,10 @@ export default function StepEvaluationPage() {
                         {/* Tab content */}
                         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                             {/* Content header */}
-                            <div className={`px-6 py-4 border-b border-gray-100 flex justify-between items-center ${activeTabData.color.accent}`}>
+                            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className={`text-xs font-bold uppercase tracking-wider ${activeTabData.color.text}`}>{activeTabData.step}</span>
+                                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{activeTabData.step}</span>
                                         <h2 className="text-base font-bold text-gray-800">{activeTabData.title}</h2>
                                     </div>
                                     <p className="text-xs text-gray-500 mt-0.5">{activeTabData.subtitle}</p>
@@ -452,7 +452,7 @@ export default function StepEvaluationPage() {
                                 {activeTab === 'init' && (
                                     <button
                                         onClick={() => { setNewVersionName(''); setShowRunModal(true); }}
-                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl transition-colors text-sm font-medium shadow-sm"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                         New Run
@@ -461,7 +461,7 @@ export default function StepEvaluationPage() {
                                 {activeTab === 'profiler' && (
                                     <button
                                         onClick={() => openNewVersionModal('summ')}
-                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl transition-colors text-sm font-medium shadow-sm"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                         New Version
@@ -470,7 +470,7 @@ export default function StepEvaluationPage() {
                                 {activeTab === 'orchestrator' && (
                                     <button
                                         onClick={() => openNewVersionModal('retrieval')}
-                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl transition-colors text-sm font-medium shadow-sm"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                         New Version
@@ -479,7 +479,7 @@ export default function StepEvaluationPage() {
                                 {activeTab === 'reranker' && (
                                     <button
                                         onClick={() => openNewVersionModal('rerank')}
-                                        className={`flex items-center gap-2 ${activeTabData.color.btn} ${activeTabData.color.btnHover} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-sm`}
+                                        className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl transition-colors text-sm font-medium shadow-sm"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                         New Version
@@ -498,7 +498,7 @@ export default function StepEvaluationPage() {
                                             <div
                                                 key={run.id}
                                                 onClick={() => handleViewRun(run)}
-                                                className="p-4 bg-blue-50/40 border border-blue-100 rounded-xl hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+                                                className="p-4 bg-white border border-gray-200 rounded-2xl hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer group"
                                             >
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div className="flex items-center gap-2">
@@ -529,7 +529,7 @@ export default function StepEvaluationPage() {
                                     <div className="space-y-3">
                                         {summBatches.length === 0 && <EmptyState icon="🤖" message="No Profiler Agent versions yet. Click '+ New Version' to create one." />}
                                         {summBatches.map(b => (
-                                            <VersionCard key={b.id} batch={b} color={{ bg: 'bg-indigo-50/50', border: 'border-indigo-100', text: 'text-indigo-800' }} onClick={() => handleViewDetail(b)} />
+                                            <VersionCard key={b.id} batch={b} onClick={() => handleViewDetail(b)} />
                                         ))}
                                     </div>
                                 )}
@@ -539,7 +539,7 @@ export default function StepEvaluationPage() {
                                     <div className="space-y-3">
                                         {retrievalBatches.length === 0 && <EmptyState icon="🎛️" message="No Orchestrator Agent versions yet. Click '+ New Version' to create one." />}
                                         {retrievalBatches.map(b => (
-                                            <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50/50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
+                                            <VersionCard key={b.id} batch={b} onClick={() => handleViewDetail(b)}>
                                                 <div className="flex gap-3 text-xs text-gray-600">
                                                     <span className="bg-white px-2 py-0.5 rounded border border-gray-200">N = <strong>{(b.config as Record<string, unknown>).n_sample as number}</strong> candidates</span>
                                                 </div>
@@ -553,7 +553,7 @@ export default function StepEvaluationPage() {
                                     <div className="space-y-3">
                                         {rerankBatches.length === 0 && <EmptyState icon="🎯" message="No Reranker versions yet. Click '+ New Version' to create one." />}
                                         {rerankBatches.map(b => (
-                                            <VersionCard key={b.id} batch={b} color={{ bg: 'bg-green-50/50', border: 'border-green-100', text: 'text-green-800' }} onClick={() => handleViewDetail(b)}>
+                                            <VersionCard key={b.id} batch={b} onClick={() => handleViewDetail(b)}>
                                                 <div className="flex gap-2 text-xs text-gray-600">
                                                     <span className="bg-white px-2 py-0.5 rounded border border-gray-200">Top-K = <strong>{(b.config as Record<string, unknown>).top_k as number}</strong></span>
                                                     <span className="bg-white px-2 py-0.5 rounded border border-gray-200 capitalize">{String((b.config as Record<string, unknown>).model)}</span>
@@ -616,7 +616,7 @@ export default function StepEvaluationPage() {
             {(detailLoading || loading) && (
                 <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl px-8 py-5 shadow-xl flex items-center gap-4">
-                        <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
@@ -663,7 +663,7 @@ export default function StepEvaluationPage() {
                         <div className="overflow-y-auto flex-1 px-6 py-4">
                             {runDetailLoading ? (
                                 <div className="flex items-center justify-center py-16 gap-3">
-                                    <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
@@ -688,7 +688,7 @@ export default function StepEvaluationPage() {
                                                 </span>
                                             </div>
                                             {conv.liked_movies && conv.liked_movies.length > 0 && (
-                                                <p className="text-xs text-blue-600 mb-1">❤️ {conv.liked_movies.join(', ')}</p>
+                                                <p className="text-xs text-gray-600 mb-1">❤️ {conv.liked_movies.join(', ')}</p>
                                             )}
                                             {conv.dialog_preview && (
                                                 <p className="text-xs text-gray-500 line-clamp-2">{conv.dialog_preview}…</p>
@@ -715,7 +715,6 @@ export default function StepEvaluationPage() {
                     onClose={() => setShowRunModal(false)}
                     onSubmit={handleInit}
                     submitLabel={loading ? 'Initializing...' : 'Initialize'}
-                    submitColor="bg-blue-600 hover:bg-blue-700"
                     submitDisabled={loading}
                 >
                     <div className="space-y-4">
@@ -726,7 +725,7 @@ export default function StepEvaluationPage() {
                                 value={newVersionName}
                                 onChange={(e) => setNewVersionName(e.target.value)}
                                 placeholder="e.g. initial-run..."
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm"
+                                className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                             />
                         </div>
                         <div>
@@ -734,7 +733,7 @@ export default function StepEvaluationPage() {
                             <select
                                 value={dataset}
                                 onChange={(e) => setDataset(e.target.value as "redial" | "inspired")}
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                                className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                             >
                                 <option value="redial">Redial</option>
                                 <option value="inspired">Inspired</option>
@@ -743,7 +742,7 @@ export default function StepEvaluationPage() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Sample Size
-                                <span className="ml-2 font-bold text-blue-600">{samplePercent}%</span>
+                                <span className="ml-2 font-bold text-gray-900">{samplePercent}%</span>
                                 {datasetSizes[dataset] ? (
                                     <span className="ml-1 text-gray-400 font-normal">
                                         (~{Math.max(1, Math.round(datasetSizes[dataset] * samplePercent / 100))} conversations)
@@ -756,7 +755,7 @@ export default function StepEvaluationPage() {
                                 max={100}
                                 value={samplePercent}
                                 onChange={(e) => setSamplePercent(Number(e.target.value))}
-                                className="w-full accent-blue-600"
+                                className="w-full accent-gray-800"
                             />
                             <div className="flex justify-between text-xs text-gray-400 mt-0.5">
                                 <span>1%</span><span>50%</span><span>100%</span>
@@ -773,7 +772,6 @@ export default function StepEvaluationPage() {
                     onClose={() => setShowNewVersionModal(null)}
                     onSubmit={() => handleCreateProfiler()}
                     submitLabel={loading ? 'Running...' : 'Run Profiler Agent'}
-                    submitColor="bg-indigo-600 hover:bg-indigo-700"
                     submitDisabled={loading || !selectedRunId}
                 >
                     <div>
@@ -783,7 +781,7 @@ export default function StepEvaluationPage() {
                             value={newVersionName}
                             onChange={(e) => setNewVersionName(e.target.value)}
                             placeholder="e.g. baseline, experiment-1..."
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
+                            className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                         />
                     </div>
                     <div>
@@ -791,7 +789,7 @@ export default function StepEvaluationPage() {
                         <select
                             value={selectedRunId || ''}
                             onChange={(e) => setSelectedRunId(e.target.value ? Number(e.target.value) : undefined)}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2 text-sm"
+                            className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                         >
                             <option value="">— Select a run —</option>
                             {stepRuns.map(r => (
@@ -802,9 +800,9 @@ export default function StepEvaluationPage() {
                         </select>
                         <p className="text-xs text-gray-500 mt-1">Profiler Agent will extract user preferences from all conversations in this run.</p>
                     </div>
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-indigo-800">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-700">
                         <p className="font-medium mb-1">ℹ️ No additional parameters needed</p>
-                        <p className="text-indigo-600 text-xs">Extracts preferences, genres, hard constraints, and WRRF weights from conversation history.</p>
+                        <p className="text-gray-500 text-xs">Extracts preferences, genres, hard constraints, and WRRF weights from conversation history.</p>
                     </div>
                 </ModalBackdrop>
             )}
@@ -821,7 +819,6 @@ export default function StepEvaluationPage() {
                         handleRunRetrieval(selectedSummBatch);
                     }}
                     submitLabel={loading ? 'Running...' : 'Run Orchestrator Agent'}
-                    submitColor="bg-purple-600 hover:bg-purple-700"
                     submitDisabled={loading || !selectedSummBatch}
                 >
                     <div>
@@ -831,7 +828,7 @@ export default function StepEvaluationPage() {
                             value={newVersionName}
                             onChange={(e) => setNewVersionName(e.target.value)}
                             placeholder="e.g. n100-critic-v1..."
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
+                            className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                         />
                     </div>
                     <div>
@@ -846,7 +843,7 @@ export default function StepEvaluationPage() {
                                     if (batch) setSelectedRunId(batch.run_id);
                                 }
                             }}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2 text-sm"
+                            className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                         >
                             <option value="">— Select a profiler version —</option>
                             {summBatches.map(b => (
@@ -862,11 +859,11 @@ export default function StepEvaluationPage() {
                             type="number"
                             value={nSample}
                             onChange={(e) => setNSample(Number(e.target.value))}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 border p-2"
+                            className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                         />
                         <p className="text-xs text-gray-500 mt-1">Number of candidates to retrieve (10–600).</p>
                     </div>
-                    <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 text-xs text-purple-800">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-600">
                         Orchestrator kích hoạt 3 luồng truy xuất song song (Semantic / Content / Graph), hợp nhất qua WRRF với trọng số động, rồi Critic lọc ràng buộc cứng — Relaxation Agent can thiệp nếu cần.
                     </div>
                 </ModalBackdrop>
@@ -879,7 +876,6 @@ export default function StepEvaluationPage() {
                     onClose={() => setShowNewVersionModal(null)}
                     onSubmit={handleRunReranking}
                     submitLabel={loading ? 'Running...' : 'Run Reranker'}
-                    submitColor="bg-green-600 hover:bg-green-700"
                     submitDisabled={loading || !selectedRetrievalBatch}
                 >
                     <div>
@@ -889,7 +885,7 @@ export default function StepEvaluationPage() {
                             value={newVersionName}
                             onChange={(e) => setNewVersionName(e.target.value)}
                             placeholder="e.g. cohere-top10..."
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
+                            className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                         />
                     </div>
                     <div>
@@ -904,7 +900,7 @@ export default function StepEvaluationPage() {
                                     if (batch) setSelectedRunId(batch.run_id);
                                 }
                             }}
-                            className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2 text-sm"
+                            className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                         >
                             <option value="">— Select an orchestrator version —</option>
                             {retrievalBatches.filter(b => b.status === 'completed').map(b => (
@@ -922,7 +918,7 @@ export default function StepEvaluationPage() {
                                 type="number"
                                 value={topK}
                                 onChange={(e) => setTopK(Number(e.target.value))}
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
+                                className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                             />
                         </div>
                         <div>
@@ -930,14 +926,14 @@ export default function StepEvaluationPage() {
                             <select
                                 value={model}
                                 onChange={(e) => setModel(e.target.value as "llm" | "cohere")}
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 border p-2"
+                                className="w-full rounded-xl border border-gray-200 focus:border-gray-400 outline-none px-3 py-2 text-sm bg-white transition-colors"
                             >
                                 <option value="cohere">Cohere</option>
                                 <option value="llm">LLM</option>
                             </select>
                         </div>
                     </div>
-                    <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-xs text-green-800">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-600">
                         Sử dụng danh sách ứng viên đã lọc từ Orchestrator Agent (Step 3) để xếp hạng lại theo mức độ phù hợp với người dùng.
                     </div>
                 </ModalBackdrop>

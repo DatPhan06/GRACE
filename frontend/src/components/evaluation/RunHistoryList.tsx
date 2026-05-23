@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trash2, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 4;
 import { EvaluationRunResponse, deleteEvaluationRun } from '@/lib/api';
 
 interface RunHistoryListProps {

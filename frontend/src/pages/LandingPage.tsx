@@ -7,7 +7,7 @@ import StepEvaluationPage from '@/pages/StepEvaluationPage';
 type TabId = 'chat' | 'evaluation' | 'step-evaluation';
 
 const NAV_ITEMS: { id: TabId; label: string; icon: typeof MessageSquare; description: string }[] = [
-    { id: 'chat',            label: 'Assistant',         icon: MessageSquare, description: 'Chat with GRACE' },
+    { id: 'chat',            label: 'Assistant',         icon: MessageSquare, description: 'Chat with ARGOS' },
     { id: 'evaluation',      label: 'Evaluation',         icon: BarChart2,     description: 'System metrics' },
     { id: 'step-evaluation', label: 'Step Optimization',  icon: Layers,        description: 'Pipeline stages' },
 ];
@@ -30,7 +30,7 @@ export default function LandingPage() {
                         </div>
                         {!collapsed && (
                             <div className="min-w-0">
-                                <p className="text-sm font-bold text-gray-900 tracking-tight leading-none">GRACE</p>
+                                <p className="text-sm font-bold text-gray-900 tracking-tight leading-none">ARGOS</p>
                                 <p className="text-[10px] text-gray-400 leading-none mt-0.5">Movie Recommender</p>
                             </div>
                         )}

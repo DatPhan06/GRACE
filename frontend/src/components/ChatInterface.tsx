@@ -205,7 +205,7 @@ export default function ChatInterface() {
         {
             id: '1',
             role: 'ai',
-            content: "Hi! I'm **GRACE** — your movie recommendation assistant. Tell me what you're in the mood for, and I'll find the perfect film for you.",
+            content: "Hi! I'm **ARGOS** — your movie recommendation assistant. Tell me what you're in the mood for, and I'll find the perfect film for you.",
         },
     ]);
     const [input, setInput] = useState('');
@@ -228,7 +228,7 @@ export default function ChatInterface() {
         setNodeStates(initialNodeStates());
 
         const turns = messages.filter((m, i) => !(i === 0 && m.role === 'ai'));
-        const history = turns.map(m => `${m.role === 'user' ? 'User' : 'GRACE'}: ${m.content}`).join('\n');
+        const history = turns.map(m => `${m.role === 'user' ? 'User' : 'ARGOS'}: ${m.content}`).join('\n');
         const fullConversation = history ? `${history}\nUser: ${input}` : `User: ${input}`;
 
         try {
