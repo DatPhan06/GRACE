@@ -6,7 +6,6 @@ import {
     streamChatMessages,
     type MovieRecommendation,
     type AgentNode,
-    type StreamEvent,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -40,8 +39,13 @@ interface NodeState {
 // ─── Agent progress strip ─────────────────────────────────────────────────────
 
 function AgentProgress({ nodeStates }: { nodeStates: Record<AgentNode, NodeState> }) {
+    console.log("AgentProgress rendering with nodeStates props:", JSON.parse(JSON.stringify(nodeStates)));
     const activeNode = NODE_DEFS.find(n => nodeStates[n.id].status === 'running');
     const doneCount = NODE_DEFS.filter(n => nodeStates[n.id].status === 'done').length;
+
+    // Find the latest active or completed node to display its message
+    const lastActiveOrDoneNode = [...NODE_DEFS].reverse().find(n => nodeStates[n.id].status !== 'idle');
+    const displayMessage = lastActiveOrDoneNode ? nodeStates[lastActiveOrDoneNode.id].message : '';
 
     return (
         <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm w-72">
@@ -105,6 +109,13 @@ function AgentProgress({ nodeStates }: { nodeStates: Record<AgentNode, NodeState
                     style={{ width: `${(doneCount / NODE_DEFS.length) * 100}%` }}
                 />
             </div>
+
+            {/* Active message */}
+            {displayMessage && (
+                <div className="mt-3 pt-2.5 border-t border-gray-100 text-[10px] text-gray-500 leading-normal animate-fade-in">
+                    {displayMessage}
+                </div>
+            )}
         </div>
     );
 }
@@ -200,46 +211,11 @@ export default function ChatInterface() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [nodeStates, setNodeStates] = useState<Record<AgentNode, NodeState>>(initialNodeStates());
-    const [eventQueue, setEventQueue] = useState<StreamEvent[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading, nodeStates]);
-
-    useEffect(() => {
-        if (eventQueue.length === 0) return;
-        const [event, ...rest] = eventQueue;
-        if (event.event === 'node') {
-            setNodeStates(prev => ({
-                ...prev,
-                [event.node]: { status: event.status, message: event.message },
-            }));
-        } else if (event.event === 'result') {
-            setMessages(prev => [
-                ...prev,
-                {
-                    id: (Date.now() + 1).toString(),
-                    role: 'ai' as const,
-                    content: event.response,
-                    recommendations: event.recommendations,
-                    agentTrace: event.agent_trace,
-                },
-            ]);
-            setIsLoading(false);
-        } else if (event.event === 'error') {
-            setMessages(prev => [
-                ...prev,
-                {
-                    id: (Date.now() + 1).toString(),
-                    role: 'ai' as const,
-                    content: `Something went wrong: ${event.detail}`,
-                },
-            ]);
-            setIsLoading(false);
-        }
-        setEventQueue(rest);
-    }, [eventQueue]);
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -250,17 +226,58 @@ export default function ChatInterface() {
         setInput('');
         setIsLoading(true);
         setNodeStates(initialNodeStates());
-        setEventQueue([]);
 
         const turns = messages.filter((m, i) => !(i === 0 && m.role === 'ai'));
         const history = turns.map(m => `${m.role === 'user' ? 'User' : 'GRACE'}: ${m.content}`).join('\n');
         const fullConversation = history ? `${history}\nUser: ${input}` : `User: ${input}`;
 
         try {
+            console.log("streamChatMessages started");
             await streamChatMessages(fullConversation, event => {
-                setEventQueue(prev => [...prev, event]);
+                console.log("Stream event received:", event);
+                try {
+                    if (event.event === 'node') {
+                        console.log(`Setting node state for ${event.node} to ${event.status}`);
+                        setNodeStates(prev => {
+                            const updated = {
+                                ...prev,
+                                [event.node]: { status: event.status, message: event.message },
+                            };
+                            console.log("Updated nodeStates:", updated);
+                            return updated;
+                        });
+                    } else if (event.event === 'result') {
+                        console.log("Result event received:", event);
+                        setMessages(prev => [
+                            ...prev,
+                            {
+                                id: (Date.now() + 1).toString(),
+                                role: 'ai' as const,
+                                content: event.response,
+                                recommendations: event.recommendations,
+                                agentTrace: event.agent_trace,
+                            },
+                        ]);
+                        setIsLoading(false);
+                    } else if (event.event === 'error') {
+                        console.error("Error event from stream:", event.detail);
+                        setMessages(prev => [
+                            ...prev,
+                            {
+                                id: (Date.now() + 1).toString(),
+                                role: 'ai' as const,
+                                content: `Something went wrong: ${event.detail}`,
+                            },
+                        ]);
+                        setIsLoading(false);
+                    }
+                } catch (handlerErr) {
+                    console.error("Error in stream event handler:", handlerErr);
+                }
             });
-        } catch {
+            console.log("streamChatMessages finished successfully");
+        } catch (err) {
+            console.error("streamChatMessages thrown error:", err);
             setMessages(prev => [
                 ...prev,
                 { id: (Date.now() + 1).toString(), role: 'ai', content: "Sorry, something went wrong. Please try again." },
