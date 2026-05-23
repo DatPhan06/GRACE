@@ -106,29 +106,35 @@ function PipelineFlowDiagram() {
                 </div>
                 <Arrow />
 
-                {/* Step 3: Retrieval + Critic + Reflexion */}
+                {/* Step 3: Orchestrator Agent */}
                 <div className="flex flex-col items-center shrink-0">
-                    <div className="border-2 border-purple-200 bg-purple-50 rounded-xl p-3 w-56">
-                        <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-2 text-center">
-                            Retrieval + Critic + Reflexion
+                    <div className="border-2 border-purple-200 bg-purple-50 rounded-xl p-3 w-64">
+                        <div className="text-[10px] font-bold text-purple-700 uppercase tracking-wider mb-2 text-center">
+                            Orchestrator Agent
                         </div>
                         <div className="flex flex-col items-center gap-1">
-                            <div className="bg-white border border-purple-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-purple-700 w-full text-center">
-                                Retrieval (WRRF fusion)
+                            {/* 3 parallel streams */}
+                            <div className="w-full bg-white border border-purple-100 rounded-lg px-2 py-1.5">
+                                <div className="text-[9px] font-semibold text-purple-500 text-center mb-1">Kích hoạt đồng thời</div>
+                                <div className="flex gap-1 justify-center">
+                                    <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">Semantic</span>
+                                    <span className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100">Content</span>
+                                    <span className="text-[9px] bg-teal-50 text-teal-600 px-1.5 py-0.5 rounded border border-teal-100">Graph</span>
+                                </div>
                             </div>
-                            <div className="text-[10px] text-gray-400">↓</div>
+                            <div className="text-[10px] text-gray-400">↓ WRRF(w_sem, w_con, w_col)</div>
                             <div className="bg-white border border-orange-200 rounded-lg px-3 py-1.5 text-[11px] font-semibold text-orange-700 w-full text-center">
                                 Critic Agent
                             </div>
                             <div className="text-[10px] text-gray-400">↓</div>
-                            {/* Reflexion loop — dashed signals conditional re-retrieval */}
+                            {/* Reflexion loop */}
                             <div className="w-full border border-dashed border-amber-300 bg-amber-50/60 rounded-lg px-2.5 py-1.5 text-center">
                                 <div className="text-[9px] font-semibold text-amber-600 mb-0.5">if |M| &lt; τ · max 1×</div>
-                                <div className="text-[10px] text-amber-700">Reflexion → re-retrieve → Critic</div>
+                                <div className="text-[10px] text-amber-700">Relaxation Agent → re-retrieve</div>
                             </div>
                             <div className="text-[10px] text-gray-400 italic">↓ always</div>
                             <div className="bg-white border border-purple-100 rounded-lg px-3 py-1.5 text-[11px] text-purple-600 w-full text-center">
-                                filtered candidates
+                                Top-N candidates
                             </div>
                         </div>
                     </div>
@@ -332,7 +338,7 @@ export default function StepEvaluationPage() {
         }
     };
 
-    // Step 3: Run Retrieval + Critic + Reflexion
+    // Step 3: Run Orchestrator Agent (Retrieval + Critic + Relaxation)
     const handleRunRetrieval = async (summBatchOverride?: number) => {
         const summBatchId = summBatchOverride ?? selectedSummBatch;
         const runId = summBatches.find(b => b.id === summBatchId)?.run_id ?? selectedRunId;
@@ -420,7 +426,7 @@ export default function StepEvaluationPage() {
             <h1 className="text-3xl font-bold mb-2">Step-by-Step Optimization</h1>
             <p className="text-gray-500 text-sm mb-8">
                 Run each pipeline stage independently: Profiler Agent extracts preferences, then
-                Retrieval+Critic+Reflexion retrieves and filters candidates, then Reranker selects top-K.
+                Orchestrator Agent retrieves and filters candidates, then Reranker selects top-K.
             </p>
 
             {/* Pipeline Diagram */}
@@ -492,21 +498,21 @@ export default function StepEvaluationPage() {
                 </div>
             </PipelineSection>
 
-            {/* ─── Section 3: Retrieval + Critic + Reflexion ─── */}
+            {/* ─── Section 3: Orchestrator Agent ─── */}
             <PipelineSection
                 id="section-retrieval"
                 stepNumber="Step 3"
-                title="Retrieval + Critic + Reflexion"
-                subtitle="WRRF retrieval, then Critic filters candidates. If too few pass constraints, Reflexion widens them and re-retrieves (max 1x)."
+                title="Orchestrator Agent"
+                subtitle="Kích hoạt đồng thời 3 luồng truy xuất (Semantic / Content / Graph), hợp nhất kết quả qua WRRF với trọng số động từ Profiler, sau đó qua Critic Agent → Relaxation Agent nếu cần."
                 accentColor="bg-purple-50/50"
                 headerRight={<NewVersionButton onClick={() => openNewVersionModal('retrieval')} color="bg-purple-600 hover:bg-purple-700" />}
             >
                 <div className="space-y-3">
-                    {retrievalBatches.length === 0 && <EmptyState icon="🔍" message="No Retrieval+Critic versions yet. Click '+ New Version' to create one." />}
+                    {retrievalBatches.length === 0 && <EmptyState icon="🎛️" message="No Orchestrator versions yet. Click '+ New Version' to create one." />}
                     {retrievalBatches.map(b => (
                         <VersionCard key={b.id} batch={b} color={{ bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-800' }} onClick={() => handleViewDetail(b)}>
                             <div className="flex gap-3 text-xs text-gray-600">
-                                <span>N={(b.config as Record<string, unknown>).n_sample as number}</span>
+                                <span>N={(b.config as Record<string, unknown>).n_sample as number} candidates</span>
                             </div>
                         </VersionCard>
                     ))}
@@ -518,7 +524,7 @@ export default function StepEvaluationPage() {
                 id="section-reranker"
                 stepNumber="Step 4"
                 title="Reranker → Recall@K"
-                subtitle="Pure reranking on post-Critic filtered candidates from Step 3. Computes Recall@K."
+                subtitle="Reranker chọn Top-K từ danh sách candidates đã qua Critic (Step 3). Tính Recall@K."
                 accentColor="bg-green-50/50"
                 headerRight={<NewVersionButton onClick={() => openNewVersionModal('rerank')} color="bg-green-600 hover:bg-green-700" />}
             >
@@ -736,10 +742,10 @@ export default function StepEvaluationPage() {
                 </ModalBackdrop>
             )}
 
-            {/* New Retrieval+Critic+Reflexion Version Modal */}
+            {/* New Orchestrator Agent Version Modal */}
             {showNewVersionModal === 'retrieval' && (
                 <ModalBackdrop
-                    title="New Retrieval + Critic + Reflexion Version"
+                    title="New Orchestrator Agent Version"
                     onClose={() => setShowNewVersionModal(null)}
                     onSubmit={() => {
                         const runId = getRunIdFromSummBatch(selectedSummBatch) || selectedRunId;
@@ -747,7 +753,7 @@ export default function StepEvaluationPage() {
                         setSelectedRunId(runId);
                         handleRunRetrieval(selectedSummBatch);
                     }}
-                    submitLabel={loading ? 'Running...' : 'Run Retrieval + Critic + Reflexion'}
+                    submitLabel={loading ? 'Running...' : 'Run Orchestrator Agent'}
                     submitColor="bg-purple-600 hover:bg-purple-700"
                     submitDisabled={loading || !selectedSummBatch}
                 >
@@ -794,7 +800,7 @@ export default function StepEvaluationPage() {
                         <p className="text-xs text-gray-500 mt-1">Number of candidates to retrieve (10–600).</p>
                     </div>
                     <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 text-xs text-purple-800">
-                        Retrieval runs first (WRRF fusion), then Critic checks constraints. If relaxation is needed, it re-retrieves once before producing filtered candidates.
+                        Orchestrator kích hoạt 3 luồng truy xuất song song (Semantic / Content / Graph), hợp nhất qua WRRF với trọng số động, rồi Critic lọc ràng buộc cứng — Relaxation Agent can thiệp nếu cần.
                     </div>
                 </ModalBackdrop>
             )}
@@ -820,7 +826,7 @@ export default function StepEvaluationPage() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Input Retrieval Version <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Input Orchestrator Agent Version <span className="text-red-500">*</span></label>
                         <select
                             value={selectedRetrievalBatch || ''}
                             onChange={(e) => {
@@ -865,7 +871,7 @@ export default function StepEvaluationPage() {
                         </div>
                     </div>
                     <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-xs text-green-800">
-                        Uses filtered candidates from the selected Retrieval+Critic+Reflexion version (Step 3).
+                        Sử dụng danh sách ứng viên đã lọc từ Orchestrator Agent (Step 3) để xếp hạng lại theo mức độ phù hợp với người dùng.
                     </div>
                 </ModalBackdrop>
             )}

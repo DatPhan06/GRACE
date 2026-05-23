@@ -10,8 +10,8 @@ interface Props {
 
 const stepDisplayNames: Record<string, string> = {
     summarization: 'Profiler Agent',
-    retrieval: 'Retrieval',
-    reranking: 'Critic → Relax → Reranker',
+    retrieval: 'Orchestrator Agent',
+    reranking: 'Reranker',
 };
 
 const stepColors: Record<string, { bg: string; border: string; text: string; badge: string }> = {
@@ -21,7 +21,7 @@ const stepColors: Record<string, { bg: string; border: string; text: string; bad
 };
 
 const nextStepInfo: Record<string, { label: string; icon: string; color: string; hoverColor: string }> = {
-    summarization: { label: 'Run Retrieval + Critic + Reflexion', icon: '🔍', color: 'bg-purple-600', hoverColor: 'hover:bg-purple-700' },
+    summarization: { label: 'Run Orchestrator Agent', icon: '🎛️', color: 'bg-purple-600', hoverColor: 'hover:bg-purple-700' },
     retrieval: { label: 'Run Reranker', icon: '🎯', color: 'bg-green-600', hoverColor: 'hover:bg-green-700' },
 };
 
